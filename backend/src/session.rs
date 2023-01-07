@@ -1,11 +1,13 @@
 use std::collections::HashMap;
 
-use actix::{Actor, ActorContext, Addr, StreamHandler};
+use actix::{
+    dev::MessageResponse, Actor, ActorContext, Addr, AsyncContext, Handler, Message, StreamHandler,
+};
 use actix_web_actors::ws;
 use log::{error, info};
 use serde::{Deserialize, Serialize};
 
-use crate::game::{Game, GameId};
+use crate::game::{BasicConfig, Game, GameId, GameTiming};
 
 pub struct Session {
     /// Unique ID of the session
@@ -26,11 +28,11 @@ pub type SessionId = u32;
 #[serde(tag = "ty")]
 pub enum ClientMessage {
     // Message to connect self to the game with the associated ID
-    Connect {
+    TryConnect {
         // The game token to try and connect to (e.g. W2133)
-        try_connect: String,
-        // Token provided to the client for connecting with a name
         token: String,
+        // The username to try and connect with
+        username: String,
     },
 }
 
@@ -40,10 +42,12 @@ pub enum ClientMessage {
 pub enum ServerMessage {
     /// Message indicating a complete successful connection
     Connected {
-        // The name of the game
-        name: String,
-        // The ID of the current session
-        id: SessionId,
+        /// The session ID
+        id: u32,
+        /// Basic game config information
+        basic: BasicConfig,
+        /// Timing data for different game events
+        timing: GameTiming,
     },
     /// Message providing information about another player in
     /// the game
@@ -57,8 +61,10 @@ pub enum ServerMessage {
 pub enum ServerError {
     /// The last proivded message was malformed
     MalformedMessage = 0x0,
+    /// The provided token didn't match up to any game
+    InvalidToken = 0x1,
     /// The provided username is already in use
-    UsernameTaken = 0x1,
+    UsernameTaken = 0x2,
 }
 
 type ServerResult = Result<ServerMessage, ServerError>;
@@ -68,6 +74,19 @@ impl Actor for Session {
 }
 
 type SessionContext = ws::WebsocketContext<Session>;
+
+#[derive(Message)]
+#[rtype(result = "SessionResponse")]
+pub enum SessionRequest {
+    /// Request to send a message to the session client
+    Message(ServerMessage),
+    /// Request to send an error to the session client
+    Error(ServerError),
+}
+
+pub enum SessionResponse {
+    None,
+}
 
 impl Session {
     /// Writes a server message by encoding it to json and then sending it
@@ -80,7 +99,7 @@ impl Session {
         let value = match serde_json::to_string(&msg) {
             Ok(value) => value,
             Err(err) => {
-                error!("Failed to encode server message as JSON");
+                error!("Failed to encode server message as JSON: {:?}", err);
                 return;
             }
         };
@@ -90,7 +109,40 @@ impl Session {
     }
 
     /// Handles a recieved client message
-    fn handle_message(&mut self, message: ClientMessage, ctx: &mut SessionContext) {}
+    fn handle_message(&mut self, message: ClientMessage, ctx: &mut SessionContext) {
+        match message {
+            ClientMessage::TryConnect { token, username } => {
+                Self::try_connect(ctx, token, username);
+            }
+        }
+    }
+
+    /// Attempts to connect this session to a game with the provided token
+    /// using the provided username
+    ///
+    /// `ctx`      The session context
+    /// `token`    The game token
+    /// `username` The username to use
+    fn try_connect(ctx: &mut SessionContext, token: String, username: String) {
+        let addr = ctx.address();
+        tokio::spawn(async move {});
+    }
+}
+
+impl Handler<SessionRequest> for Session {
+    type Result = SessionResponse;
+
+    fn handle(&mut self, msg: SessionRequest, ctx: &mut Self::Context) -> Self::Result {
+        match msg {
+            SessionRequest::Message(message) => {
+                Self::write_message(ctx, message);
+            }
+            SessionRequest::Error(error) => {
+                Self::write_message(ctx, error);
+            }
+        }
+        SessionResponse::None
+    }
 }
 
 impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Session {
@@ -119,6 +171,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Session {
             _ => return,
         };
 
+        // Decode the recieved client message
         let value = match serde_json::from_str::<ClientMessage>(&*text) {
             Ok(value) => value,
             Err(err) => {
@@ -128,6 +181,21 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Session {
             }
         };
 
+        // Handle the client message
         self.handle_message(value, ctx);
+    }
+}
+
+impl MessageResponse<Session, SessionRequest> for SessionResponse {
+    fn handle(
+        self,
+        _ctx: &mut SessionContext,
+        tx: Option<actix::dev::OneshotSender<SessionResponse>>,
+    ) {
+        if let Some(tx) = tx {
+            if tx.send(self).is_err() {
+                error!("Failed to send message response to session");
+            }
+        }
     }
 }

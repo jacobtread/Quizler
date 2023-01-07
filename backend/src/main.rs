@@ -7,7 +7,7 @@ mod game;
 mod games;
 mod session;
 
-#[actix_web::main]
+#[tokio::main]
 async fn main() -> std::io::Result<()> {
     // Load environment variables
     dotenv().ok();
