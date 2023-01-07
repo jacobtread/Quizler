@@ -34,6 +34,8 @@ pub enum ClientMessage {
         // The username to try and connect with
         username: String,
     },
+    /// Message indicating the client is ready to play
+    Ready,
 }
 
 /// Messages sent by the server
@@ -120,6 +122,7 @@ impl Session {
             ClientMessage::TryConnect { token, username } => {
                 Self::try_connect(ctx, token, username);
             }
+            ClientMessage::Ready => todo!(),
         }
     }
 

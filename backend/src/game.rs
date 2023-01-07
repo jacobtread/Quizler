@@ -173,7 +173,9 @@ pub struct GameConfig {
     /// Timing data for different game events
     pub timing: GameTiming,
     /// Scoring point values
-    pub scoring: GameScoring,
+    pub scoring: Scoring,
+    /// The game questions
+    pub questions: Vec<Question>,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -182,7 +184,7 @@ pub struct BasicConfig {
     pub text: String,
 }
 
-pub struct GameScoring {
+pub struct Scoring {
     /// The minimum amount awarded for getting the
     /// question correct
     pub min: u32,
@@ -202,6 +204,52 @@ pub struct GameTiming {
     /// The time that a bonus score will be granted within
     /// bonus score is disabled if none
     pub bonus_score_time: u32,
+}
+
+/// Type for a string which represents a reference to a tmp stored image
+pub type ImageRef = String;
+
+pub struct Question {
+    /// The title of the question
+    title: String,
+    /// The text of the question
+    text: String,
+
+    /// Optional image
+    image: Option<ImageRef>,
+
+    /// The content of the question
+    ty: QuestionType,
+    /// The time given to answer the question
+    answer_time: u32,
+    /// The point scoring for the question
+    scoring: Scoring,
+}
+
+pub enum QuestionType {
+    /// Single choice question
+    Single {
+        /// Vec of indexes of correct answers
+        answers: Vec<u32>,
+        /// Vec of the possible answers
+        values: Vec<String>,
+    },
+    /// Multiple choice question
+    Multiple {
+        /// Vec of indexes of correct answers
+        answers: Vec<u32>,
+        /// Vec of the possible answers
+        values: Vec<String>,
+    },
+    /// Image where you must click an area
+    ClickableImage {
+        /// The image url to take clicking on
+        image: ImageRef,
+        /// Top left box coordinate
+        top: (f32, f32),
+        /// Bottom right box coordinate
+        bottom: (f32, f32),
+    },
 }
 
 impl<A, M> MessageResponse<A, M> for GameResponse
