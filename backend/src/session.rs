@@ -67,6 +67,10 @@ pub enum ServerError {
     InvalidToken = 0x1,
     /// The provided username is already in use
     UsernameTaken = 0x2,
+    /// The game is already started
+    AlreadyStarted = 0x3,
+    /// The game has already finished
+    AlreadyFinished = 0x4,
 }
 
 type ServerResult = Result<ServerMessage, ServerError>;

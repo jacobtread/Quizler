@@ -16,6 +16,21 @@ pub struct Game {
     players: Vec<GameSession>,
     /// Configuration for the game
     config: GameConfig,
+    /// The state of the game
+    state: GameState,
+}
+
+#[derive(Serialize)]
+#[repr(u8)]
+pub enum GameState {
+    /// The game is in the lobby
+    Lobby = 0x0,
+    /// The game is starting
+    Starting = 0x1,
+    /// The game has started
+    Started = 0x2,
+    /// The game has finished
+    Finished = 0x3,
 }
 
 impl Game {
@@ -28,6 +43,7 @@ impl Game {
             },
             players: Default::default(),
             config,
+            state: GameState::Lobby,
         }
     }
 }
@@ -63,9 +79,17 @@ pub enum GameResponse {
 impl Handler<GameRequest> for Game {
     type Result = Result<GameResponse, ServerError>;
 
-    fn handle(&mut self, msg: GameRequest, ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: GameRequest, _ctx: &mut Self::Context) -> Self::Result {
         match msg {
             GameRequest::TryConnect { id, name, addr } => {
+                match self.state {
+                    GameState::Started | GameState::Starting => {
+                        return Err(ServerError::AlreadyStarted)
+                    }
+                    GameState::Finished => return Err(ServerError::AlreadyFinished),
+                    _ => {}
+                }
+
                 // Error if username is already taken
                 if self
                     .players
