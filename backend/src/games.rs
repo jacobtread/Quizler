@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use actix::{dev::MessageResponse, Actor, Addr, Context, Handler, Message};
+use actix::{dev::MessageResponse, Actor, Addr, Context, Handler, Message, WrapFuture};
 use rand_core::{OsRng, RngCore};
 
 use crate::{
@@ -81,8 +81,14 @@ impl Games {
             };
 
             match res {
-                Ok(GameResponse::Connected { id, basic, timing }) => {
+                Ok(GameResponse::Connected {
+                    token,
+                    id,
+                    basic,
+                    timing,
+                }) => {
                     addr.do_send(SessionRequest::Message(ServerMessage::Connected {
+                        token,
                         id,
                         basic,
                         timing,
@@ -142,7 +148,7 @@ pub enum GamesResponse {
 
 impl Handler<GamesRequest> for Games {
     type Result = Result<GamesResponse, ServerError>;
-    fn handle(&mut self, msg: GamesRequest, ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: GamesRequest, _ctx: &mut Self::Context) -> Self::Result {
         match msg {
             GamesRequest::PreInitGame { config } => {
                 let id = self.pre_init_id;

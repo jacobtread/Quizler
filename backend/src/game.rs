@@ -4,7 +4,7 @@ use actix::{dev::MessageResponse, Actor, Addr, Context, Handler, Message};
 use actix_web::cookie::time::Duration;
 use serde::{Deserialize, Serialize};
 
-use crate::session::{ServerError, Session, SessionId};
+use crate::session::{ServerError, ServerMessage, Session, SessionId, SessionRequest};
 use log::error;
 
 pub struct Game {
@@ -13,7 +13,7 @@ pub struct Game {
     /// The host session
     host: HostSession,
     /// Map of session IDs mapped to the session address
-    players: HashMap<SessionId, GameSession>,
+    players: Vec<GameSession>,
     /// Configuration for the game
     config: GameConfig,
 }
@@ -35,17 +35,21 @@ impl Game {
 #[derive(Message)]
 #[rtype(result = "Result<GameResponse, ServerError>")]
 pub enum GameRequest {
+    /// Message to attempt to connect a new client
     TryConnect {
         id: SessionId,
         name: String,
         addr: Addr<Session>,
     },
-}
 
-pub enum TryConnectType {}
+    /// Message to skip the current timer
+    SkipTimer,
+}
 
 pub enum GameResponse {
     Connected {
+        /// The game token
+        token: String,
         /// The session ID
         id: u32,
         /// Basic game config information
@@ -62,16 +66,36 @@ impl Handler<GameRequest> for Game {
     fn handle(&mut self, msg: GameRequest, ctx: &mut Self::Context) -> Self::Result {
         match msg {
             GameRequest::TryConnect { id, name, addr } => {
-                // First player is always the host player
-                let is_host = self.players.is_empty();
+                // Error if username is already taken
+                if self
+                    .players
+                    .iter()
+                    .find(|player| player.name.eq(&name))
+                    .is_some()
+                {
+                    return Err(ServerError::UsernameTaken);
+                }
+
+                let game_player = GameSession { id, name, addr };
+
+                // Notify existing players and host of joined player
+                for player in &self.players {
+                    player.notify_other(&game_player);
+                }
+                self.host.notify_other(&game_player);
+
+                self.players.push(game_player);
 
                 let config = &self.config;
                 Ok(GameResponse::Connected {
                     id,
+                    token: self.token.clone(),
                     basic: config.basic.clone(),
                     timing: config.timing.clone(),
                 })
             }
+            // Not yet implemented
+            GameRequest::SkipTimer => Ok(GameResponse::None),
         }
     }
 }
@@ -83,6 +107,16 @@ pub struct HostSession {
     addr: Addr<Session>,
 }
 
+impl HostSession {
+    pub fn notify_other(&self, other: &GameSession) {
+        self.addr
+            .do_send(SessionRequest::Message(ServerMessage::OtherPlayer {
+                id: other.id,
+                name: other.name.clone(),
+            }))
+    }
+}
+
 pub struct GameSession {
     /// The ID of the session
     id: SessionId,
@@ -90,6 +124,16 @@ pub struct GameSession {
     name: String,
     /// Address to the session
     addr: Addr<Session>,
+}
+
+impl GameSession {
+    pub fn notify_other(&self, other: &GameSession) {
+        self.addr
+            .do_send(SessionRequest::Message(ServerMessage::OtherPlayer {
+                id: other.id,
+                name: other.name.clone(),
+            }))
+    }
 }
 
 pub type GameId = u32;

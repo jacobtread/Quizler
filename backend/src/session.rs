@@ -44,6 +44,8 @@ pub enum ServerMessage {
     Connected {
         /// The session ID
         id: u32,
+        /// The joined game token
+        token: String,
         /// Basic game config information
         basic: BasicConfig,
         /// Timing data for different game events
