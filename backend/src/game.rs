@@ -1,4 +1,4 @@
-use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant};
 
 use actix::{
     dev::MessageResponse, Actor, Addr, AsyncContext, Context, Handler, Message, SpawnHandle,
@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     error::ServerError,
+    games,
     session::{ServerMessage, Session, SessionId, SessionRequest},
 };
 use log::error;
@@ -25,6 +26,9 @@ pub struct Game {
 
     /// Spawn handle for the tick task
     task: Option<DelayedTask>,
+
+    /// The index of the current question
+    question_index: usize,
 
     /// Game timer
     timer: GameTimer,
@@ -91,10 +95,15 @@ pub enum GameState {
     Lobby = 0x0,
     /// The game is starting
     Starting = 0x1,
-    /// The game has started
-    Started = 0x2,
+
+    /// The game is waiting for ready from all the players
+    AwaitingReady = 0x2,
+
+    /// The game has started and is waiting for answers
+    AwaitingAnswers = 0x3,
+
     /// The game has finished
-    Finished = 0x3,
+    Finished = 0x4,
 }
 
 const TIMER_INTERVAL: Duration = Duration::from_millis(500);
@@ -112,6 +121,7 @@ impl Game {
             state: GameState::Lobby,
             task: None,
             timer: GameTimer::new(),
+            question_index: 0,
         }
     }
 
@@ -174,6 +184,111 @@ impl Game {
         self.task = Some(task)
     }
 
+    /// Immediately completes the current delayed task
+    fn immediate_task(&mut self, ctx: &mut Context<Self>) {
+        if let Some(task) = self.task.take() {
+            task.finish(self, ctx);
+        }
+    }
+
+    /// Begins the question at the provided index
+    ///
+    /// `ctx`   The game context
+    /// `index` The question index
+    fn begin_question(&mut self, ctx: &mut Context<Self>, index: usize) {
+        self.reset_ready();
+        let question = match self.config.questions.get(index) {
+            Some(value) => value,
+            None => {
+                error!("Attempted to begin a question at an index which doesn't exist");
+                return;
+            }
+        };
+        self.question_index = index;
+        self.send_all(ServerMessage::Question(question.clone()));
+    }
+
+    /// Called after all the ready messages have been recieved from all the
+    /// clients
+    fn ready_question(&mut self, ctx: &mut Context<Self>) {
+        self.send_all(ServerMessage::BeginQuestion);
+        let question = self.question();
+        self.delayed_task(
+            ctx,
+            Duration::from_millis(question.answer_time),
+            Self::mark_answers,
+        )
+    }
+
+    fn question(&self) -> &Question {
+        match self.config.questions.get(self.question_index) {
+            Some(value) => value,
+            None => {
+                panic!("Attempted to access a question at an index that does not exist");
+            }
+        }
+    }
+
+    /// Task for marking the answers
+    fn mark_answers(&mut self, ctx: &mut Context<Self>) {
+        let question = self.question();
+        for player in &mut self.players {
+            let answer = match player.answers.get(self.question_index) {
+                Some(answer) => answer,
+                None => {
+                    // Player did not answer the question
+                    continue;
+                }
+            };
+
+            let score = match (&question.ty, answer) {
+                (QuestionType::Single { answers, .. }, QuestionAnswer::Single { answer }) => {
+                    let valid = answers.contains(answer);
+                }
+                (
+                    QuestionType::Multiple {
+                        answers: qu_answers,
+                        ..
+                    },
+                    QuestionAnswer::Multiple { answers },
+                ) => {
+                    let mut correct = 0usize;
+                    let mut incorrect = 0usize;
+                    for answer in answers {
+                        if qu_answers.contains(answer) {
+                            correct += 1;
+                        } else {
+                            incorrect += 1;
+                        }
+                    }
+
+                    let valid = correct == qu_answers.len();
+                }
+                (
+                    QuestionType::ClickableImage { top, bottom, .. },
+                    QuestionAnswer::ClickableImage { answer },
+                ) => {
+                    // Clicked position is within top and bottom box position
+                    let valid = answer.0 >= top.0
+                        && answer.0 <= bottom.0
+                        && answer.1 >= top.1
+                        && answer.1 <= bottom.1;
+                }
+                _ => {
+                    error!("Mis matched question and answer types don't know how to mark.");
+                    continue;
+                }
+            }
+        }
+    }
+
+    /// Resets the plaeyr ready states of all the players
+    fn reset_ready(&mut self) {
+        for player in &mut self.players {
+            player.ready = false;
+        }
+    }
+
     fn cancel_task(&mut self, ctx: &mut Context<Self>) {
         if let Some(task) = self.task.take() {
             task.cancel(ctx);
@@ -233,12 +348,6 @@ pub enum GameResponse {
 
 pub type GameId = u32;
 
-// Game ticks once every 500 millis
-const GAME_TICK_TIME: Duration = Duration::from_millis(500);
-
-// Game time is ticked every 1 second
-const GAME_TIMER_TIME: Duration = Duration::from_secs(1);
-
 impl Actor for Game {
     type Context = Context<Self>;
 
@@ -252,11 +361,8 @@ impl Handler<GameRequest> for Game {
         match msg {
             GameRequest::TryConnect { id, name, addr } => {
                 match self.state {
-                    GameState::Started | GameState::Starting => {
-                        return Err(ServerError::AlreadyStarted)
-                    }
-                    GameState::Finished => return Err(ServerError::AlreadyFinished),
-                    _ => {}
+                    GameState::Lobby | GameState::Starting => {}
+                    _ => return Err(ServerError::NotJoinable),
                 }
 
                 // Error if username is already taken
@@ -324,19 +430,32 @@ impl Handler<GameRequest> for Game {
 
             // Not yet implemented
             GameRequest::SkipTimer => {
-                // TODO: SKIP THE TIMER OF THE CURRENT QUESTION"
+                self.immediate_task(ctx);
 
                 // Reset the timer future
                 Ok(GameResponse::None)
             }
             GameRequest::Ready { id } => {
-                let player = self
-                    .players
-                    .iter_mut()
-                    .find(|player| player.id == id)
-                    .ok_or(ServerError::UnknownPlayer)?;
+                // Whether all players are ready
+                let mut all_ready = true;
+                let mut found_player = false;
+                for player in &mut self.players {
+                    if player.id == id {
+                        player.ready = true;
+                        found_player = true;
+                    } else if !player.ready {
+                        all_ready = false;
+                    }
+                }
 
-                player.ready = true;
+                if !found_player {
+                    return Err(ServerError::UnknownPlayer);
+                }
+
+                if all_ready {
+                    self.ready_question(ctx);
+                }
+
                 Ok(GameResponse::None)
             }
         }
@@ -413,6 +532,7 @@ pub struct BasicConfig {
     pub text: String,
 }
 
+#[derive(Clone, Serialize)]
 pub struct Scoring {
     /// The minimum amount awarded for getting the
     /// question correct
@@ -429,15 +549,16 @@ pub struct Scoring {
 #[derive(Clone, Serialize, Deserialize)]
 pub struct GameTiming {
     /// The time to wait before displaying each question
-    pub wait_time: u32,
+    pub wait_time: u64,
     /// The time that a bonus score will be granted within
     /// bonus score is disabled if none
-    pub bonus_score_time: u32,
+    pub bonus_score_time: u64,
 }
 
 /// Type for a string which represents a reference to a tmp stored image
 pub type ImageRef = String;
 
+#[derive(Clone, Serialize)]
 pub struct Question {
     /// The title of the question
     title: String,
@@ -450,29 +571,33 @@ pub struct Question {
     /// The content of the question
     ty: QuestionType,
     /// The time given to answer the question
-    answer_time: u32,
+    answer_time: u64,
     /// The point scoring for the question
     scoring: Scoring,
 }
 
+#[derive(Deserialize)]
 pub enum QuestionAnswer {
-    Single { answer: u32 },
-    Multiple { answers: Vec<u32> },
+    Single { answer: usize },
+    Multiple { answers: Vec<usize> },
     ClickableImage { answer: (f32, f32) },
 }
 
+#[derive(Clone, Serialize)]
 pub enum QuestionType {
     /// Single choice question
     Single {
         /// Vec of indexes of correct answers
-        answers: Vec<u32>,
+        #[serde(skip)]
+        answers: Vec<usize>,
         /// Vec of the possible answers
         values: Vec<String>,
     },
     /// Multiple choice question
     Multiple {
         /// Vec of indexes of correct answers
-        answers: Vec<u32>,
+        #[serde(skip)]
+        answers: Vec<usize>,
         /// Vec of the possible answers
         values: Vec<String>,
     },
@@ -481,8 +606,10 @@ pub enum QuestionType {
         /// The image url to take clicking on
         image: ImageRef,
         /// Top left box coordinate
+        #[serde(skip)]
         top: (f32, f32),
         /// Bottom right box coordinate
+        #[serde(skip)]
         bottom: (f32, f32),
     },
 }

@@ -9,10 +9,8 @@ pub enum ServerError {
     InvalidToken,
     /// The provided username is already in use
     UsernameTaken,
-    /// The game is already started
-    AlreadyStarted,
-    /// The game has already finished
-    AlreadyFinished,
+    /// The game is already started or finish so cannot be joined
+    NotJoinable,
     /// An action was attempting on a player that wasnt found
     UnknownPlayer,
 }
@@ -23,9 +21,8 @@ impl ServerError {
             Self::MalformedMessage => 0x0,
             Self::InvalidToken => 0x1,
             Self::UsernameTaken => 0x2,
-            Self::AlreadyStarted => 0x3,
-            Self::AlreadyFinished => 0x4,
-            Self::UnknownPlayer => 0x5,
+            Self::NotJoinable => 0x3,
+            Self::UnknownPlayer => 0x4,
         }
     }
 }

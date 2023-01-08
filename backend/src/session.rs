@@ -9,7 +9,7 @@ use serde::{ser::SerializeStruct, Deserialize, Serialize};
 
 use crate::{
     error::ServerError,
-    game::{BasicConfig, Game, GameId, GameState, GameTiming},
+    game::{BasicConfig, Game, GameId, GameState, GameTiming, Question, QuestionAnswer},
 };
 
 pub struct Session {
@@ -43,6 +43,8 @@ pub enum ClientMessage {
     Start,
     /// Message to cancel starting the game
     Cancel,
+    /// Message to answer the question
+    Answer(QuestionAnswer),
 }
 
 /// Messages sent by the server
@@ -74,6 +76,13 @@ pub enum ServerMessage {
         /// The time that has already passed
         elapsed: u64,
     },
+
+    /// Question data for the next question
+    Question(Question),
+
+    /// Message to begin the question displaying the answers
+    /// at the bottom for the user to choose
+    BeginQuestion,
 
     /// Update for the player scores
     ScoreUpdate { scores: HashMap<SessionId, u32> },
