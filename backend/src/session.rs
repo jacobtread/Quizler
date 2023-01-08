@@ -9,7 +9,7 @@ use serde::{ser::SerializeStruct, Deserialize, Serialize};
 
 use crate::{
     error::ServerError,
-    game::{BasicConfig, Game, GameId, GameTiming},
+    game::{BasicConfig, Game, GameId, GameState, GameTiming},
 };
 
 pub struct Session {
@@ -39,10 +39,14 @@ pub enum ClientMessage {
     },
     /// Message indicating the client is ready to play
     Ready,
+    /// Message to start the game
+    Start,
+    /// Message to cancel starting the game
+    Cancel,
 }
 
 /// Messages sent by the server
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 #[serde(tag = "ty")]
 pub enum ServerMessage {
     /// Message indicating a complete successful connection
@@ -59,6 +63,18 @@ pub enum ServerMessage {
     /// Message providing information about another player in
     /// the game
     OtherPlayer { id: SessionId, name: String },
+
+    /// Message indicating the current state of the game
+    GameState(GameState),
+
+    /// Message for syncing the time between the game and clients
+    TimeSync {
+        /// The total time that is being waited for
+        total: u64,
+        /// The time that has already passed
+        elapsed: u64,
+    },
+
     /// Update for the player scores
     ScoreUpdate { scores: HashMap<SessionId, u32> },
 }
@@ -109,6 +125,7 @@ impl Session {
                 Self::try_connect(ctx, token, username);
             }
             ClientMessage::Ready => todo!(),
+            _ => todo!(),
         }
     }
 

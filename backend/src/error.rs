@@ -13,6 +13,8 @@ pub enum ServerError {
     AlreadyStarted,
     /// The game has already finished
     AlreadyFinished,
+    /// An action was attempting on a player that wasnt found
+    UnknownPlayer,
 }
 
 impl ServerError {
@@ -23,6 +25,7 @@ impl ServerError {
             Self::UsernameTaken => 0x2,
             Self::AlreadyStarted => 0x3,
             Self::AlreadyFinished => 0x4,
+            Self::UnknownPlayer => 0x5,
         }
     }
 }
