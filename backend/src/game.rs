@@ -231,7 +231,10 @@ impl Game {
 
     /// Task for marking the answers
     fn mark_answers(&mut self, ctx: &mut Context<Self>) {
-        let question = self.question();
+        let question = self.question().clone();
+
+        let scoring = &question.scoring;
+
         for player in &mut self.players {
             let answer = match player.answers.get(self.question_index) {
                 Some(answer) => answer,
@@ -241,9 +244,28 @@ impl Game {
                 }
             };
 
+            let elapsed = self.timer.elapsed();
+            let is_bonus = elapsed.as_micros() as u64 <= self.config.timing.bonus_score_time;
+
+            let percent =
+                1.0 - ((elapsed.as_millis() as f32) / (question.answer_time as f32)).max(1.0);
+
+            let mut base_score = scoring.min_score
+                + ((scoring.max_score - scoring.min_score) as f32 * percent) as u32;
+
+            if is_bonus {
+                base_score += scoring.bonus_score;
+            }
+
             let score = match (&question.ty, answer) {
                 (QuestionType::Single { answers, .. }, QuestionAnswer::Single { answer }) => {
                     let valid = answers.contains(answer);
+
+                    if valid {
+                        base_score
+                    } else {
+                        0
+                    }
                 }
                 (
                     QuestionType::Multiple {
@@ -263,6 +285,12 @@ impl Game {
                     }
 
                     let valid = correct == qu_answers.len();
+
+                    if valid {
+                        base_score
+                    } else {
+                        0
+                    }
                 }
                 (
                     QuestionType::ClickableImage { top, bottom, .. },
@@ -273,12 +301,17 @@ impl Game {
                         && answer.0 <= bottom.0
                         && answer.1 >= top.1
                         && answer.1 <= bottom.1;
+                    if valid {
+                        base_score
+                    } else {
+                        0
+                    }
                 }
                 _ => {
                     error!("Mis matched question and answer types don't know how to mark.");
                     continue;
                 }
-            }
+            };
         }
     }
 
@@ -520,8 +553,6 @@ pub struct GameConfig {
     pub basic: BasicConfig,
     /// Timing data for different game events
     pub timing: GameTiming,
-    /// Scoring point values
-    pub scoring: Scoring,
     /// The game questions
     pub questions: Vec<Question>,
 }
@@ -534,14 +565,10 @@ pub struct BasicConfig {
 
 #[derive(Clone, Serialize)]
 pub struct Scoring {
-    /// The minimum amount awarded for getting the
-    /// question correct
-    pub min: u32,
-
-    /// The maximum amount to award for getting the
-    /// question right
-    pub max: u32,
-
+    /// Minimum score awarded for the longest time taken
+    pub min_score: u32,
+    /// Maximum score awarded for the shortest time taken
+    pub max_score: u32,
     /// The amount awarded if scored within the bonus time
     pub bonus_score: u32,
 }
