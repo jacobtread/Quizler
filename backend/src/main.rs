@@ -3,6 +3,7 @@ use dotenvy::dotenv;
 use log::info;
 
 mod env;
+mod error;
 mod game;
 mod games;
 mod session;

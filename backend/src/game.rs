@@ -1,10 +1,10 @@
-use std::collections::HashMap;
-
 use actix::{dev::MessageResponse, Actor, Addr, Context, Handler, Message};
-use actix_web::cookie::time::Duration;
 use serde::{Deserialize, Serialize};
 
-use crate::session::{ServerError, ServerMessage, Session, SessionId, SessionRequest};
+use crate::{
+    error::ServerError,
+    session::{ServerMessage, Session, SessionId, SessionRequest},
+};
 use log::error;
 
 pub struct Game {

@@ -1,11 +1,12 @@
 use std::collections::HashMap;
 
-use actix::{dev::MessageResponse, Actor, Addr, Context, Handler, Message, WrapFuture};
+use actix::{dev::MessageResponse, Actor, Addr, Context, Handler, Message};
 use rand_core::{OsRng, RngCore};
 
 use crate::{
+    error::ServerError,
     game::{BasicConfig, Game, GameConfig, GameRequest, GameResponse, GameTiming},
-    session::{ServerError, ServerMessage, Session, SessionId, SessionRequest},
+    session::{ServerMessage, Session, SessionId, SessionRequest},
 };
 use log::error;
 

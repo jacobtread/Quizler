@@ -5,9 +5,12 @@ use actix::{
 };
 use actix_web_actors::ws;
 use log::{error, info};
-use serde::{Deserialize, Serialize};
+use serde::{ser::SerializeStruct, Deserialize, Serialize};
 
-use crate::game::{BasicConfig, Game, GameId, GameTiming};
+use crate::{
+    error::ServerError,
+    game::{BasicConfig, Game, GameId, GameTiming},
+};
 
 pub struct Session {
     /// Unique ID of the session
@@ -59,23 +62,6 @@ pub enum ServerMessage {
     /// Update for the player scores
     ScoreUpdate { scores: HashMap<SessionId, u32> },
 }
-
-#[derive(Serialize)]
-#[repr(u8)]
-pub enum ServerError {
-    /// The last proivded message was malformed
-    MalformedMessage = 0x0,
-    /// The provided token didn't match up to any game
-    InvalidToken = 0x1,
-    /// The provided username is already in use
-    UsernameTaken = 0x2,
-    /// The game is already started
-    AlreadyStarted = 0x3,
-    /// The game has already finished
-    AlreadyFinished = 0x4,
-}
-
-type ServerResult = Result<ServerMessage, ServerError>;
 
 impl Actor for Session {
     type Context = ws::WebsocketContext<Session>;
