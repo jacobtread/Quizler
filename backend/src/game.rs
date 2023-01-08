@@ -353,15 +353,6 @@ pub trait GameSession {
     fn send(&self, message: ServerMessage) {
         self.addr().do_send(SessionRequest::Message(message));
     }
-
-    fn notify_other(&self, other: &PlayerSession) {
-        self.send(ServerMessage::OtherPlayer {
-            id: other.id,
-            name: other.name.clone(),
-        });
-    }
-
-    fn update_timer(&self, v: u8) {}
 }
 
 pub struct HostSession {
