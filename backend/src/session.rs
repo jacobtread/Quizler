@@ -9,7 +9,9 @@ use serde::{ser::SerializeStruct, Deserialize, Serialize};
 
 use crate::{
     error::ServerError,
-    game::{BasicConfig, Game, GameId, GameState, GameTiming, Question, QuestionAnswer},
+    game::{
+        AnswerResult, BasicConfig, Game, GameId, GameState, GameTiming, Question, QuestionAnswer,
+    },
 };
 
 pub struct Session {
@@ -79,6 +81,9 @@ pub enum ServerMessage {
 
     /// Question data for the next question
     Question(Question),
+
+    /// Result message for showing the results of a player
+    AnswerResult(AnswerResult),
 
     /// Message to begin the question displaying the answers
     /// at the bottom for the user to choose

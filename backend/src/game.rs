@@ -1,4 +1,7 @@
-use std::time::{Duration, Instant};
+use std::{
+    collections::HashMap,
+    time::{Duration, Instant},
+};
 
 use actix::{
     dev::MessageResponse, Actor, Addr, AsyncContext, Context, Handler, Message, SpawnHandle,
@@ -7,7 +10,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     error::ServerError,
-    games,
     session::{ServerMessage, Session, SessionId, SessionRequest},
 };
 use log::error;
@@ -257,14 +259,14 @@ impl Game {
                 base_score += scoring.bonus_score;
             }
 
-            let score = match (&question.ty, answer) {
+            let result = match (&question.ty, &answer) {
                 (QuestionType::Single { answers, .. }, QuestionAnswer::Single { answer }) => {
                     let valid = answers.contains(answer);
 
                     if valid {
-                        base_score
+                        AnswerResult::Correct(base_score)
                     } else {
-                        0
+                        AnswerResult::Incorrect
                     }
                 }
                 (
@@ -284,12 +286,16 @@ impl Game {
                         }
                     }
 
+                    // The percent completion
+                    let percent = (correct as f32) / ((correct + incorrect) as f32);
+
                     let valid = correct == qu_answers.len();
 
                     if valid {
-                        base_score
+                        AnswerResult::Correct(base_score)
                     } else {
-                        0
+                        let score = ((base_score as f32) * percent).round() as u32;
+                        AnswerResult::Partial(score)
                     }
                 }
                 (
@@ -302,9 +308,9 @@ impl Game {
                         && answer.1 >= top.1
                         && answer.1 <= bottom.1;
                     if valid {
-                        base_score
+                        AnswerResult::Correct(base_score)
                     } else {
-                        0
+                        AnswerResult::Incorrect
                     }
                 }
                 _ => {
@@ -312,7 +318,15 @@ impl Game {
                     continue;
                 }
             };
+
+            player.score += result.score();
+            player.results.push(result.clone());
+
+            // Send the result to the player
+            player.send(ServerMessage::AnswerResult(result));
         }
+        // Update everyones scores
+        self.update_scores();
     }
 
     /// Resets the plaeyr ready states of all the players
@@ -339,6 +353,14 @@ impl Game {
             player.send(message.clone());
         }
         self.host.send(message);
+    }
+
+    fn update_scores(&self) {
+        let mut scores = HashMap::new();
+        for player in &self.players {
+            scores.insert(player.id, player.score);
+        }
+        self.send_all(ServerMessage::ScoreUpdate { scores })
     }
 }
 
@@ -414,6 +436,8 @@ impl Handler<GameRequest> for Game {
                     addr,
                     ready: false,
                     answers: Vec::new(),
+                    results: Vec::new(),
+                    score: 0,
                 };
 
                 // Message sent to existing players for this player
@@ -533,8 +557,12 @@ pub struct PlayerSession {
     addr: Addr<Session>,
     /// The player ready state
     ready: bool,
-    /// The players answers
+    /// The players answers and the score they got for them
     answers: Vec<QuestionAnswer>,
+    /// Marked version of each question answer
+    results: Vec<AnswerResult>,
+    /// The player total score
+    score: u32,
 }
 
 impl GameSession for PlayerSession {
@@ -610,7 +638,26 @@ pub enum QuestionAnswer {
     ClickableImage { answer: (f32, f32) },
 }
 
-#[derive(Clone, Serialize)]
+#[derive(Serialize, Clone)]
+pub enum AnswerResult {
+    // Answer was 100% correct
+    Correct(u32),
+    // Answer was incorrect
+    Incorrect,
+    // Multiple choice has some asnwers right
+    Partial(u32),
+}
+impl AnswerResult {
+    pub fn score(&self) -> u32 {
+        match self {
+            Self::Correct(value) => *value,
+            Self::Incorrect => 0,
+            Self::Partial(value) => *value,
+        }
+    }
+}
+
+#[derive(Serialize, Clone)]
 pub enum QuestionType {
     /// Single choice question
     Single {
