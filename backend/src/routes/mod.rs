@@ -1,21 +1,29 @@
-use std::{collections::HashMap, sync::Arc};
-
 use actix_multipart::{form::MultipartForm, Multipart, MultipartError};
 use actix_web::{
+    get,
     http::StatusCode,
     post,
     web::{self, ServiceConfig},
-    HttpResponse, Responder, ResponseError,
+    HttpRequest, HttpResponse, Responder, ResponseError,
 };
+use actix_web_actors::ws::{self};
 use bytes::BytesMut;
 use futures::TryStreamExt;
 use serde::{Deserialize, Serialize};
+use std::{
+    collections::HashMap,
+    sync::{
+        atomic::{AtomicU32, Ordering},
+        Arc,
+    },
+};
 use thiserror::Error;
 use uuid::Uuid;
 
 use crate::{
     game::{BasicConfig, GameConfig, GameTiming, GetImageMessage, Image, Question},
     games::{GameToken, Games, GetGameMessage, PrepareGameMessage},
+    session::Session,
 };
 
 /// Configuration function for configuring
@@ -23,6 +31,7 @@ use crate::{
 pub fn configure(cfg: &mut ServiceConfig) {
     cfg.service(create_quiz);
     cfg.service(quiz_image);
+    cfg.service(quiz_socket);
 }
 
 #[derive(Debug, MultipartForm)]
@@ -75,7 +84,7 @@ struct QuizCreated {
 }
 
 /// Endpoint for creating a new quiz
-#[post("/api/quiz")]
+#[post("/api/quiz/create")]
 async fn create_quiz(mut payload: Multipart) -> Result<impl Responder, CreateError> {
     // Configuration data
     let mut config: Option<GameConfigUpload> = None;
@@ -178,4 +187,22 @@ async fn quiz_image(path: web::Path<(String, Uuid)>) -> Result<impl Responder, I
         .ok_or(ImageError::UnknownImage)?;
 
     Ok(HttpResponse::Ok().content_type(image.mime).body(image.data))
+}
+
+static SESSION_ID: AtomicU32 = AtomicU32::new(0);
+
+#[get("/api/quiz/socket")]
+async fn quiz_socket(
+    req: HttpRequest,
+    stream: web::Payload,
+) -> Result<impl Responder, actix_web::Error> {
+    let session_id = SESSION_ID.fetch_add(1, Ordering::AcqRel);
+    ws::start(
+        Session {
+            id: session_id,
+            game: None,
+        },
+        &req,
+        stream,
+    )
 }

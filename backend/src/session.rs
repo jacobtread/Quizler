@@ -20,9 +20,9 @@ pub type SessionId = u32;
 
 pub struct Session {
     /// Unique ID of the session
-    id: SessionId,
+    pub id: SessionId,
     /// Address to the current game if apart of one
-    game: Option<Addr<Game>>,
+    pub game: Option<Addr<Game>>,
 }
 
 /// Reference to a session, contains the ID of the
@@ -154,7 +154,7 @@ impl Actor for Session {
 
     /// Handle the session being stopped by removing the
     /// session from any games and cleaning up after it
-    fn stopped(&mut self, ctx: &mut Self::Context) {
+    fn stopped(&mut self, _ctx: &mut Self::Context) {
         // Take the game to attempt removing if present
         if let Some(game) = self.game.take() {
             // Inform game to remove self
@@ -239,7 +239,7 @@ impl Session {
             }
 
             // Handle message for an answer to the current question
-            ClientMessage::Answer(answer) => todo!(),
+            ClientMessage::Answer(_answer) => todo!(),
 
             // Handle message for kicking a player
             ClientMessage::Kick { id } => {
