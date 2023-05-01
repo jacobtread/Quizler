@@ -52,6 +52,8 @@ pub enum ClientMessage {
         username: String,
     },
     /// Message indicating the client is ready to play
+    ///
+    /// (This is done internally by clients once everything has been loaded)
     Ready,
     /// Message to start the game
     Start,
