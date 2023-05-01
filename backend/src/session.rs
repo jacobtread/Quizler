@@ -1,7 +1,7 @@
 use crate::{
     error::ServerError,
     game::{
-        AnswerResult, ConnectedMessage, Game, GameState, Question, QuestionAnswer,
+        AnswerResult, ConnectedMessage, Game, GameState, Question, QuestionAnswer, ReadyMessage,
         TryConnectMessage,
     },
     games::{GameToken, Games, GetGameMessage, InitializeMessage, InitializedMessage},
@@ -13,7 +13,7 @@ use actix::{
 use actix_web_actors::ws;
 use log::{debug, error, info};
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, future::Future, sync::Arc};
 use uuid::Uuid;
 
 pub type SessionId = u32;
@@ -22,7 +22,7 @@ pub struct Session {
     /// Unique ID of the session
     id: SessionId,
     /// Address to the current game if apart of one
-    game: Option<SessionGame>,
+    game: Option<Addr<Game>>,
 }
 
 /// Reference to a session, contains the ID of the
@@ -32,11 +32,6 @@ pub struct SessionRef {
     pub id: SessionId,
     /// The addr to the session
     pub addr: Addr<Session>,
-}
-
-pub struct SessionGame {
-    token: GameToken,
-    addr: Addr<Game>,
 }
 
 /// Messages recieved from the client
@@ -122,9 +117,9 @@ impl Session {
     ///
     /// `ctx` The context to write to
     /// `msg` The message to write
-    fn write_message<M: Serialize>(ctx: &mut SessionContext, msg: M) {
+    fn write_message(ctx: &mut SessionContext, msg: &ServerMessage) {
         // Serialize the message
-        let value = match serde_json::to_string(&msg) {
+        let value = match serde_json::to_string(msg) {
             Ok(value) => value,
             Err(err) => {
                 error!("Failed to encode server message as JSON: {:?}", err);
@@ -136,23 +131,61 @@ impl Session {
         ctx.text(value);
     }
 
+    fn write_error(ctx: &mut SessionContext, error: ServerError) {
+        Self::write_message(ctx, &ServerMessage::Error { error })
+    }
+
     /// Handles a recieved client message
-    async fn handle_message(
-        session_ref: SessionRef,
-        message: ClientMessage,
-    ) -> Result<ServerMessage, ServerError> {
+    fn handle_message(&mut self, message: ClientMessage, ctx: &mut SessionContext) {
+        // Create a reference to the session
+        let session_ref = SessionRef {
+            id: self.id,
+            addr: ctx.address(),
+        };
+
         match message {
             // Handle initializing new games
-            ClientMessage::InitializeGame { uuid } => Self::initialize(session_ref, uuid).await,
+            ClientMessage::InitializeGame { uuid } => {
+                self.async_message(Self::initialize(session_ref, uuid), ctx);
+            }
 
             // Handle try connect messages
             ClientMessage::TryConnect { token, username } => {
-                Self::try_connect(session_ref, token, username).await
+                self.async_message(Self::try_connect(session_ref, token, username), ctx);
             }
 
-            ClientMessage::Ready => todo!(),
+            // Handle client ready messages
+            ClientMessage::Ready => {
+                let game = match &self.game {
+                    Some(value) => value.clone(),
+                    None => {
+                        // Expected the game to exist
+                        Self::write_error(ctx, ServerError::Unexpected);
+                        return;
+                    }
+                };
+                game.do_send(ReadyMessage { id: session_ref.id });
+            }
             _ => todo!(),
         }
+    }
+
+    fn async_message<F>(&self, future: F, ctx: &mut SessionContext)
+    where
+        F: Future<Output = Result<ServerMessage, ServerError>> + 'static,
+    {
+        let future = future.into_actor(self).map(|result, _act, ctx| {
+            // Handle error cases
+            let msg = match result {
+                Ok(msg) => msg,
+                Err(error) => ServerMessage::Error { error },
+            };
+
+            // Write the response
+            Self::write_message(ctx, &msg);
+        });
+
+        ctx.spawn(future);
     }
 
     async fn initialize(session_ref: SessionRef, uuid: Uuid) -> Result<ServerMessage, ServerError> {
@@ -197,7 +230,7 @@ impl Handler<ServerMessage> for Session {
     type Result = ();
 
     fn handle(&mut self, msg: ServerMessage, ctx: &mut Self::Context) -> Self::Result {
-        Self::write_message(ctx, msg);
+        Self::write_message(ctx, &msg);
     }
 }
 
@@ -205,7 +238,7 @@ impl Handler<Arc<ServerMessage>> for Session {
     type Result = ();
 
     fn handle(&mut self, msg: Arc<ServerMessage>, ctx: &mut Self::Context) -> Self::Result {
-        Self::write_message(ctx, msg);
+        Self::write_message(ctx, &*msg);
     }
 }
 
@@ -213,7 +246,7 @@ impl Handler<ServerError> for Session {
     type Result = ();
 
     fn handle(&mut self, msg: ServerError, ctx: &mut Self::Context) -> Self::Result {
-        Self::write_message(ctx, ServerMessage::Error { error: msg });
+        Self::write_error(ctx, msg);
     }
 }
 
@@ -248,31 +281,11 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Session {
             Ok(value) => value,
             Err(err) => {
                 error!("Unable to decode client message: {:?}", err);
-                Self::write_message(ctx, ServerError::MalformedMessage);
+                Self::write_error(ctx, ServerError::MalformedMessage);
                 return;
             }
         };
 
-        // Create a reference to the session
-        let session_ref = SessionRef {
-            id: self.id,
-            addr: ctx.address(),
-        };
-
-        // Handle the client message
-        ctx.spawn(
-            Self::handle_message(session_ref, value)
-                .into_actor(self)
-                .map(|result, _act, ctx| {
-                    // Handle error cases
-                    let msg = match result {
-                        Ok(msg) => msg,
-                        Err(error) => ServerMessage::Error { error },
-                    };
-
-                    // Write the response
-                    Self::write_message(ctx, msg);
-                }),
-        );
+        Self::handle_message(self, value, ctx)
     }
 }
