@@ -9,7 +9,7 @@ mod games;
 mod routes;
 mod session;
 
-#[tokio::main]
+#[actix_web::main]
 async fn main() -> std::io::Result<()> {
     // Load environment variables
     dotenv().ok();

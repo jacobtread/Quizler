@@ -1,43 +1,18 @@
-use serde::{ser::SerializeStruct, Serialize};
+use actix::Message;
+use serde::Serialize;
 
-#[derive(Clone)]
+#[derive(Message, Debug, Copy, Clone, Serialize)]
+#[rtype(result = "()")]
 #[repr(u8)]
 pub enum ServerError {
     /// The last proivded message was malformed
-    MalformedMessage,
+    MalformedMessage = 0x0,
     /// The provided token didn't match up to any game
-    InvalidToken,
+    InvalidToken = 0x1,
     /// The provided username is already in use
-    UsernameTaken,
+    UsernameTaken = 0x2,
     /// The game is already started or finish so cannot be joined
-    NotJoinable,
+    NotJoinable = 0x3,
     /// An action was attempting on a player that wasnt found
-    UnknownPlayer,
-}
-
-impl ServerError {
-    pub fn code(&self) -> u8 {
-        match self {
-            Self::MalformedMessage => 0x0,
-            Self::InvalidToken => 0x1,
-            Self::UsernameTaken => 0x2,
-            Self::NotJoinable => 0x3,
-            Self::UnknownPlayer => 0x4,
-        }
-    }
-}
-
-impl Serialize for ServerError {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        let mut stru = serializer.serialize_struct("ServerError", 2)?;
-        // Message type field to match up with server messages
-        stru.serialize_field("ty", "Error")?;
-        // The error code field
-        stru.serialize_field("error", &self.code())?;
-
-        stru.end()
-    }
+    UnknownPlayer = 0x4,
 }

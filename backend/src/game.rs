@@ -1,18 +1,14 @@
+use crate::{
+    error::ServerError,
+    session::{ServerMessage, Session, SessionId},
+};
+use actix::{Actor, Addr, AsyncContext, Context, Handler, Message, MessageResult, SpawnHandle};
+use log::error;
+use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     time::{Duration, Instant},
 };
-
-use actix::{
-    dev::MessageResponse, Actor, Addr, AsyncContext, Context, Handler, Message, SpawnHandle,
-};
-use serde::{Deserialize, Serialize};
-
-use crate::{
-    error::ServerError,
-    session::{ServerMessage, Session, SessionId, SessionRequest},
-};
-use log::error;
 
 pub struct Game {
     /// The token this game is stored behind
@@ -323,7 +319,7 @@ impl Game {
             player.results.push(result.clone());
 
             // Send the result to the player
-            player.send(ServerMessage::AnswerResult(result));
+            player.addr.do_send(ServerMessage::AnswerResult(result));
         }
         // Update everyones scores
         self.update_scores();
@@ -350,9 +346,9 @@ impl Game {
     /// Send a message to all clients
     fn send_all(&self, message: ServerMessage) {
         for player in &self.players {
-            player.send(message.clone());
+            player.addr.do_send(message.clone());
         }
-        self.host.send(message);
+        self.host.addr.do_send(message);
     }
 
     fn update_scores(&self) {
@@ -364,158 +360,177 @@ impl Game {
     }
 }
 
+/// Message to attempt to connect from a new client
 #[derive(Message)]
-#[rtype(result = "Result<GameResponse, ServerError>")]
-pub enum GameRequest {
-    /// Message to attempt to connect a new client
-    TryConnect {
-        id: SessionId,
-        name: String,
-        addr: Addr<Session>,
-    },
-
-    /// Message from the host to start the game
-    Start,
-
-    /// Message to cancel starting the game
-    Cancel,
-
-    /// Request to inform that a player is ready
-    Ready { id: SessionId },
-
-    /// Message to skip the current timer
-    SkipTimer,
+#[rtype(result = "Result<ConnectedMessage, ServerError>")]
+pub struct TryConnectMessage {
+    /// The session ID
+    pub id: SessionId,
+    /// The name for the connecting player
+    pub name: String,
+    /// The return address of the session
+    pub addr: Addr<Session>,
 }
 
-pub enum GameResponse {
-    Connected {
-        /// The game token
-        token: String,
-        /// The session ID
-        id: u32,
-        /// Basic game config information
-        basic: BasicConfig,
-        /// Timing data for different game events
-        timing: GameTiming,
-    },
-    None,
+pub struct ConnectedMessage {
+    /// The game token
+    pub token: String,
+    /// The session ID
+    pub id: u32,
+    /// Basic game config information
+    pub basic: BasicConfig,
+    /// Timing data for different game events
+    pub timing: GameTiming,
 }
+
+/// Message from the host to start the game
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct StartMessage;
+
+/// Message from the host to cancel starting the game
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct CancelMessage;
+
+/// Request to inform that a player is ready
+#[derive(Message)]
+#[rtype(result = "Result<(), ServerError>")]
+pub struct ReadyMessage {
+    pub id: SessionId,
+}
+
+/// Message to skip the current timer
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct SkipTimerMessage;
 
 pub type GameId = u32;
 
 impl Actor for Game {
     type Context = Context<Self>;
 
-    fn started(&mut self, ctx: &mut Self::Context) {}
+    fn started(&mut self, _ctx: &mut Self::Context) {}
 }
 
-impl Handler<GameRequest> for Game {
-    type Result = Result<GameResponse, ServerError>;
+impl Handler<TryConnectMessage> for Game {
+    type Result = MessageResult<TryConnectMessage>;
 
-    fn handle(&mut self, msg: GameRequest, ctx: &mut Self::Context) -> Self::Result {
-        match msg {
-            GameRequest::TryConnect { id, name, addr } => {
-                match self.state {
-                    GameState::Lobby | GameState::Starting => {}
-                    _ => return Err(ServerError::NotJoinable),
-                }
+    fn handle(
+        &mut self,
+        TryConnectMessage { id, name, addr }: TryConnectMessage,
+        ctx: &mut Self::Context,
+    ) -> Self::Result {
+        match self.state {
+            GameState::Lobby | GameState::Starting => {}
+            _ => return MessageResult(Err(ServerError::NotJoinable)),
+        }
 
-                // Error if username is already taken
-                if self
-                    .players
-                    .iter()
-                    .find(|player| player.name.eq(&name))
-                    .is_some()
-                {
-                    return Err(ServerError::UsernameTaken);
-                }
+        // Error if username is already taken
+        if self
+            .players
+            .iter()
+            .find(|player| player.name.eq(&name))
+            .is_some()
+        {
+            return MessageResult(Err(ServerError::UsernameTaken));
+        }
 
-                let game_player = PlayerSession {
-                    id,
-                    name,
-                    addr,
-                    ready: false,
-                    answers: Vec::new(),
-                    results: Vec::new(),
-                    score: 0,
-                };
+        let game_player = PlayerSession {
+            id,
+            name,
+            addr,
+            ready: false,
+            answers: Vec::new(),
+            results: Vec::new(),
+            score: 0,
+        };
 
-                // Message sent to existing players for this player
-                let joiner_message = ServerMessage::OtherPlayer {
-                    id: game_player.id,
-                    name: game_player.name.clone(),
-                };
+        // Message sent to existing players for this player
+        let joiner_message = ServerMessage::OtherPlayer {
+            id: game_player.id,
+            name: game_player.name.clone(),
+        };
 
-                // Notify all players of the existence of eachother
-                for player in &self.players {
-                    player.send(joiner_message.clone());
+        // Notify all players of the existence of eachother
+        for player in &self.players {
+            player.addr.do_send(joiner_message.clone());
 
-                    // Message describing the other player
-                    game_player.send(ServerMessage::OtherPlayer {
-                        id: player.id,
-                        name: player.name.clone(),
-                    });
-                }
+            // Message describing the other player
+            game_player.addr.do_send(ServerMessage::OtherPlayer {
+                id: player.id,
+                name: player.name.clone(),
+            });
+        }
 
-                // Notify the host of the join
-                self.host.send(joiner_message);
+        // Notify the host of the join
+        self.host.addr.do_send(joiner_message);
 
-                self.players.push(game_player);
+        self.players.push(game_player);
 
-                let config = &self.config;
-                Ok(GameResponse::Connected {
-                    id,
-                    token: self.token.clone(),
-                    basic: config.basic.clone(),
-                    timing: config.timing.clone(),
-                })
-            }
+        let config = &self.config;
 
-            GameRequest::Start => {
-                self.set_state(GameState::Starting);
-                // Begin the start time
-                self.starting_task(ctx);
-                Ok(GameResponse::None)
-            }
+        MessageResult(Ok(ConnectedMessage {
+            id,
+            token: self.token.clone(),
+            basic: config.basic.clone(),
+            timing: config.timing.clone(),
+        }))
+    }
+}
 
-            GameRequest::Cancel => {
-                self.cancel_task(ctx);
-                self.set_state(GameState::Lobby);
-                // TODO: Reset all other state
-                Ok(GameResponse::None)
-            }
+impl Handler<StartMessage> for Game {
+    type Result = ();
 
-            // Not yet implemented
-            GameRequest::SkipTimer => {
-                self.immediate_task(ctx);
+    fn handle(&mut self, _: StartMessage, ctx: &mut Self::Context) -> Self::Result {
+        self.set_state(GameState::Starting);
+        // Begin the start time
+        self.starting_task(ctx);
+    }
+}
 
-                // Reset the timer future
-                Ok(GameResponse::None)
-            }
-            GameRequest::Ready { id } => {
-                // Whether all players are ready
-                let mut all_ready = true;
-                let mut found_player = false;
-                for player in &mut self.players {
-                    if player.id == id {
-                        player.ready = true;
-                        found_player = true;
-                    } else if !player.ready {
-                        all_ready = false;
-                    }
-                }
+impl Handler<CancelMessage> for Game {
+    type Result = ();
 
-                if !found_player {
-                    return Err(ServerError::UnknownPlayer);
-                }
+    fn handle(&mut self, _: CancelMessage, ctx: &mut Self::Context) -> Self::Result {
+        self.cancel_task(ctx);
+        self.set_state(GameState::Lobby);
+    }
+}
 
-                if all_ready {
-                    self.ready_question(ctx);
-                }
+impl Handler<SkipTimerMessage> for Game {
+    type Result = ();
 
-                Ok(GameResponse::None)
+    fn handle(&mut self, _: SkipTimerMessage, ctx: &mut Self::Context) -> Self::Result {
+        self.immediate_task(ctx);
+    }
+}
+
+impl Handler<ReadyMessage> for Game {
+    type Result = MessageResult<ReadyMessage>;
+
+    fn handle(&mut self, msg: ReadyMessage, ctx: &mut Self::Context) -> Self::Result {
+        // Whether all players are ready
+        let mut all_ready = true;
+        let mut found_player = false;
+        for player in &mut self.players {
+            if player.id == msg.id {
+                player.ready = true;
+                found_player = true;
+            } else if !player.ready {
+                all_ready = false;
             }
         }
+
+        if !found_player {
+            return MessageResult(Err(ServerError::UnknownPlayer));
+        }
+
+        if all_ready {
+            self.ready_question(ctx);
+        }
+
+        MessageResult(Ok(()))
     }
 }
 
@@ -525,10 +540,6 @@ pub trait GameSession {
     fn id(&self) -> SessionId;
 
     fn addr(&self) -> &Addr<Session>;
-
-    fn send(&self, message: ServerMessage) {
-        self.addr().do_send(SessionRequest::Message(message));
-    }
 }
 
 pub struct HostSession {
@@ -686,22 +697,4 @@ pub enum QuestionType {
         #[serde(skip)]
         bottom: (f32, f32),
     },
-}
-
-impl<A, M> MessageResponse<A, M> for GameResponse
-where
-    A: Actor,
-    M: Message<Result = GameResponse>,
-{
-    fn handle(
-        self,
-        _ctx: &mut <A as Actor>::Context,
-        tx: Option<actix::dev::OneshotSender<<M as Message>::Result>>,
-    ) {
-        if let Some(tx) = tx {
-            if tx.send(self).is_err() {
-                error!("Failed to send game response");
-            }
-        }
-    }
 }

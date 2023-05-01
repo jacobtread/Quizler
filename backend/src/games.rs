@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 
-use actix::{dev::MessageResponse, Actor, Addr, Context, Handler, Message};
+use actix::{Actor, Addr, Context, Handler, Message, MessageResult, ResponseFuture};
 use rand_core::{OsRng, RngCore};
 
 use crate::{
     error::ServerError,
-    game::{BasicConfig, Game, GameConfig, GameRequest, GameResponse, GameTiming},
-    session::{ServerMessage, Session, SessionId, SessionRequest},
+    game::{BasicConfig, ConnectedMessage, Game, GameConfig, GameTiming},
+    session::{ServerMessage, Session, SessionId},
 };
 use log::error;
 
@@ -21,6 +21,10 @@ pub struct Games {
 
     /// Uninitialized games
     pre_init: HashMap<u32, GameConfig>,
+}
+
+impl Actor for Games {
+    type Context = Context<Self>;
 }
 
 impl Games {
@@ -62,156 +66,133 @@ impl Games {
 
         out
     }
+}
 
-    fn try_connect(game: Addr<Game>, id: u32, name: String, addr: Addr<Session>) {
-        tokio::spawn(async move {
-            let game = game;
-            let res = match game
-                .send(GameRequest::TryConnect {
-                    id,
-                    name,
-                    addr: addr.clone(),
-                })
-                .await
-            {
+/// Request from the HTTP API to initialize a new game
+#[derive(Message)]
+#[rtype(result = "Result<PreInitCompleteMessage, ServerError>")]
+pub struct PreInitGameMessage {
+    config: GameConfig,
+}
+
+pub struct PreInitCompleteMessage {
+    id: u32,
+}
+
+impl Handler<PreInitGameMessage> for Games {
+    type Result = MessageResult<PreInitGameMessage>;
+
+    fn handle(&mut self, msg: PreInitGameMessage, ctx: &mut Self::Context) -> Self::Result {
+        let id = self.pre_init_id;
+        self.pre_init_id += 1;
+        self.pre_init.insert(id, msg.config);
+        MessageResult(Ok(PreInitCompleteMessage { id }))
+    }
+}
+
+/// Message for the host to connect to an un-initialized game
+
+#[derive(Message)]
+#[rtype(result = "Result<HostConnectedMessage, ServerError>")]
+pub struct HostConnectMessage {
+    id: u32,
+    sess_id: SessionId,
+    addr: Addr<Session>,
+}
+
+/// The game was connected to successfully
+pub struct HostConnectedMessage {
+    /// The game token,
+    token: String,
+    /// Basic game config information
+    basic: BasicConfig,
+    /// Timing data for different game events
+    timing: GameTiming,
+}
+
+impl Handler<HostConnectMessage> for Games {
+    type Result = MessageResult<HostConnectMessage>;
+
+    fn handle(&mut self, msg: HostConnectMessage, ctx: &mut Self::Context) -> Self::Result {
+        let HostConnectMessage { id, sess_id, addr } = msg;
+
+        // Find the config data from the pre init list
+        let config = match self.pre_init.remove(&id) {
+            Some(value) => value,
+            None => return MessageResult(Err(ServerError::InvalidToken)),
+        };
+
+        // Clone config data for response
+        let timing = config.timing.clone();
+        let basic = config.basic.clone();
+
+        // Initialize and store the game
+        let token = self.unique_token();
+        let game = Game::new(token.clone(), sess_id, addr, config).start();
+        self.games.insert(token.clone(), game);
+
+        MessageResult(Ok(HostConnectedMessage {
+            token,
+            basic,
+            timing,
+        }))
+    }
+}
+
+/// Message to attempt to connect to a game
+#[derive(Message)]
+#[rtype(result = "Result<(), ServerError>")]
+pub struct TryConnectMessage {
+    token: String,
+    id: SessionId,
+    name: String,
+    addr: Addr<Session>,
+}
+impl Handler<TryConnectMessage> for Games {
+    type Result = ResponseFuture<Result<(), ServerError>>;
+
+    fn handle(&mut self, msg: TryConnectMessage, ctx: &mut Self::Context) -> Self::Result {
+        let TryConnectMessage {
+            token,
+            id,
+            name,
+            addr,
+        } = msg;
+
+        let game = self.games.get(&token).cloned();
+
+        Box::pin(async move {
+            let game = game.ok_or(ServerError::InvalidToken)?;
+
+            let msg = super::game::TryConnectMessage {
+                id,
+                name,
+                addr: addr.clone(),
+            };
+
+            let result = match game.send(msg).await {
                 Ok(value) => value,
                 Err(err) => {
                     error!("Failed to send join attempt: {:?}", err);
-                    return;
+                    return Err(ServerError::NotJoinable);
                 }
             };
 
-            match res {
-                Ok(GameResponse::Connected {
-                    token,
-                    id,
-                    basic,
-                    timing,
-                }) => {
-                    addr.do_send(SessionRequest::Message(ServerMessage::Connected {
-                        token,
-                        id,
-                        basic,
-                        timing,
-                    }));
-                }
-                Ok(_) => {
-                    error!("Unexpected games response message");
-                }
-                Err(err) => {
-                    addr.do_send(SessionRequest::Error(err));
-                }
-            }
-        });
-    }
-}
-
-#[derive(Message)]
-#[rtype(result = "Result<GamesResponse, ServerError>")]
-pub enum GamesRequest {
-    /// Request from the HTTP API to initialize a new game
-    PreInitGame { config: GameConfig },
-
-    /// Message for the host to connect to an un-initialized game
-    HostConnect {
-        id: u32,
-        sess_id: SessionId,
-        addr: Addr<Session>,
-    },
-
-    /// Message to attempt to connect to a game
-    TryConnect {
-        token: String,
-        id: SessionId,
-        name: String,
-        addr: Addr<Session>,
-    },
-}
-
-pub enum GamesResponse {
-    /// Pre initialization complete
-    PreInitComplete {
-        id: u32,
-    },
-
-    /// The game was connected to successfully
-    Connected {
-        /// The game token,
-        token: String,
-        /// Basic game config information
-        basic: BasicConfig,
-        /// Timing data for different game events
-        timing: GameTiming,
-    },
-
-    None,
-}
-
-impl Handler<GamesRequest> for Games {
-    type Result = Result<GamesResponse, ServerError>;
-    fn handle(&mut self, msg: GamesRequest, _ctx: &mut Self::Context) -> Self::Result {
-        match msg {
-            GamesRequest::PreInitGame { config } => {
-                let id = self.pre_init_id;
-                self.pre_init_id += 1;
-                self.pre_init.insert(id, config);
-                Ok(GamesResponse::PreInitComplete { id })
-            }
-            GamesRequest::HostConnect { id, sess_id, addr } => {
-                // Find the config data from the pre init list
-                let config = self.pre_init.remove(&id).ok_or(ServerError::InvalidToken)?;
-
-                // Clone config data for response
-                let timing = config.timing.clone();
-                let basic = config.basic.clone();
-
-                // Initialize and store the game
-                let token = self.unique_token();
-                let game = Game::new(token.clone(), sess_id, addr, config).start();
-                self.games.insert(token.clone(), game);
-
-                Ok(GamesResponse::Connected {
-                    token,
-                    basic,
-                    timing,
-                })
-            }
-            GamesRequest::TryConnect {
+            let ConnectedMessage {
                 token,
                 id,
-                name,
-                addr,
-            } => {
-                let game = self
-                    .games
-                    .get(&token)
-                    .ok_or(ServerError::InvalidToken)?
-                    .clone();
-                Self::try_connect(game, id, name, addr);
-                Ok(GamesResponse::None)
-            }
-        }
-    }
-}
+                basic,
+                timing,
+            } = result?;
 
-impl Actor for Games {
-    type Context = Context<Self>;
-}
+            addr.do_send(ServerMessage::Connected {
+                token,
+                id,
+                basic,
+                timing,
+            });
 
-impl<A, M> MessageResponse<A, M> for GamesResponse
-where
-    A: Actor,
-    M: Message<Result = GamesResponse>,
-{
-    fn handle(
-        self,
-        _ctx: &mut <A as Actor>::Context,
-        tx: Option<actix::dev::OneshotSender<<M as Message>::Result>>,
-    ) {
-        if let Some(tx) = tx {
-            if tx.send(self).is_err() {
-                error!("Failed to send games response");
-            }
-        }
+            Ok(())
+        })
     }
 }

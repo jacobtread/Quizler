@@ -1,18 +1,14 @@
-use std::collections::HashMap;
-
-use actix::{
-    dev::MessageResponse, Actor, ActorContext, Addr, AsyncContext, Handler, Message, StreamHandler,
-};
-use actix_web_actors::ws;
-use log::{error, info};
-use serde::{ser::SerializeStruct, Deserialize, Serialize};
-
 use crate::{
     error::ServerError,
     game::{
         AnswerResult, BasicConfig, Game, GameId, GameState, GameTiming, Question, QuestionAnswer,
     },
 };
+use actix::{Actor, ActorContext, Addr, AsyncContext, Handler, Message, StreamHandler};
+use actix_web_actors::ws;
+use log::{error, info};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 pub struct Session {
     /// Unique ID of the session
@@ -50,7 +46,8 @@ pub enum ClientMessage {
 }
 
 /// Messages sent by the server
-#[derive(Serialize, Clone)]
+#[derive(Message, Serialize, Clone)]
+#[rtype(result = "()")]
 #[serde(tag = "ty")]
 pub enum ServerMessage {
     /// Message indicating a complete successful connection
@@ -91,6 +88,9 @@ pub enum ServerMessage {
 
     /// Update for the player scores
     ScoreUpdate { scores: HashMap<SessionId, u32> },
+
+    /// Server error
+    Error { error: ServerError },
 }
 
 impl Actor for Session {
@@ -98,19 +98,6 @@ impl Actor for Session {
 }
 
 type SessionContext = ws::WebsocketContext<Session>;
-
-#[derive(Message)]
-#[rtype(result = "SessionResponse")]
-pub enum SessionRequest {
-    /// Request to send a message to the session client
-    Message(ServerMessage),
-    /// Request to send an error to the session client
-    Error(ServerError),
-}
-
-pub enum SessionResponse {
-    None,
-}
 
 impl Session {
     /// Writes a server message by encoding it to json and then sending it
@@ -151,23 +138,22 @@ impl Session {
     /// `username` The username to use
     fn try_connect(ctx: &mut SessionContext, token: String, username: String) {
         let addr = ctx.address();
-        tokio::spawn(async move {});
     }
 }
 
-impl Handler<SessionRequest> for Session {
-    type Result = SessionResponse;
+impl Handler<ServerMessage> for Session {
+    type Result = ();
 
-    fn handle(&mut self, msg: SessionRequest, ctx: &mut Self::Context) -> Self::Result {
-        match msg {
-            SessionRequest::Message(message) => {
-                Self::write_message(ctx, message);
-            }
-            SessionRequest::Error(error) => {
-                Self::write_message(ctx, error);
-            }
-        }
-        SessionResponse::None
+    fn handle(&mut self, msg: ServerMessage, ctx: &mut Self::Context) -> Self::Result {
+        Self::write_message(ctx, msg);
+    }
+}
+
+impl Handler<ServerError> for Session {
+    type Result = ();
+
+    fn handle(&mut self, msg: ServerError, ctx: &mut Self::Context) -> Self::Result {
+        Self::write_message(ctx, ServerMessage::Error { error: msg });
     }
 }
 
@@ -209,19 +195,5 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Session {
 
         // Handle the client message
         self.handle_message(value, ctx);
-    }
-}
-
-impl MessageResponse<Session, SessionRequest> for SessionResponse {
-    fn handle(
-        self,
-        _ctx: &mut SessionContext,
-        tx: Option<actix::dev::OneshotSender<SessionResponse>>,
-    ) {
-        if let Some(tx) = tx {
-            if tx.send(self).is_err() {
-                error!("Failed to send message response to session");
-            }
-        }
     }
 }
