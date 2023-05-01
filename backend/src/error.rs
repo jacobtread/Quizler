@@ -17,4 +17,6 @@ pub enum ServerError {
     UnknownPlayer = 0x4,
     /// Something unexpected went wrong on the server
     Unexpected = 0x5,
+    /// Didn't have permission to complete that action
+    InvalidPermission = 0x6,
 }

@@ -460,12 +460,24 @@ impl Handler<TryConnectMessage> for Game {
 /// Message from the host to start the game
 #[derive(Message)]
 #[rtype(result = "()")]
-pub struct StartMessage;
+pub struct StartMessage {
+    /// The session reference who is attempting
+    /// to start the game
+    pub session_ref: SessionRef,
+}
 
 impl Handler<StartMessage> for Game {
     type Result = ();
 
-    fn handle(&mut self, _: StartMessage, ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: StartMessage, ctx: &mut Self::Context) -> Self::Result {
+        let host = &self.host.session_ref;
+
+        // Handle messages that aren't from the game host
+        if host.id != msg.session_ref.id {
+            msg.session_ref.addr.do_send(ServerError::InvalidPermission);
+            return;
+        }
+
         self.set_state(GameState::Starting);
         // Begin the start time
         self.starting_task(ctx);
@@ -475,12 +487,24 @@ impl Handler<StartMessage> for Game {
 /// Message from the host to cancel starting the game
 #[derive(Message)]
 #[rtype(result = "()")]
-pub struct CancelMessage;
+pub struct CancelMessage {
+    /// The session reference who is attempting to
+    /// cancel starting the game
+    pub session_ref: SessionRef,
+}
 
 impl Handler<CancelMessage> for Game {
     type Result = ();
 
-    fn handle(&mut self, _: CancelMessage, ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: CancelMessage, ctx: &mut Self::Context) -> Self::Result {
+        let host = &self.host.session_ref;
+
+        // Handle messages that aren't from the game host
+        if host.id != msg.session_ref.id {
+            msg.session_ref.addr.do_send(ServerError::InvalidPermission);
+            return;
+        }
+
         self.cancel_task(ctx);
         self.set_state(GameState::Lobby);
     }

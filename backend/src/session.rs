@@ -1,8 +1,8 @@
 use crate::{
     error::ServerError,
     game::{
-        AnswerResult, ConnectedMessage, Game, GameState, Question, QuestionAnswer, ReadyMessage,
-        TryConnectMessage,
+        AnswerResult, CancelMessage, ConnectedMessage, Game, GameState, Question, QuestionAnswer,
+        ReadyMessage, StartMessage, TryConnectMessage,
     },
     games::{GameToken, Games, GetGameMessage, InitializeMessage, InitializedMessage},
 };
@@ -156,6 +156,35 @@ impl Session {
                 self.async_message(Self::try_connect(session_ref, token, username), ctx);
             }
 
+            // Handle message to start game
+            ClientMessage::Start => {
+                let game = match &self.game {
+                    Some(value) => value.clone(),
+                    None => {
+                        // Expected the game to exist
+                        Self::write_error(ctx, ServerError::Unexpected);
+                        return;
+                    }
+                };
+                game.do_send(StartMessage { session_ref });
+            }
+
+            // Handle message to cancel starting game
+            ClientMessage::Cancel => {
+                let game = match &self.game {
+                    Some(value) => value.clone(),
+                    None => {
+                        // Expected the game to exist
+                        Self::write_error(ctx, ServerError::Unexpected);
+                        return;
+                    }
+                };
+                game.do_send(CancelMessage { session_ref });
+            }
+
+            // Handle message for an answer to the current question
+            ClientMessage::Answer(answer) => todo!(),
+
             // Handle client ready messages
             ClientMessage::Ready => {
                 let game = match &self.game {
@@ -168,7 +197,6 @@ impl Session {
                 };
                 game.do_send(ReadyMessage { id: session_ref.id });
             }
-            _ => todo!(),
         }
     }
 
@@ -228,6 +256,7 @@ impl Session {
     }
 }
 
+/// Handle writing server messages
 impl Handler<ServerMessage> for Session {
     type Result = ();
 
@@ -236,6 +265,7 @@ impl Handler<ServerMessage> for Session {
     }
 }
 
+/// Handle writing shared references to a server message
 impl Handler<Arc<ServerMessage>> for Session {
     type Result = ();
 
@@ -244,6 +274,8 @@ impl Handler<Arc<ServerMessage>> for Session {
     }
 }
 
+/// Handle server error messages sent to the session by forwarding
+/// them on to be written as server error messages
 impl Handler<ServerError> for Session {
     type Result = ();
 
@@ -252,6 +284,9 @@ impl Handler<ServerError> for Session {
     }
 }
 
+/// Stream handler for processing incoming websocket messages, and
+/// responding accordingly. Text packet messages are decoded and
+/// send onto the [`Session::handle_message`] function to be proccessed
 impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Session {
     fn handle(&mut self, item: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
         // Handle protocol errors
