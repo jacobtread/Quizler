@@ -8,7 +8,7 @@ mod env;
 mod error;
 mod game;
 mod games;
-mod routes;
+mod http;
 mod session;
 
 #[actix::main]
@@ -25,7 +25,7 @@ async fn main() -> std::io::Result<()> {
     let port = env::from_env(env::PORT);
     info!("Starting Quizler on port {}", port);
 
-    HttpServer::new(move || App::new().configure(routes::configure))
+    HttpServer::new(move || App::new().configure(http::configure))
         .bind(("0.0.0.0", port))?
         .run()
         .await
