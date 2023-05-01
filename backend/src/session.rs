@@ -103,10 +103,6 @@ pub enum ServerMessage {
     /// Result message for showing the results of a player
     AnswerResult(AnswerResult),
 
-    /// Message to begin the question displaying the answers
-    /// at the bottom for the user to choose
-    BeginQuestion,
-
     /// Update for the player scores
     ScoreUpdate { scores: HashMap<SessionId, u32> },
 

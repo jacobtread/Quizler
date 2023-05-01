@@ -135,8 +135,7 @@ impl Game {
         const START_DURATION: Duration = Duration::from_secs(5);
 
         self.delayed_task(ctx, START_DURATION, |actor, ctx| {
-            actor.set_state(GameState::Starting);
-            // TODO: Started game logic
+            actor.begin_question(ctx, 0);
         })
     }
 
@@ -155,7 +154,7 @@ impl Game {
 
         // Interval for updating the timers for all the clients to ensure
         // they are up to date with the server time
-        let timer_handle = ctx.run_interval(TIMER_INTERVAL, |actor, ctx| {
+        let timer_handle = ctx.run_interval(TIMER_INTERVAL, |actor, _ctx| {
             let timer = &actor.timer;
             let (total, elapsed) = if timer.has_elapsed() {
                 let total = timer.want.as_millis() as u32;
@@ -196,7 +195,7 @@ impl Game {
     ///
     /// `ctx`   The game context
     /// `index` The question index
-    fn begin_question(&mut self, ctx: &mut Context<Self>, index: usize) {
+    fn begin_question(&mut self, _ctx: &mut Context<Self>, index: usize) {
         self.reset_ready();
         let question = match self.config.questions.get(index) {
             Some(value) => value,
@@ -207,12 +206,15 @@ impl Game {
         };
         self.question_index = index;
         self.send_all(ServerMessage::Question(question.clone()));
+        // Begin awaiting for ready messages
+        self.set_state(GameState::AwaitingReady);
     }
 
     /// Called after all the ready messages have been recieved from all the
     /// clients
     fn ready_question(&mut self, ctx: &mut Context<Self>) {
-        self.send_all(ServerMessage::BeginQuestion);
+        self.set_state(GameState::AwaitingAnswers);
+
         let question = self.question();
         self.delayed_task(
             ctx,
@@ -274,6 +276,8 @@ impl Game {
                     },
                     QuestionAnswer::Multiple { answers },
                 ) => {
+                    // TODO: Handle min max for questions
+
                     let mut correct = 0usize;
                     let mut incorrect = 0usize;
                     for answer in answers {
@@ -326,8 +330,25 @@ impl Game {
                 .addr
                 .do_send(ServerMessage::AnswerResult(result));
         }
+
         // Update everyones scores
         self.update_scores();
+
+        // Wait the between question wait time then ask the next question
+        self.delayed_task(
+            ctx,
+            Duration::from_millis(self.config.timing.wait_time),
+            Self::next_question,
+        )
+    }
+
+    fn next_question(&mut self, ctx: &mut Context<Self>) {
+        if self.question_index < self.config.questions.len() {
+            self.question_index += 1;
+            self.begin_question(ctx, self.question_index);
+        } else {
+            self.set_state(GameState::Finished);
+        }
     }
 
     /// Resets the plaeyr ready states of all the players
@@ -377,7 +398,7 @@ impl Actor for Game {
     fn started(&mut self, _ctx: &mut Self::Context) {}
 
     /// Handle stopping of a game actor
-    fn stopped(&mut self, ctx: &mut Self::Context) {
+    fn stopped(&mut self, _ctx: &mut Self::Context) {
         // Remove the game from the list of games
         let games = Games::get();
         games.do_send(RemoveGameMessage { token: self.token });
@@ -596,7 +617,7 @@ pub struct GetImageMessage {
 
 impl Handler<GetImageMessage> for Game {
     type Result = MessageResult<GetImageMessage>;
-    fn handle(&mut self, msg: GetImageMessage, ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: GetImageMessage, _ctx: &mut Self::Context) -> Self::Result {
         let image = self.config.images.get(&msg.uuid).cloned();
         MessageResult(image)
     }
