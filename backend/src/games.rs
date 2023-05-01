@@ -1,7 +1,7 @@
 use crate::{
     error::ServerError,
     game::{Game, GameConfig},
-    session::{Session, SessionId},
+    session::SessionRef,
 };
 use actix::{Actor, Addr, Context, Handler, Message, MessageResult};
 use rand_core::{OsRng, RngCore};
@@ -141,30 +141,28 @@ impl Handler<PrepareGameMessage> for Games {
 /// Message for handling the connection of a host to a preparing game.
 /// This creates the actual game and is done through the WebSocket API
 #[derive(Message)]
-#[rtype(result = "Result<HostConnectedMessage, ServerError>")]
-pub struct HostConnectMessage {
+#[rtype(result = "Result<InitializedMessage, ServerError>")]
+pub struct InitializeMessage {
     /// The UUID of the prepared game configuration to start
-    uuid: Uuid,
-    /// The session ID of the host
-    session_id: SessionId,
-    /// The return address of the session
-    addr: Addr<Session>,
+    pub uuid: Uuid,
+    /// Reference to the session trying to connect
+    pub session_ref: SessionRef,
 }
 
 /// Message containing the details of a game that has been successfully
 /// connected to by the host (The game has finished being prepared)
 #[derive(Serialize)]
-pub struct HostConnectedMessage {
+pub struct InitializedMessage {
     /// The uniquely generated game token (e.g A3DLM)
-    token: GameToken,
+    pub token: GameToken,
     /// The full game config to be used while playing
-    config: Arc<GameConfig>,
+    pub config: Arc<GameConfig>,
 }
 
-impl Handler<HostConnectMessage> for Games {
-    type Result = MessageResult<HostConnectMessage>;
+impl Handler<InitializeMessage> for Games {
+    type Result = MessageResult<InitializeMessage>;
 
-    fn handle(&mut self, msg: HostConnectMessage, _ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: InitializeMessage, _ctx: &mut Self::Context) -> Self::Result {
         // Find the config data from the pre init list
         let config = match self.preparing.remove(&msg.uuid) {
             Some(value) => Arc::new(value),
@@ -174,10 +172,10 @@ impl Handler<HostConnectMessage> for Games {
         // Create a new game token
         let token = GameToken::unique_token(&self.games);
 
-        let game = Game::new(token, msg.session_id, msg.addr, config.clone()).start();
+        let game = Game::new(token, msg.session_ref, config.clone()).start();
         self.games.insert(token, game);
 
-        MessageResult(Ok(HostConnectedMessage {
+        MessageResult(Ok(InitializedMessage {
             token,
             config: config.clone(),
         }))

@@ -1,17 +1,22 @@
 use crate::{
     error::ServerError,
     game::{
-        AnswerResult, ConnectedMessage, Game, GameId, GameState, Question, QuestionAnswer,
+        AnswerResult, ConnectedMessage, Game, GameState, Question, QuestionAnswer,
         TryConnectMessage,
     },
-    games::{GameToken, Games, GetGameMessage, HostConnectedMessage},
+    games::{GameToken, Games, GetGameMessage, InitializeMessage, InitializedMessage},
 };
-use actix::{Actor, ActorContext, Addr, AsyncContext, Handler, Message, StreamHandler};
+use actix::{
+    Actor, ActorContext, ActorFutureExt, Addr, AsyncContext, Handler, Message, StreamHandler,
+    WrapFuture,
+};
 use actix_web_actors::ws;
 use log::{debug, error, info};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, sync::Arc};
 use uuid::Uuid;
+
+pub type SessionId = u32;
 
 pub struct Session {
     /// Unique ID of the session
@@ -20,12 +25,19 @@ pub struct Session {
     game: Option<SessionGame>,
 }
 
-pub struct SessionGame {
-    id: GameId,
-    addr: Addr<Game>,
+/// Reference to a session, contains the ID of the
+/// session along with the session addr
+pub struct SessionRef {
+    /// The ID of the referenced session
+    pub id: SessionId,
+    /// The addr to the session
+    pub addr: Addr<Session>,
 }
 
-pub type SessionId = u32;
+pub struct SessionGame {
+    token: GameToken,
+    addr: Addr<Game>,
+}
 
 /// Messages recieved from the client
 #[derive(Deserialize)]
@@ -36,6 +48,7 @@ pub enum ClientMessage {
         /// The UUID of the game to initialize
         uuid: Uuid,
     },
+
     // Message to connect self to the game with the associated ID
     TryConnect {
         // The game token to try and connect to (e.g. W2133)
@@ -58,12 +71,12 @@ pub enum ClientMessage {
 #[rtype(result = "()")]
 #[serde(tag = "ty")]
 pub enum ServerMessage {
+    /// Message sent to the host after they've initialized
+    /// a game
+    Initialized(InitializedMessage),
+
     /// Message indicating a complete successful connection
     Connected(ConnectedMessage),
-
-    /// Message sent to the host after they've connected to
-    /// and create a game
-    HostConnected(HostConnectedMessage),
 
     /// Message providing information about another player in
     /// the game
@@ -124,40 +137,43 @@ impl Session {
     }
 
     /// Handles a recieved client message
-    fn handle_message(&mut self, message: ClientMessage, ctx: &mut SessionContext) {
+    async fn handle_message(
+        session_ref: SessionRef,
+        message: ClientMessage,
+    ) -> Result<ServerMessage, ServerError> {
         match message {
+            // Handle initializing new games
+            ClientMessage::InitializeGame { uuid } => Self::initialize(session_ref, uuid).await,
+
+            // Handle try connect messages
             ClientMessage::TryConnect { token, username } => {
-                let addr = ctx.address();
-                let id = self.id;
-
-                // Spawn the connection attempt
-                actix_rt::spawn(async move {
-                    // Copy of the address used to send the return message
-                    let ret_addr = addr.clone();
-
-                    // Attempt to connect
-                    let _ = match Self::try_connect(addr, id, token, username).await {
-                        Ok(msg) => ret_addr.do_send(ServerMessage::Connected(msg)),
-                        Err(err) => ret_addr.do_send(err),
-                    };
-                });
+                Self::try_connect(session_ref, token, username).await
             }
+
             ClientMessage::Ready => todo!(),
             _ => todo!(),
         }
     }
 
+    async fn initialize(session_ref: SessionRef, uuid: Uuid) -> Result<ServerMessage, ServerError> {
+        let games = Games::get();
+        let msg: InitializedMessage = games
+            .send(InitializeMessage { uuid, session_ref })
+            .await
+            .expect("Games service was stopped")?;
+        Ok(ServerMessage::Initialized(msg))
+    }
+
     async fn try_connect(
-        addr: Addr<Session>,
-        id: SessionId,
+        session_ref: SessionRef,
         token: String,
         name: String,
-    ) -> Result<ConnectedMessage, ServerError> {
+    ) -> Result<ServerMessage, ServerError> {
         // Parse the token
         let token: GameToken = token.parse()?;
 
-        // Attempting to connect to AED32E as Jacob (1)
-        debug!("Attempting to connect to {} as {} ({})", token, name, id);
+        // Attempting to connect to AED32E as Jacob
+        debug!("Attempting to connect to {} as {}", token, name);
 
         // Obtain a addr to the game
         let games = Games::get();
@@ -168,10 +184,12 @@ impl Session {
             .ok_or(ServerError::InvalidToken)?;
 
         // Attempt the connection
-        game_addr
-            .send(TryConnectMessage { addr, id, name })
+        let msg: ConnectedMessage = game_addr
+            .send(TryConnectMessage { session_ref, name })
             .await
-            .map_err(|_| ServerError::InvalidToken)?
+            .map_err(|_| ServerError::InvalidToken)??;
+
+        Ok(ServerMessage::Connected(msg))
     }
 }
 
@@ -182,6 +200,7 @@ impl Handler<ServerMessage> for Session {
         Self::write_message(ctx, msg);
     }
 }
+
 impl Handler<Arc<ServerMessage>> for Session {
     type Result = ();
 
@@ -234,7 +253,26 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Session {
             }
         };
 
+        // Create a reference to the session
+        let session_ref = SessionRef {
+            id: self.id,
+            addr: ctx.address(),
+        };
+
         // Handle the client message
-        self.handle_message(value, ctx);
+        ctx.spawn(
+            Self::handle_message(session_ref, value)
+                .into_actor(self)
+                .map(|result, _act, ctx| {
+                    // Handle error cases
+                    let msg = match result {
+                        Ok(msg) => msg,
+                        Err(error) => ServerMessage::Error { error },
+                    };
+
+                    // Write the response
+                    Self::write_message(ctx, msg);
+                }),
+        );
     }
 }

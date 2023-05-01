@@ -1,9 +1,9 @@
 use crate::{
     error::ServerError,
     games::GameToken,
-    session::{ServerMessage, Session, SessionId},
+    session::{ServerMessage, SessionId, SessionRef},
 };
-use actix::{Actor, Addr, AsyncContext, Context, Handler, Message, MessageResult, SpawnHandle};
+use actix::{Actor, AsyncContext, Context, Handler, Message, MessageResult, SpawnHandle};
 use log::error;
 use serde::{ser::SerializeStruct, Deserialize, Serialize};
 use std::{
@@ -107,17 +107,11 @@ pub enum GameState {
 const TIMER_INTERVAL: Duration = Duration::from_millis(500);
 
 impl Game {
-    pub fn new(
-        token: GameToken,
-        host_id: SessionId,
-        host_addr: Addr<Session>,
-        config: Arc<GameConfig>,
-    ) -> Self {
+    pub fn new(token: GameToken, host_ref: SessionRef, config: Arc<GameConfig>) -> Self {
         Self {
             token,
             host: HostSession {
-                id: host_id,
-                addr: host_addr,
+                session_ref: host_ref,
             },
             players: Default::default(),
             config,
@@ -323,7 +317,10 @@ impl Game {
             player.results.push(result.clone());
 
             // Send the result to the player
-            player.addr.do_send(ServerMessage::AnswerResult(result));
+            player
+                .session_ref
+                .addr
+                .do_send(ServerMessage::AnswerResult(result));
         }
         // Update everyones scores
         self.update_scores();
@@ -354,23 +351,21 @@ impl Game {
 
         // Send the message to all the players
         for player in &self.players {
-            player.addr.do_send(message.clone());
+            player.session_ref.addr.do_send(message.clone());
         }
 
         // Send the message to the host
-        self.host.addr.do_send(message);
+        self.host.session_ref.addr.do_send(message);
     }
 
     fn update_scores(&self) {
         let mut scores = HashMap::new();
         for player in &self.players {
-            scores.insert(player.id, player.score);
+            scores.insert(player.session_ref.id, player.score);
         }
         self.send_all(ServerMessage::ScoreUpdate { scores })
     }
 }
-
-pub type GameId = u32;
 
 impl Actor for Game {
     type Context = Context<Self>;
@@ -382,21 +377,19 @@ impl Actor for Game {
 #[derive(Message)]
 #[rtype(result = "Result<ConnectedMessage, ServerError>")]
 pub struct TryConnectMessage {
-    /// The session ID
-    pub id: SessionId,
+    /// Reference to the session trying to connect
+    pub session_ref: SessionRef,
     /// The name for the connecting player
     pub name: String,
-    /// The return address of the session
-    pub addr: Addr<Session>,
 }
 
 /// Message containing the connected details for a connected player
 #[derive(Serialize)]
 pub struct ConnectedMessage {
-    /// The uniquely generated game token (e.g A3DLM)
-    pub token: GameToken,
     /// The session ID
     pub id: SessionId,
+    /// The uniquely generated game token (e.g A3DLM)
+    pub token: GameToken,
     /// Copy of the game configuration to send back
     pub config: PlayerGameConfig,
 }
@@ -404,11 +397,7 @@ pub struct ConnectedMessage {
 impl Handler<TryConnectMessage> for Game {
     type Result = MessageResult<TryConnectMessage>;
 
-    fn handle(
-        &mut self,
-        TryConnectMessage { id, name, addr }: TryConnectMessage,
-        ctx: &mut Self::Context,
-    ) -> Self::Result {
+    fn handle(&mut self, msg: TryConnectMessage, _ctx: &mut Self::Context) -> Self::Result {
         match self.state {
             GameState::Lobby | GameState::Starting => {}
             _ => return MessageResult(Err(ServerError::NotJoinable)),
@@ -418,16 +407,15 @@ impl Handler<TryConnectMessage> for Game {
         if self
             .players
             .iter()
-            .find(|player| player.name.eq(&name))
+            .find(|player| player.name.eq(&msg.name))
             .is_some()
         {
             return MessageResult(Err(ServerError::UsernameTaken));
         }
 
         let game_player = PlayerSession {
-            id,
-            name,
-            addr,
+            name: msg.name,
+            session_ref: msg.session_ref,
             ready: false,
             answers: Vec::new(),
             results: Vec::new(),
@@ -436,23 +424,28 @@ impl Handler<TryConnectMessage> for Game {
 
         // Message sent to existing players for this player
         let joiner_message = Arc::new(ServerMessage::OtherPlayer {
-            id: game_player.id,
+            id: game_player.session_ref.id,
             name: game_player.name.clone(),
         });
 
         // Notify all players of the existence of eachother
         for player in &self.players {
-            player.addr.do_send(joiner_message.clone());
+            player.session_ref.addr.do_send(joiner_message.clone());
 
             // Message describing the other player
-            game_player.addr.do_send(ServerMessage::OtherPlayer {
-                id: player.id,
-                name: player.name.clone(),
-            });
+            game_player
+                .session_ref
+                .addr
+                .do_send(ServerMessage::OtherPlayer {
+                    id: player.session_ref.id,
+                    name: player.name.clone(),
+                });
         }
 
         // Notify the host of the join
-        self.host.addr.do_send(joiner_message);
+        self.host.session_ref.addr.do_send(joiner_message);
+
+        let id = game_player.session_ref.id;
 
         self.players.push(game_player);
 
@@ -521,7 +514,7 @@ impl Handler<ReadyMessage> for Game {
         let mut all_ready = true;
         let mut found_player = false;
         for player in &mut self.players {
-            if player.id == msg.id {
+            if player.session_ref.id == msg.id {
                 player.ready = true;
                 found_player = true;
             } else if !player.ready {
@@ -541,38 +534,16 @@ impl Handler<ReadyMessage> for Game {
     }
 }
 
-/// Trait implemented by the sessions that are connected to
-/// the game for logic to share between both
-pub trait GameSession {
-    fn id(&self) -> SessionId;
-
-    fn addr(&self) -> &Addr<Session>;
-}
-
 pub struct HostSession {
-    /// The ID of the session
-    id: SessionId,
-    /// Address to the session
-    addr: Addr<Session>,
-}
-
-impl GameSession for HostSession {
-    fn id(&self) -> SessionId {
-        self.id
-    }
-
-    fn addr(&self) -> &Addr<Session> {
-        &self.addr
-    }
+    /// Reference to the session
+    session_ref: SessionRef,
 }
 
 pub struct PlayerSession {
-    /// The ID of the session
-    id: SessionId,
+    /// Reference to the session
+    session_ref: SessionRef,
     /// The player name
     name: String,
-    /// Address to the session
-    addr: Addr<Session>,
     /// The player ready state
     ready: bool,
     /// The players answers and the score they got for them
@@ -581,16 +552,6 @@ pub struct PlayerSession {
     results: Vec<AnswerResult>,
     /// The player total score
     score: u32,
-}
-
-impl GameSession for PlayerSession {
-    fn id(&self) -> SessionId {
-        self.id
-    }
-
-    fn addr(&self) -> &Addr<Session> {
-        &self.addr
-    }
 }
 
 /// Configuration data for a game
@@ -617,8 +578,8 @@ impl Serialize for PlayerGameConfig {
     {
         let mut stru = serializer.serialize_struct("GameConfig", 2)?;
         let this = &*self.0;
-        stru.serialize_field("basic", &this.basic);
-        stru.serialize_field("timing", &this.timing);
+        stru.serialize_field("basic", &this.basic)?;
+        stru.serialize_field("timing", &this.timing)?;
         stru.end()
     }
 }
