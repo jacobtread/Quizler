@@ -15,4 +15,6 @@ pub enum ServerError {
     NotJoinable = 0x3,
     /// An action was attempting on a player that wasnt found
     UnknownPlayer = 0x4,
+    /// Something unexpected went wrong on the server
+    Unexpected = 0x5,
 }

@@ -1,14 +1,17 @@
 use crate::{
     error::ServerError,
     game::{
-        AnswerResult, BasicConfig, Game, GameId, GameState, GameTiming, Question, QuestionAnswer,
+        AnswerResult, ConnectedMessage, Game, GameId, GameState, Question, QuestionAnswer,
+        TryConnectMessage,
     },
+    games::{GameToken, Games, GetGameMessage, HostConnectedMessage},
 };
 use actix::{Actor, ActorContext, Addr, AsyncContext, Handler, Message, StreamHandler};
 use actix_web_actors::ws;
-use log::{error, info};
+use log::{debug, error, info};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
+use uuid::Uuid;
 
 pub struct Session {
     /// Unique ID of the session
@@ -28,6 +31,11 @@ pub type SessionId = u32;
 #[derive(Deserialize)]
 #[serde(tag = "ty")]
 pub enum ClientMessage {
+    // Message to initialize the desired game as a host
+    InitializeGame {
+        /// The UUID of the game to initialize
+        uuid: Uuid,
+    },
     // Message to connect self to the game with the associated ID
     TryConnect {
         // The game token to try and connect to (e.g. W2133)
@@ -46,21 +54,17 @@ pub enum ClientMessage {
 }
 
 /// Messages sent by the server
-#[derive(Message, Serialize, Clone)]
+#[derive(Message, Serialize)]
 #[rtype(result = "()")]
 #[serde(tag = "ty")]
 pub enum ServerMessage {
     /// Message indicating a complete successful connection
-    Connected {
-        /// The session ID
-        id: u32,
-        /// The joined game token
-        token: String,
-        /// Basic game config information
-        basic: BasicConfig,
-        /// Timing data for different game events
-        timing: GameTiming,
-    },
+    Connected(ConnectedMessage),
+
+    /// Message sent to the host after they've connected to
+    /// and create a game
+    HostConnected(HostConnectedMessage),
+
     /// Message providing information about another player in
     /// the game
     OtherPlayer { id: SessionId, name: String },
@@ -77,7 +81,7 @@ pub enum ServerMessage {
     },
 
     /// Question data for the next question
-    Question(Question),
+    Question(Arc<Question>),
 
     /// Result message for showing the results of a player
     AnswerResult(AnswerResult),
@@ -123,21 +127,51 @@ impl Session {
     fn handle_message(&mut self, message: ClientMessage, ctx: &mut SessionContext) {
         match message {
             ClientMessage::TryConnect { token, username } => {
-                Self::try_connect(ctx, token, username);
+                let addr = ctx.address();
+                let id = self.id;
+
+                // Spawn the connection attempt
+                actix_rt::spawn(async move {
+                    // Copy of the address used to send the return message
+                    let ret_addr = addr.clone();
+
+                    // Attempt to connect
+                    let _ = match Self::try_connect(addr, id, token, username).await {
+                        Ok(msg) => ret_addr.do_send(ServerMessage::Connected(msg)),
+                        Err(err) => ret_addr.do_send(err),
+                    };
+                });
             }
             ClientMessage::Ready => todo!(),
             _ => todo!(),
         }
     }
 
-    /// Attempts to connect this session to a game with the provided token
-    /// using the provided username
-    ///
-    /// `ctx`      The session context
-    /// `token`    The game token
-    /// `username` The username to use
-    fn try_connect(ctx: &mut SessionContext, token: String, username: String) {
-        let addr = ctx.address();
+    async fn try_connect(
+        addr: Addr<Session>,
+        id: SessionId,
+        token: String,
+        name: String,
+    ) -> Result<ConnectedMessage, ServerError> {
+        // Parse the token
+        let token: GameToken = token.parse()?;
+
+        // Attempting to connect to AED32E as Jacob (1)
+        debug!("Attempting to connect to {} as {} ({})", token, name, id);
+
+        // Obtain a addr to the game
+        let games = Games::get();
+        let game_addr = games
+            .send(GetGameMessage { token })
+            .await
+            .expect("Games service was stopped")
+            .ok_or(ServerError::InvalidToken)?;
+
+        // Attempt the connection
+        game_addr
+            .send(TryConnectMessage { addr, id, name })
+            .await
+            .map_err(|_| ServerError::InvalidToken)?
     }
 }
 
@@ -145,6 +179,13 @@ impl Handler<ServerMessage> for Session {
     type Result = ();
 
     fn handle(&mut self, msg: ServerMessage, ctx: &mut Self::Context) -> Self::Result {
+        Self::write_message(ctx, msg);
+    }
+}
+impl Handler<Arc<ServerMessage>> for Session {
+    type Result = ();
+
+    fn handle(&mut self, msg: Arc<ServerMessage>, ctx: &mut Self::Context) -> Self::Result {
         Self::write_message(ctx, msg);
     }
 }

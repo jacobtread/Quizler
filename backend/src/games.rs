@@ -1,198 +1,201 @@
-use std::collections::HashMap;
-
-use actix::{Actor, Addr, Context, Handler, Message, MessageResult, ResponseFuture};
-use rand_core::{OsRng, RngCore};
-
 use crate::{
     error::ServerError,
-    game::{BasicConfig, ConnectedMessage, Game, GameConfig, GameTiming},
-    session::{ServerMessage, Session, SessionId},
+    game::{Game, GameConfig},
+    session::{Session, SessionId},
 };
-use log::error;
+use actix::{Actor, Addr, Context, Handler, Message, MessageResult};
+use rand_core::{OsRng, RngCore};
+use serde::Serialize;
+use std::{collections::HashMap, fmt::Display, str::FromStr, sync::Arc};
+use uuid::Uuid;
 
 /// Central store for storing all the references to the individual
 /// games that are currently running
+#[derive(Default)]
 pub struct Games {
     /// Map of the game tokens to the actual game itself
-    games: HashMap<String, Addr<Game>>,
+    games: HashMap<GameToken, Addr<Game>>,
+    /// Map of UUID's to game configurations that are preparing to start
+    preparing: HashMap<Uuid, GameConfig>,
+}
 
-    /// The next ID for pre init values
-    pre_init_id: u32,
+/// Static global state for Games pre initialization
+static mut GAMES: Option<Addr<Games>> = None;
 
-    /// Uninitialized games
-    pre_init: HashMap<u32, GameConfig>,
+impl Games {
+    pub fn init() {
+        let this = Self::start_default();
+        unsafe { GAMES = Some(this) }
+    }
+
+    pub fn get() -> &'static Addr<Games> {
+        unsafe { GAMES.as_ref().expect("Games not initialized yet") }
+    }
 }
 
 impl Actor for Games {
     type Context = Context<Self>;
 }
 
-impl Games {
-    /// The length of game tokens
-    const TOKEN_LENGTH: usize = 5;
+#[derive(Hash, PartialEq, Eq, Clone, Copy)]
+pub struct GameToken([u8; GameToken::LENGTH]);
 
-    /// Generates a unique token not used by any other games stored
-    /// in the games map
-    fn unique_token(&self) -> String {
+impl GameToken {
+    /// Length of tokens that will be created
+    const LENGTH: usize = 5;
+    /// Set of chars that can be used as game tokens
+    const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+    fn unique_token(games: &HashMap<GameToken, Addr<Game>>) -> GameToken {
+        /// Length of the charset
+        const RANGE: usize = GameToken::CHARSET.len();
+
+        let mut rand = OsRng;
+        let mut token = Self([0u8; Self::LENGTH]);
+
         loop {
-            let token = Self::random_token();
-            if !self.games.contains_key(&token) {
+            for at in token.0.iter_mut() {
+                loop {
+                    // Obtain a random number
+                    let var = (rand.next_u32() >> (32 - 6)) as usize;
+
+                    // If the value is in the charset break the loop
+                    if var < RANGE {
+                        *at = Self::CHARSET[var];
+                        break;
+                    }
+                }
+            }
+
+            if !games.contains_key(&token) {
                 return token;
             }
         }
     }
+}
 
-    /// Generates a random token from the charset
-    fn random_token() -> String {
-        /// Available chars to create the token from
-        const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        /// The number of chars in the charset
-        const RANGE: u32 = 36;
-
-        let mut rand = OsRng;
-        let mut out = String::with_capacity(Self::TOKEN_LENGTH);
-
-        // Loop until the string length is finished
-        for _ in 0..Self::TOKEN_LENGTH {
-            // Loop until a valid random is found
-            loop {
-                let var = rand.next_u32() >> (32 - 6);
-                if var < RANGE {
-                    out.push(char::from(CHARSET[var as usize]));
-                    break;
-                }
-            }
-        }
-
-        out
+impl Serialize for GameToken {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        // Game tokens are simply serialized as strings by casting the type
+        let token = unsafe { std::str::from_utf8_unchecked(&self.0) };
+        serializer.serialize_str(token)
     }
 }
 
-/// Request from the HTTP API to initialize a new game
+impl FromStr for GameToken {
+    type Err = ServerError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.len() != GameToken::LENGTH {
+            return Err(ServerError::InvalidToken);
+        }
+
+        let bytes = s.as_bytes();
+
+        // Handle invalid characters
+        if bytes
+            .iter()
+            .any(|value| !GameToken::CHARSET.contains(value))
+        {
+            return Err(ServerError::InvalidToken);
+        }
+
+        let mut output = [0u8; GameToken::LENGTH];
+        output.copy_from_slice(bytes);
+        Ok(Self(output))
+    }
+}
+
+impl Display for GameToken {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let token = unsafe { std::str::from_utf8_unchecked(&self.0) };
+        f.write_str(token)
+    }
+}
+
+/// Requests that the games manager prepares for initalizing
+/// of a new game with the provided [`GameConfig`]. Responds
+/// with a UUID that the host can use to start the game.
+///
+/// This request comes from the HTTP API
 #[derive(Message)]
-#[rtype(result = "Result<PreInitCompleteMessage, ServerError>")]
-pub struct PreInitGameMessage {
+#[rtype(result = "Uuid")]
+pub struct PrepareGameMessage {
+    /// The configuration to store as prepared
     config: GameConfig,
 }
 
-pub struct PreInitCompleteMessage {
-    id: u32,
-}
+impl Handler<PrepareGameMessage> for Games {
+    type Result = MessageResult<PrepareGameMessage>;
 
-impl Handler<PreInitGameMessage> for Games {
-    type Result = MessageResult<PreInitGameMessage>;
-
-    fn handle(&mut self, msg: PreInitGameMessage, ctx: &mut Self::Context) -> Self::Result {
-        let id = self.pre_init_id;
-        self.pre_init_id += 1;
-        self.pre_init.insert(id, msg.config);
-        MessageResult(Ok(PreInitCompleteMessage { id }))
+    fn handle(&mut self, msg: PrepareGameMessage, _ctx: &mut Self::Context) -> Self::Result {
+        let id = Uuid::new_v4();
+        self.preparing.insert(id, msg.config);
+        MessageResult(id)
     }
 }
 
-/// Message for the host to connect to an un-initialized game
-
+/// Message for handling the connection of a host to a preparing game.
+/// This creates the actual game and is done through the WebSocket API
 #[derive(Message)]
 #[rtype(result = "Result<HostConnectedMessage, ServerError>")]
 pub struct HostConnectMessage {
-    id: u32,
-    sess_id: SessionId,
+    /// The UUID of the prepared game configuration to start
+    uuid: Uuid,
+    /// The session ID of the host
+    session_id: SessionId,
+    /// The return address of the session
     addr: Addr<Session>,
 }
 
-/// The game was connected to successfully
+/// Message containing the details of a game that has been successfully
+/// connected to by the host (The game has finished being prepared)
+#[derive(Serialize)]
 pub struct HostConnectedMessage {
-    /// The game token,
-    token: String,
-    /// Basic game config information
-    basic: BasicConfig,
-    /// Timing data for different game events
-    timing: GameTiming,
+    /// The uniquely generated game token (e.g A3DLM)
+    token: GameToken,
+    /// The full game config to be used while playing
+    config: Arc<GameConfig>,
 }
 
 impl Handler<HostConnectMessage> for Games {
     type Result = MessageResult<HostConnectMessage>;
 
-    fn handle(&mut self, msg: HostConnectMessage, ctx: &mut Self::Context) -> Self::Result {
-        let HostConnectMessage { id, sess_id, addr } = msg;
-
+    fn handle(&mut self, msg: HostConnectMessage, _ctx: &mut Self::Context) -> Self::Result {
         // Find the config data from the pre init list
-        let config = match self.pre_init.remove(&id) {
-            Some(value) => value,
+        let config = match self.preparing.remove(&msg.uuid) {
+            Some(value) => Arc::new(value),
             None => return MessageResult(Err(ServerError::InvalidToken)),
         };
 
-        // Clone config data for response
-        let timing = config.timing.clone();
-        let basic = config.basic.clone();
+        // Create a new game token
+        let token = GameToken::unique_token(&self.games);
 
-        // Initialize and store the game
-        let token = self.unique_token();
-        let game = Game::new(token.clone(), sess_id, addr, config).start();
-        self.games.insert(token.clone(), game);
+        let game = Game::new(token, msg.session_id, msg.addr, config.clone()).start();
+        self.games.insert(token, game);
 
         MessageResult(Ok(HostConnectedMessage {
             token,
-            basic,
-            timing,
+            config: config.clone(),
         }))
     }
 }
 
-/// Message to attempt to connect to a game
 #[derive(Message)]
-#[rtype(result = "Result<(), ServerError>")]
-pub struct TryConnectMessage {
-    token: String,
-    id: SessionId,
-    name: String,
-    addr: Addr<Session>,
+#[rtype(result = "Option<Addr<Game>>")]
+pub struct GetGameMessage {
+    /// The raw string token
+    pub token: GameToken,
 }
-impl Handler<TryConnectMessage> for Games {
-    type Result = ResponseFuture<Result<(), ServerError>>;
 
-    fn handle(&mut self, msg: TryConnectMessage, ctx: &mut Self::Context) -> Self::Result {
-        let TryConnectMessage {
-            token,
-            id,
-            name,
-            addr,
-        } = msg;
+impl Handler<GetGameMessage> for Games {
+    type Result = MessageResult<GetGameMessage>;
 
-        let game = self.games.get(&token).cloned();
-
-        Box::pin(async move {
-            let game = game.ok_or(ServerError::InvalidToken)?;
-
-            let msg = super::game::TryConnectMessage {
-                id,
-                name,
-                addr: addr.clone(),
-            };
-
-            let result = match game.send(msg).await {
-                Ok(value) => value,
-                Err(err) => {
-                    error!("Failed to send join attempt: {:?}", err);
-                    return Err(ServerError::NotJoinable);
-                }
-            };
-
-            let ConnectedMessage {
-                token,
-                id,
-                basic,
-                timing,
-            } = result?;
-
-            addr.do_send(ServerMessage::Connected {
-                token,
-                id,
-                basic,
-                timing,
-            });
-
-            Ok(())
-        })
+    fn handle(&mut self, msg: GetGameMessage, _ctx: &mut Self::Context) -> Self::Result {
+        let game: Option<Addr<Game>> = self.games.get(&msg.token).cloned();
+        MessageResult(game)
     }
 }

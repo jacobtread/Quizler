@@ -1,33 +1,33 @@
 use crate::{
     error::ServerError,
+    games::GameToken,
     session::{ServerMessage, Session, SessionId},
 };
 use actix::{Actor, Addr, AsyncContext, Context, Handler, Message, MessageResult, SpawnHandle};
 use log::error;
-use serde::{Deserialize, Serialize};
+use serde::{ser::SerializeStruct, Deserialize, Serialize};
 use std::{
     collections::HashMap,
+    sync::Arc,
     time::{Duration, Instant},
 };
+use uuid::Uuid;
 
 pub struct Game {
     /// The token this game is stored behind
-    token: String,
+    token: GameToken,
     /// The host session
     host: HostSession,
     /// Map of session IDs mapped to the session address
     players: Vec<PlayerSession>,
     /// Configuration for the game
-    config: GameConfig,
+    config: Arc<GameConfig>,
     /// The state of the game
     state: GameState,
-
     /// Spawn handle for the tick task
     task: Option<DelayedTask>,
-
     /// The index of the current question
     question_index: usize,
-
     /// Game timer
     timer: GameTimer,
 }
@@ -107,7 +107,12 @@ pub enum GameState {
 const TIMER_INTERVAL: Duration = Duration::from_millis(500);
 
 impl Game {
-    pub fn new(token: String, host_id: u32, host_addr: Addr<Session>, config: GameConfig) -> Self {
+    pub fn new(
+        token: GameToken,
+        host_id: SessionId,
+        host_addr: Addr<Session>,
+        config: Arc<GameConfig>,
+    ) -> Self {
         Self {
             token,
             host: HostSession {
@@ -218,18 +223,17 @@ impl Game {
         )
     }
 
-    fn question(&self) -> &Question {
-        match self.config.questions.get(self.question_index) {
-            Some(value) => value,
-            None => {
-                panic!("Attempted to access a question at an index that does not exist");
-            }
-        }
+    fn question(&self) -> Arc<Question> {
+        self.config
+            .questions
+            .get(self.question_index)
+            .expect("Attempted to access a question at an index that does not exist")
+            .clone()
     }
 
     /// Task for marking the answers
     fn mark_answers(&mut self, ctx: &mut Context<Self>) {
-        let question = self.question().clone();
+        let question = self.question();
 
         let scoring = &question.scoring;
 
@@ -345,9 +349,15 @@ impl Game {
 
     /// Send a message to all clients
     fn send_all(&self, message: ServerMessage) {
+        // Wrap the message in an Arc to prevent cloning lots of heap data
+        let message = Arc::new(message);
+
+        // Send the message to all the players
         for player in &self.players {
             player.addr.do_send(message.clone());
         }
+
+        // Send the message to the host
         self.host.addr.do_send(message);
     }
 
@@ -358,6 +368,14 @@ impl Game {
         }
         self.send_all(ServerMessage::ScoreUpdate { scores })
     }
+}
+
+pub type GameId = u32;
+
+impl Actor for Game {
+    type Context = Context<Self>;
+
+    fn started(&mut self, _ctx: &mut Self::Context) {}
 }
 
 /// Message to attempt to connect from a new client
@@ -372,45 +390,15 @@ pub struct TryConnectMessage {
     pub addr: Addr<Session>,
 }
 
+/// Message containing the connected details for a connected player
+#[derive(Serialize)]
 pub struct ConnectedMessage {
-    /// The game token
-    pub token: String,
+    /// The uniquely generated game token (e.g A3DLM)
+    pub token: GameToken,
     /// The session ID
-    pub id: u32,
-    /// Basic game config information
-    pub basic: BasicConfig,
-    /// Timing data for different game events
-    pub timing: GameTiming,
-}
-
-/// Message from the host to start the game
-#[derive(Message)]
-#[rtype(result = "()")]
-pub struct StartMessage;
-
-/// Message from the host to cancel starting the game
-#[derive(Message)]
-#[rtype(result = "()")]
-pub struct CancelMessage;
-
-/// Request to inform that a player is ready
-#[derive(Message)]
-#[rtype(result = "Result<(), ServerError>")]
-pub struct ReadyMessage {
     pub id: SessionId,
-}
-
-/// Message to skip the current timer
-#[derive(Message)]
-#[rtype(result = "()")]
-pub struct SkipTimerMessage;
-
-pub type GameId = u32;
-
-impl Actor for Game {
-    type Context = Context<Self>;
-
-    fn started(&mut self, _ctx: &mut Self::Context) {}
+    /// Copy of the game configuration to send back
+    pub config: PlayerGameConfig,
 }
 
 impl Handler<TryConnectMessage> for Game {
@@ -447,10 +435,10 @@ impl Handler<TryConnectMessage> for Game {
         };
 
         // Message sent to existing players for this player
-        let joiner_message = ServerMessage::OtherPlayer {
+        let joiner_message = Arc::new(ServerMessage::OtherPlayer {
             id: game_player.id,
             name: game_player.name.clone(),
-        };
+        });
 
         // Notify all players of the existence of eachother
         for player in &self.players {
@@ -468,16 +456,18 @@ impl Handler<TryConnectMessage> for Game {
 
         self.players.push(game_player);
 
-        let config = &self.config;
-
         MessageResult(Ok(ConnectedMessage {
             id,
-            token: self.token.clone(),
-            basic: config.basic.clone(),
-            timing: config.timing.clone(),
+            token: self.token,
+            config: PlayerGameConfig(self.config.clone()),
         }))
     }
 }
+
+/// Message from the host to start the game
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct StartMessage;
 
 impl Handler<StartMessage> for Game {
     type Result = ();
@@ -489,6 +479,11 @@ impl Handler<StartMessage> for Game {
     }
 }
 
+/// Message from the host to cancel starting the game
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct CancelMessage;
+
 impl Handler<CancelMessage> for Game {
     type Result = ();
 
@@ -498,12 +493,24 @@ impl Handler<CancelMessage> for Game {
     }
 }
 
+/// Message to skip the current timer
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct SkipTimerMessage;
+
 impl Handler<SkipTimerMessage> for Game {
     type Result = ();
 
     fn handle(&mut self, _: SkipTimerMessage, ctx: &mut Self::Context) -> Self::Result {
         self.immediate_task(ctx);
     }
+}
+
+/// Request to inform that a player is ready
+#[derive(Message)]
+#[rtype(result = "Result<(), ServerError>")]
+pub struct ReadyMessage {
+    pub id: SessionId,
 }
 
 impl Handler<ReadyMessage> for Game {
@@ -587,22 +594,42 @@ impl GameSession for PlayerSession {
 }
 
 /// Configuration data for a game
+#[derive(Serialize)]
 pub struct GameConfig {
     /// Basic configuration such as name and subtext
     pub basic: BasicConfig,
     /// Timing data for different game events
     pub timing: GameTiming,
     /// The game questions
-    pub questions: Vec<Question>,
+    pub questions: Vec<Arc<Question>>,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+/// Serializable verison of the reference counted game config
+/// that only serializes the parts that should be visible to
+/// non host users ("timing" and "basic" not "questions")
+#[derive(Clone)]
+pub struct PlayerGameConfig(Arc<GameConfig>);
+
+impl Serialize for PlayerGameConfig {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let mut stru = serializer.serialize_struct("GameConfig", 2)?;
+        let this = &*self.0;
+        stru.serialize_field("basic", &this.basic);
+        stru.serialize_field("timing", &this.timing);
+        stru.end()
+    }
+}
+
+#[derive(Serialize, Deserialize)]
 pub struct BasicConfig {
     pub name: String,
     pub text: String,
 }
 
-#[derive(Clone, Serialize)]
+#[derive(Serialize)]
 pub struct Scoring {
     /// Minimum score awarded for the longest time taken
     pub min_score: u32,
@@ -612,7 +639,7 @@ pub struct Scoring {
     pub bonus_score: u32,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct GameTiming {
     /// The time to wait before displaying each question
     pub wait_time: u64,
@@ -622,18 +649,23 @@ pub struct GameTiming {
 }
 
 /// Type for a string which represents a reference to a tmp stored image
-pub type ImageRef = String;
+pub type ImageRef = Uuid;
 
-#[derive(Clone, Serialize)]
+pub struct Image {
+    /// The file extension for the image
+    ext: String,
+    /// The actual image data bytes
+    data: Vec<u8>,
+}
+
+#[derive(Serialize)]
 pub struct Question {
     /// The title of the question
     title: String,
     /// The text of the question
     text: String,
-
-    /// Optional image
+    /// Optional UUID from created image
     image: Option<ImageRef>,
-
     /// The content of the question
     ty: QuestionType,
     /// The time given to answer the question
@@ -649,7 +681,7 @@ pub enum QuestionAnswer {
     ClickableImage { answer: (f32, f32) },
 }
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Clone, Copy)]
 pub enum AnswerResult {
     // Answer was 100% correct
     Correct(u32),
@@ -668,7 +700,7 @@ impl AnswerResult {
     }
 }
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize)]
 pub enum QuestionType {
     /// Single choice question
     Single {
