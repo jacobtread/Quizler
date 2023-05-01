@@ -6,7 +6,9 @@ use crate::{
 use actix::{
     Actor, ActorContext, AsyncContext, Context, Handler, Message, MessageResult, SpawnHandle,
 };
+use bytes::Bytes;
 use log::error;
+use mime::Mime;
 use serde::{ser::SerializeStruct, Deserialize, Serialize};
 use std::{
     collections::HashMap,
@@ -683,6 +685,10 @@ pub struct GameConfig {
     pub timing: GameTiming,
     /// The game questions
     pub questions: Vec<Arc<Question>>,
+    /// Map of uploaded image UUIDs to their respective
+    /// image data
+    #[serde(skip)]
+    pub images: HashMap<ImageRef, Arc<Image>>,
 }
 
 /// Serializable verison of the reference counted game config
@@ -710,7 +716,7 @@ pub struct BasicConfig {
     pub text: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct Scoring {
     /// Minimum score awarded for the longest time taken
     pub min_score: u32,
@@ -733,13 +739,13 @@ pub struct GameTiming {
 pub type ImageRef = Uuid;
 
 pub struct Image {
-    /// The file extension for the image
-    ext: String,
+    /// Mime type for the image
+    pub mime: Mime,
     /// The actual image data bytes
-    data: Vec<u8>,
+    pub data: Bytes,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct Question {
     /// The title of the question
     title: String,
@@ -781,7 +787,8 @@ impl AnswerResult {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "ty")]
 pub enum QuestionType {
     /// Single choice question
     Single {
@@ -798,6 +805,10 @@ pub enum QuestionType {
         answers: Vec<usize>,
         /// Vec of the possible answers
         values: Vec<String>,
+        /// The optional minimum number of required answers
+        min: Option<usize>,
+        /// The optional maximum number of required answers
+        max: Option<usize>,
     },
     /// Image where you must click an area
     ClickableImage {
