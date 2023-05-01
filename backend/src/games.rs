@@ -125,7 +125,7 @@ impl Display for GameToken {
 #[rtype(result = "Uuid")]
 pub struct PrepareGameMessage {
     /// The configuration to store as prepared
-    config: GameConfig,
+    pub config: GameConfig,
 }
 
 impl Handler<PrepareGameMessage> for Games {

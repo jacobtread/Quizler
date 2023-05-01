@@ -12,13 +12,13 @@ use actix_web::{
 };
 use bytes::{buf, Bytes, BytesMut};
 use futures::TryStreamExt;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use uuid::Uuid;
 
 use crate::{
     game::{BasicConfig, GameConfig, GameTiming, Image, Question},
-    games::{GameToken, Games},
+    games::{GameToken, Games, PrepareGameMessage},
 };
 
 /// Configuration function for configuring
@@ -72,6 +72,11 @@ impl ResponseError for CreateError {
     }
 }
 
+#[derive(Serialize)]
+struct QuizCreated {
+    uuid: Uuid,
+}
+
 /// Endpoint for creating a new quiz
 #[post("/api/quiz")]
 async fn create_quiz(mut payload: Multipart) -> Result<impl Responder, CreateError> {
@@ -122,8 +127,8 @@ async fn create_quiz(mut payload: Multipart) -> Result<impl Responder, CreateErr
         );
     }
 
+    // Create the full configuration
     let config = config.ok_or(CreateError::MissingConfig)?;
-
     let config = GameConfig {
         basic: config.basic,
         timing: config.timing,
@@ -133,7 +138,12 @@ async fn create_quiz(mut payload: Multipart) -> Result<impl Responder, CreateErr
 
     let games = Games::get();
 
-    Ok(HttpResponse::Ok().body("CREATE"))
+    let uuid = games
+        .send(PrepareGameMessage { config })
+        .await
+        .expect("Games service is not running");
+
+    Ok(HttpResponse::Created().json(QuizCreated { uuid }))
 }
 
 #[post("/api/quiz/{token}/{image}")]
