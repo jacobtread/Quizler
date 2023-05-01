@@ -146,20 +146,20 @@ impl Game {
         self.timer.set(duration);
 
         // Intital time update
-        let total = self.timer.want.as_millis() as u64;
+        let total = self.timer.want.as_millis() as u32;
         self.send_all(ServerMessage::TimeSync { total, elapsed: 0 });
 
-        // Interval handle for updating the timers for all the clients to ensure
+        // Interval for updating the timers for all the clients to ensure
         // they are up to date with the server time
         let timer_handle = ctx.run_interval(TIMER_INTERVAL, |actor, ctx| {
             let timer = &actor.timer;
             let (total, elapsed) = if timer.has_elapsed() {
-                let total = timer.want.as_millis() as u64;
+                let total = timer.want.as_millis() as u32;
                 (total, total)
             } else {
-                // Size down casted to u64 which is probbably even larger than nessicary
-                let total = timer.want.as_millis() as u64;
-                let elapsed = timer.elapsed().as_millis() as u64;
+                // Size down casted to u32 which is probbably even larger than nessicary
+                let total = timer.want.as_millis() as u32;
+                let elapsed = timer.elapsed().as_millis() as u32;
                 (total, elapsed)
             };
             actor.send_all(ServerMessage::TimeSync { total, elapsed })

@@ -83,9 +83,9 @@ pub enum ServerMessage {
     /// Message for syncing the time between the game and clients
     TimeSync {
         /// The total time that is being waited for
-        total: u64,
+        total: u32,
         /// The time that has already passed
-        elapsed: u64,
+        elapsed: u32,
     },
 
     /// Question data for the next question
