@@ -1,4 +1,4 @@
-use actix_multipart::{form::MultipartForm, Multipart, MultipartError};
+use actix_multipart::{Multipart, MultipartError};
 use actix_web::{
     get,
     http::StatusCode,
@@ -33,9 +33,6 @@ pub fn configure(cfg: &mut ServiceConfig) {
     cfg.service(quiz_image);
     cfg.service(quiz_socket);
 }
-
-#[derive(Debug, MultipartForm)]
-pub struct QuizForm {}
 
 #[derive(Deserialize)]
 pub struct GameConfigUpload {
@@ -84,7 +81,7 @@ struct QuizCreated {
 }
 
 /// Endpoint for creating a new quiz
-#[post("/api/quiz/create")]
+#[post("/api/quiz")]
 async fn create_quiz(mut payload: Multipart) -> Result<impl Responder, CreateError> {
     // Configuration data
     let mut config: Option<GameConfigUpload> = None;
