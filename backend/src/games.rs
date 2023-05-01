@@ -182,6 +182,7 @@ impl Handler<InitializeMessage> for Games {
     }
 }
 
+/// Message to request an addr to a game
 #[derive(Message)]
 #[rtype(result = "Option<Addr<Game>>")]
 pub struct GetGameMessage {
@@ -195,5 +196,21 @@ impl Handler<GetGameMessage> for Games {
     fn handle(&mut self, msg: GetGameMessage, _ctx: &mut Self::Context) -> Self::Result {
         let game: Option<Addr<Game>> = self.games.get(&msg.token).cloned();
         MessageResult(game)
+    }
+}
+
+/// Message to remove a game
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct RemoveGameMessage {
+    /// The token of the game to remove
+    pub token: GameToken,
+}
+
+impl Handler<RemoveGameMessage> for Games {
+    type Result = ();
+
+    fn handle(&mut self, msg: RemoveGameMessage, _ctx: &mut Self::Context) -> Self::Result {
+        self.games.remove(&msg.token);
     }
 }

@@ -1,9 +1,11 @@
 use crate::{
     error::ServerError,
-    games::GameToken,
-    session::{ServerMessage, SessionId, SessionRef},
+    games::{GameToken, Games, RemoveGameMessage},
+    session::{KickMessage, KickReason, ServerMessage, SessionId, SessionRef},
 };
-use actix::{Actor, AsyncContext, Context, Handler, Message, MessageResult, SpawnHandle};
+use actix::{
+    Actor, ActorContext, AsyncContext, Context, Handler, Message, MessageResult, SpawnHandle,
+};
 use log::error;
 use serde::{ser::SerializeStruct, Deserialize, Serialize};
 use std::{
@@ -371,6 +373,21 @@ impl Actor for Game {
     type Context = Context<Self>;
 
     fn started(&mut self, _ctx: &mut Self::Context) {}
+
+    /// Handle stopping of a game actor
+    fn stopped(&mut self, ctx: &mut Self::Context) {
+        // Remove the game from the list of games
+        let games = Games::get();
+        games.do_send(RemoveGameMessage { token: self.token });
+
+        // Tell all the players they've been kicked
+        for player in &self.players {
+            player.session_ref.addr.do_send(ServerMessage::Kicked {
+                session_id: player.session_ref.id,
+                reason: KickReason::HostDisconnect,
+            });
+        }
+    }
 }
 
 /// Message to attempt to connect from a new client
@@ -497,10 +514,8 @@ impl Handler<CancelMessage> for Game {
     type Result = ();
 
     fn handle(&mut self, msg: CancelMessage, ctx: &mut Self::Context) -> Self::Result {
-        let host = &self.host.session_ref;
-
         // Handle messages that aren't from the game host
-        if host.id != msg.session_ref.id {
+        if self.host.session_ref.id != msg.session_ref.id {
             msg.session_ref.addr.do_send(ServerError::InvalidPermission);
             return;
         }
@@ -513,12 +528,20 @@ impl Handler<CancelMessage> for Game {
 /// Message to skip the current timer
 #[derive(Message)]
 #[rtype(result = "()")]
-pub struct SkipTimerMessage;
+pub struct SkipTimerMessage {
+    pub session_ref: SessionRef,
+}
 
 impl Handler<SkipTimerMessage> for Game {
     type Result = ();
 
-    fn handle(&mut self, _: SkipTimerMessage, ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: SkipTimerMessage, ctx: &mut Self::Context) -> Self::Result {
+        // Handle messages that aren't from the game host
+        if self.host.session_ref.id != msg.session_ref.id {
+            msg.session_ref.addr.do_send(ServerError::InvalidPermission);
+            return;
+        }
+
         self.immediate_task(ctx);
     }
 }
@@ -555,6 +578,75 @@ impl Handler<ReadyMessage> for Game {
         }
 
         MessageResult(Ok(()))
+    }
+}
+
+/// Message asking to remove a player from the game
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct RemovePlayerMessage {
+    /// Reference of who is attempting to remove the player
+    /// (Unless the server is removing)
+    pub session_ref: Option<SessionRef>,
+    /// The ID of the player to remove
+    pub target_id: SessionId,
+    /// Reason for the player removal (Sent to clients)
+    pub reason: KickReason,
+}
+
+impl Handler<RemovePlayerMessage> for Game {
+    type Result = ();
+
+    fn handle(&mut self, msg: RemovePlayerMessage, ctx: &mut Self::Context) -> Self::Result {
+        if let Some(session_ref) = &msg.session_ref {
+            // Handle messages that aren't from the game host
+            if self.host.session_ref.id != session_ref.id {
+                session_ref.addr.do_send(ServerError::InvalidPermission);
+                return;
+            }
+
+            // Host is removing itself (Game is stopping)
+            if msg.target_id == session_ref.id {
+                // Stop the game
+                ctx.stop();
+                return;
+            }
+        }
+
+        let kick_msg = Arc::new(ServerMessage::Kicked {
+            session_id: msg.target_id,
+            reason: msg.reason,
+        });
+
+        // Inform each player of the removal
+        self.players
+            .iter()
+            .for_each(|player| player.session_ref.addr.do_send(kick_msg.clone()));
+
+        // Inform the host of the player removal
+        self.host.session_ref.addr.do_send(kick_msg.clone());
+
+        // Find the player position
+        let index = self
+            .players
+            .iter()
+            .position(|player| player.session_ref.id == msg.target_id);
+
+        let index = match index {
+            Some(value) => value,
+            None => {
+                // Send the error message to the return addr
+                if let Some(session_ref) = msg.session_ref {
+                    session_ref.addr.do_send(ServerError::UnknownPlayer);
+                }
+                return;
+            }
+        };
+
+        // Remove the player
+        let target = self.players.remove(index);
+        // Tell the session itself that its been kicked
+        target.session_ref.addr.do_send(KickMessage);
     }
 }
 

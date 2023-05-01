@@ -2,7 +2,7 @@ use crate::{
     error::ServerError,
     game::{
         AnswerResult, CancelMessage, ConnectedMessage, Game, GameState, Question, QuestionAnswer,
-        ReadyMessage, StartMessage, TryConnectMessage,
+        ReadyMessage, RemovePlayerMessage, SkipTimerMessage, StartMessage, TryConnectMessage,
     },
     games::{GameToken, Games, GetGameMessage, InitializeMessage, InitializedMessage},
 };
@@ -61,6 +61,13 @@ pub enum ClientMessage {
     Cancel,
     /// Message to answer the question
     Answer(QuestionAnswer),
+    /// Message for the host to skip the current question
+    Skip,
+    /// Message for the host to kick a player from the game
+    Kick {
+        /// The ID of the player to kick
+        id: SessionId,
+    },
 }
 
 /// Messages sent by the server
@@ -105,10 +112,63 @@ pub enum ServerMessage {
 
     /// Server error
     Error { error: ServerError },
+
+    /// Player has been kicked from the game
+    Kicked {
+        /// The ID of the player that was kicked
+        session_id: SessionId,
+        /// The reason the player was kicked
+        reason: KickReason,
+    },
+}
+
+/// Message send to sessions to inform them that they've
+/// been removed from their game
+#[derive(Message, Debug, Copy, Clone, Serialize)]
+#[rtype(result = "()")]
+pub struct KickMessage;
+
+impl Handler<KickMessage> for Session {
+    type Result = ();
+
+    fn handle(&mut self, _: KickMessage, ctx: &mut Self::Context) -> Self::Result {
+        // Clear the active game so we don't attempt to send
+        // a LostConnection message
+        self.game = None;
+
+        // Session is stopped now that they aren't in a game
+        ctx.stop();
+    }
+}
+
+#[derive(Message, Debug, Copy, Clone, Serialize)]
+#[rtype(result = "()")]
+#[repr(u8)]
+pub enum KickReason {
+    /// Player was manually kicked by the host
+    RemovedByHost = 0x1,
+    /// The host diconnected ending the game
+    HostDisconnect = 0x2,
+    /// Connection was lost to the player
+    LostConnection = 0x3,
 }
 
 impl Actor for Session {
     type Context = ws::WebsocketContext<Session>;
+
+    /// Handle the session being stopped by removing the
+    /// session from any games and cleaning up after it
+    fn stopped(&mut self, ctx: &mut Self::Context) {
+        // Take the game to attempt removing if present
+        if let Some(game) = self.game.take() {
+            // Inform game to remove self
+            game.do_send(RemovePlayerMessage {
+                session_ref: None,
+                target_id: self.id,
+                reason: KickReason::LostConnection,
+            });
+        }
+    }
 }
 
 type SessionContext = ws::WebsocketContext<Session>;
@@ -184,6 +244,36 @@ impl Session {
 
             // Handle message for an answer to the current question
             ClientMessage::Answer(answer) => todo!(),
+
+            // Handle message for kicking a player
+            ClientMessage::Kick { id } => {
+                let game = match &self.game {
+                    Some(value) => value.clone(),
+                    None => {
+                        // Expected the game to exist
+                        Self::write_error(ctx, ServerError::Unexpected);
+                        return;
+                    }
+                };
+                game.do_send(RemovePlayerMessage {
+                    session_ref: Some(session_ref),
+                    target_id: id,
+                    reason: KickReason::RemovedByHost,
+                });
+            }
+
+            // Handle message for skipping the current question
+            ClientMessage::Skip => {
+                let game = match &self.game {
+                    Some(value) => value.clone(),
+                    None => {
+                        // Expected the game to exist
+                        Self::write_error(ctx, ServerError::Unexpected);
+                        return;
+                    }
+                };
+                game.do_send(SkipTimerMessage { session_ref });
+            }
 
             // Handle client ready messages
             ClientMessage::Ready => {
