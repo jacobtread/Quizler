@@ -382,10 +382,14 @@ impl Actor for Game {
 
         // Tell all the players they've been kicked
         for player in &self.players {
+            // Send the visual kick message
             player.session_ref.addr.do_send(ServerMessage::Kicked {
                 session_id: player.session_ref.id,
                 reason: KickReason::HostDisconnect,
             });
+
+            // Notify the session that its been kicked
+            player.session_ref.addr.do_send(KickMessage);
         }
     }
 }
