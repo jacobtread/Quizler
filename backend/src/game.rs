@@ -589,6 +589,21 @@ impl Handler<ReadyMessage> for Game {
 
 /// Message asking to remove a player from the game
 #[derive(Message)]
+#[rtype(result = "Option<Image>")]
+pub struct GetImageMessage {
+    pub uuid: Uuid,
+}
+
+impl Handler<GetImageMessage> for Game {
+    type Result = MessageResult<GetImageMessage>;
+    fn handle(&mut self, msg: GetImageMessage, ctx: &mut Self::Context) -> Self::Result {
+        let image = self.config.images.get(&msg.uuid).cloned();
+        MessageResult(image)
+    }
+}
+
+/// Message asking to remove a player from the game
+#[derive(Message)]
 #[rtype(result = "()")]
 pub struct RemovePlayerMessage {
     /// Reference of who is attempting to remove the player
@@ -688,7 +703,7 @@ pub struct GameConfig {
     /// Map of uploaded image UUIDs to their respective
     /// image data
     #[serde(skip)]
-    pub images: HashMap<ImageRef, Arc<Image>>,
+    pub images: HashMap<ImageRef, Image>,
 }
 
 /// Serializable verison of the reference counted game config
@@ -738,6 +753,7 @@ pub struct GameTiming {
 /// Type for a string which represents a reference to a tmp stored image
 pub type ImageRef = Uuid;
 
+#[derive(Debug, Clone)]
 pub struct Image {
     /// Mime type for the image
     pub mime: Mime,

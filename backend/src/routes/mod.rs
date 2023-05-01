@@ -1,24 +1,21 @@
 use std::{collections::HashMap, sync::Arc};
 
-use actix_multipart::{
-    form::{tempfile::TempFile, MultipartForm},
-    Multipart, MultipartError,
-};
+use actix_multipart::{form::MultipartForm, Multipart, MultipartError};
 use actix_web::{
     http::StatusCode,
     post,
     web::{self, ServiceConfig},
     HttpResponse, Responder, ResponseError,
 };
-use bytes::{buf, Bytes, BytesMut};
+use bytes::BytesMut;
 use futures::TryStreamExt;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use uuid::Uuid;
 
 use crate::{
-    game::{BasicConfig, GameConfig, GameTiming, Image, Question},
-    games::{GameToken, Games, PrepareGameMessage},
+    game::{BasicConfig, GameConfig, GameTiming, GetImageMessage, Image, Question},
+    games::{GameToken, Games, GetGameMessage, PrepareGameMessage},
 };
 
 /// Configuration function for configuring
@@ -120,10 +117,10 @@ async fn create_quiz(mut payload: Multipart) -> Result<impl Responder, CreateErr
 
         images.insert(
             uuid,
-            Arc::new(Image {
+            Image {
                 mime,
                 data: buffer.freeze(),
-            }),
+            },
         );
     }
 
@@ -146,10 +143,39 @@ async fn create_quiz(mut payload: Multipart) -> Result<impl Responder, CreateErr
     Ok(HttpResponse::Created().json(QuizCreated { uuid }))
 }
 
+#[derive(Debug, Error)]
+pub enum ImageError {
+    #[error("The target game could not be found")]
+    UnknownGame,
+    #[error("The target image could not be found")]
+    UnknownImage,
+}
+
+impl ResponseError for ImageError {
+    fn status_code(&self) -> StatusCode {
+        match self {
+            ImageError::UnknownGame | ImageError::UnknownImage => StatusCode::BAD_REQUEST,
+        }
+    }
+}
+
 #[post("/api/quiz/{token}/{image}")]
-async fn quiz_image(path: web::Path<(String, Uuid)>) -> impl Responder {
+async fn quiz_image(path: web::Path<(String, Uuid)>) -> Result<impl Responder, ImageError> {
     let (token, uuid) = path.into_inner();
     let token: GameToken = token.parse().unwrap();
     let games = Games::get();
-    HttpResponse::Ok().body("IMAGE")
+
+    let game = games
+        .send(GetGameMessage { token })
+        .await
+        .expect("Games service is not running")
+        .ok_or(ImageError::UnknownGame)?;
+
+    let image = game
+        .send(GetImageMessage { uuid })
+        .await
+        .map_err(|_| ImageError::UnknownGame)?
+        .ok_or(ImageError::UnknownImage)?;
+
+    Ok(HttpResponse::Ok().content_type(image.mime).body(image.data))
 }
