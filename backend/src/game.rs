@@ -349,7 +349,7 @@ impl Game {
     }
 
     fn next_question(&mut self, ctx: &mut Context<Self>) {
-        if self.question_index < self.config.questions.len() {
+        if self.question_index + 1 < self.config.questions.len() {
             self.question_index += 1;
             self.begin_question(ctx, self.question_index);
         } else {
