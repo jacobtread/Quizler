@@ -40,7 +40,7 @@ pub enum ClientMessage {
     /// Message for actions from the host session
     HostAction { action: HostAction },
     /// Message to answer the question
-    Answer(Answer),
+    Answer { answer: Answer },
     /// Message for the host to kick a player from the game
     Kick {
         /// The ID of the player to kick
@@ -70,7 +70,7 @@ pub enum ServerMessage {
     /// Message for syncing the time between the game and clients
     TimeSync(TimeSync),
     /// Question data for the next question
-    Question(Arc<Question>),
+    Question { question: Arc<Question> },
     /// Updates the player scores with the new scores
     Scores { scores: HashMap<SessionId, u32> },
     /// Server error

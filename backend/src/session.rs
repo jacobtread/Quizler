@@ -213,7 +213,7 @@ impl Session {
             }
 
             // Handle message for an answer to the current question
-            ClientMessage::Answer(answer) => {
+            ClientMessage::Answer { answer } => {
                 let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
                 // Spawn the answer task
                 ctx.spawn(

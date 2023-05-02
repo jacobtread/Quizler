@@ -305,7 +305,7 @@ impl Game {
             .for_each(|player| player.ready = false);
 
         // Send the question contents to the clients
-        self.send_all(ServerMessage::Question(question));
+        self.send_all(ServerMessage::Question { question });
 
         // Begin awaiting for ready messages
         self.set_state(GameState::AwaitingReady);
