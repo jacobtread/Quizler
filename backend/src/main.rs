@@ -9,6 +9,7 @@ mod game;
 mod games;
 mod http;
 mod session;
+mod types;
 
 #[actix::main]
 async fn main() -> std::io::Result<()> {

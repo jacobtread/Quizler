@@ -1,11 +1,12 @@
 use crate::{
     error::ServerError,
     game::{
-        AnswerResult, CancelMessage, ConnectMessage, Game, GameConfig, GameState,
-        PlayerAnswerMessage, PlayerGameConfig, Question, QuestionAnswer, ReadyMessage,
-        RemovePlayerMessage, SkipTimerMessage, StartMessage, TimeSync,
+        CancelMessage, ConnectMessage, Game, GameConfig, GameState, PlayerAnswerMessage,
+        PlayerGameConfig, ReadyMessage, RemovePlayerMessage, SkipTimerMessage, StartMessage,
+        TimeSync,
     },
     games::{GameToken, Games, GetGameMessage, InitializeMessage},
+    types::{Answer, Question},
 };
 use actix::{
     Actor, ActorContext, ActorFutureExt, Addr, AsyncContext, Handler, Message, StreamHandler,
@@ -64,7 +65,7 @@ pub enum ClientMessage {
     /// Message to cancel starting the game
     Cancel,
     /// Message to answer the question
-    Answer(QuestionAnswer),
+    Answer(Answer),
     /// Message for the host to skip the current question
     Skip,
     /// Message for the host to kick a player from the game
@@ -111,11 +112,8 @@ pub enum ServerMessage {
     /// Question data for the next question
     Question(Arc<Question>),
 
-    /// Result message for showing the results of a player
-    AnswerResult(AnswerResult),
-
-    /// Update for the player scores
-    ScoreUpdate { scores: HashMap<SessionId, u32> },
+    /// Updates the player scores with the new scores
+    Scores { scores: HashMap<SessionId, u32> },
 
     /// Server error
     Error { error: ServerError },

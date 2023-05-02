@@ -2,11 +2,9 @@ use crate::{
     error::ServerError,
     games::{GameToken, Games, RemoveGameMessage},
     session::{KickMessage, KickReason, ServerMessage, SessionId, SessionRef},
+    types::{Answer, AnswerData, Image, ImageRef, Question, QuestionData, Score},
 };
 use actix::{Actor, ActorContext, Addr, AsyncContext, Context, Handler, Message};
-use bytes::Bytes;
-use log::error;
-use mime::Mime;
 use serde::{ser::SerializeStruct, Deserialize, Serialize};
 use std::{
     collections::HashMap,
@@ -101,7 +99,7 @@ pub struct TimeSync {
     pub elapsed: u32,
 }
 
-#[derive(Serialize, Clone, Copy)]
+#[derive(Serialize, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
 pub enum GameState {
     /// The game is in the lobby
@@ -125,10 +123,10 @@ pub enum GameState {
 
 impl GameState {
     fn requires_timing(&self) -> bool {
-        match self {
-            GameState::Starting | GameState::AwaitingAnswers | GameState::Marked => true,
-            _ => false,
-        }
+        matches!(
+            self,
+            GameState::Starting | GameState::AwaitingAnswers | GameState::Marked
+        )
     }
 }
 
@@ -198,6 +196,51 @@ impl Game {
         }
     }
 
+    /// Send a message to all clients
+    fn send_all(&self, message: ServerMessage) {
+        // Wrap the message in an Arc to prevent cloning lots of heap data
+        let message = Arc::new(message);
+
+        // Send the message to all the players
+        for player in &self.players {
+            player.session_ref.addr.do_send(message.clone());
+        }
+
+        // Send the message to the host
+        self.host.session_ref.addr.do_send(message);
+    }
+
+    /// Syncronizes the timers between the clients and the server
+    /// returnig whether the current timer is complete
+    fn sync_timer(&mut self) -> bool {
+        if let Some(sync) = self.timer.sync() {
+            self.send_all(ServerMessage::TimeSync(sync));
+        }
+        self.timer.complete
+    }
+
+    /// Skips the current timer ahead to the ending
+    fn skip_timer(&mut self) {
+        let total_ms = self.timer.length.as_millis() as u32;
+        self.send_all(ServerMessage::TimeSync(TimeSync {
+            total: total_ms,
+            elapsed: total_ms,
+        }));
+        self.timer.complete = true;
+    }
+
+    /// Sets the current timer waiting duration
+    fn set_timer(&mut self, duration: Duration) {
+        // Set timer duration
+        self.timer.set(duration);
+
+        // Send initialize time sync message
+        self.send_all(ServerMessage::TimeSync(TimeSync {
+            total: duration.as_millis() as u32,
+            elapsed: 0,
+        }));
+    }
+
     /// Sets the current game state to the provided `state` and
     /// sends a state update message to all the clients including
     /// the host
@@ -238,7 +281,7 @@ impl Game {
     /// This is called once `mark_answers` has been completed
     fn marked(&mut self) {
         self.set_state(GameState::Marked);
-        self.set_timer(Duration::from_millis(self.config.timing.wait_time));
+        self.set_timer(Duration::from_millis(self.config.timing.wait_time as u64));
     }
 
     fn finished(&mut self) {
@@ -266,39 +309,9 @@ impl Game {
         self.set_state(GameState::AwaitingReady);
     }
 
-    /// Syncronizes the timers between the clients and the server
-    /// returnig whether the current timer is complete
-    fn sync_timer(&mut self) -> bool {
-        if let Some(sync) = self.timer.sync() {
-            self.send_all(ServerMessage::TimeSync(sync));
-        }
-        self.timer.complete
-    }
-
-    /// Skips the current timer ahead to the ending
-    fn skip_timer(&mut self) {
-        let total_ms = self.timer.length.as_millis() as u32;
-        self.send_all(ServerMessage::TimeSync(TimeSync {
-            total: total_ms,
-            elapsed: total_ms,
-        }));
-        self.timer.complete = true;
-    }
-
-    /// Sets the current timer waiting duration
-    fn set_timer(&mut self, duration: Duration) {
-        // Set timer duration
-        self.timer.set(duration);
-
-        // Send initialize time sync message
-        self.send_all(ServerMessage::TimeSync(TimeSync {
-            total: duration.as_millis() as u32,
-            elapsed: 0,
-        }));
-    }
-
     /// Task for marking the answers
     fn mark_answers(&mut self) {
+        // Get the current question
         let question = self
             .config
             .questions
@@ -306,126 +319,113 @@ impl Game {
             .expect("Attempted to access a question at an index that does not exist")
             .clone();
 
-        let scoring = &question.scoring;
+        let mut scores = HashMap::with_capacity(self.players.len());
 
         for player in &mut self.players {
-            let answer = match player.answers.get(self.question_index) {
-                Some(answer) => answer,
-                None => {
-                    // Player did not answer the question
-                    continue;
-                }
-            };
+            // Mark the player question
+            let score: Score =
+                Self::mark_answer(player, &question, self.question_index, &self.config.timing);
 
-            let elapsed = self.timer.elapsed();
-            let is_bonus = elapsed.as_micros() as u64 <= self.config.timing.bonus_score_time;
+            // Increase the player score
+            player.score += score.value();
+            player.results.push(score);
 
-            let percent =
-                1.0 - ((elapsed.as_millis() as f32) / (question.answer_time as f32)).max(1.0);
-
-            let mut base_score = scoring.min_score
-                + ((scoring.max_score - scoring.min_score) as f32 * percent) as u32;
-
-            if is_bonus {
-                base_score += scoring.bonus_score;
-            }
-
-            let result = match (&question.ty, &answer) {
-                (QuestionType::Single { answers, .. }, QuestionAnswer::Single { answer }) => {
-                    let valid = answers.contains(answer);
-
-                    if valid {
-                        AnswerResult::Correct(base_score)
-                    } else {
-                        AnswerResult::Incorrect
-                    }
-                }
-                (
-                    QuestionType::Multiple {
-                        answers: qu_answers,
-                        ..
-                    },
-                    QuestionAnswer::Multiple { answers },
-                ) => {
-                    // TODO: Handle min max for questions
-
-                    let mut correct = 0usize;
-                    let mut incorrect = 0usize;
-                    for answer in answers {
-                        if qu_answers.contains(answer) {
-                            correct += 1;
-                        } else {
-                            incorrect += 1;
-                        }
-                    }
-
-                    // The percent completion
-                    let percent = (correct as f32) / ((correct + incorrect) as f32);
-
-                    let valid = correct == qu_answers.len();
-
-                    if valid {
-                        AnswerResult::Correct(base_score)
-                    } else {
-                        let score = ((base_score as f32) * percent).round() as u32;
-                        AnswerResult::Partial(score)
-                    }
-                }
-                (
-                    QuestionType::ClickableImage { top, bottom, .. },
-                    QuestionAnswer::ClickableImage { answer },
-                ) => {
-                    // Clicked position is within top and bottom box position
-                    let valid = answer.0 >= top.0
-                        && answer.0 <= bottom.0
-                        && answer.1 >= top.1
-                        && answer.1 <= bottom.1;
-                    if valid {
-                        AnswerResult::Correct(base_score)
-                    } else {
-                        AnswerResult::Incorrect
-                    }
-                }
-                _ => {
-                    error!("Mis matched question and answer types don't know how to mark.");
-                    continue;
-                }
-            };
-
-            player.score += result.score();
-            player.results.push(result.clone());
-
-            // Send the result to the player
-            player
-                .session_ref
-                .addr
-                .do_send(ServerMessage::AnswerResult(result));
+            scores.insert(player.session_ref.id, player.score);
         }
 
         // Update everyones scores
-        self.update_scores();
+        self.send_all(ServerMessage::Scores { scores })
     }
 
-    /// Send a message to all clients
-    fn send_all(&self, message: ServerMessage) {
-        // Wrap the message in an Arc to prevent cloning lots of heap data
-        let message = Arc::new(message);
+    fn mark_answer(
+        player: &PlayerSession,
+        question: &Question,
+        question_index: usize,
+        timing: &GameTiming,
+    ) -> Score {
+        let answer = match &player.answers[question_index] {
+            // Player answered the question
+            Some(value) => value,
+            // Player didn't answer the question
+            None => return Score::Incorrect,
+        };
 
-        // Send the message to all the players
-        for player in &self.players {
-            player.session_ref.addr.do_send(message.clone());
+        let elapsed_ms = answer.elapsed.as_millis() as u32;
+        let is_bonus = elapsed_ms <= timing.bonus_score_time;
+
+        // Calculate the % amount between the min and max answer times
+        let answer_time_percent = 1.0 - ((elapsed_ms as f32) / (question.answer_time as f32));
+
+        let scoring = &question.scoring;
+
+        // The base score from the answer time and the bonus
+        let mut base_score = scoring.min_score
+            + ((scoring.max_score - scoring.min_score) as f32 * answer_time_percent) as u32;
+
+        // Append bonus score amount
+        if is_bonus {
+            base_score += scoring.bonus_score;
         }
 
-        // Send the message to the host
-        self.host.session_ref.addr.do_send(message);
-    }
+        use Answer as A;
+        use QuestionData as Q;
 
-    fn update_scores(&self) {
-        let mut scores = HashMap::with_capacity(self.players.len());
-        for player in &self.players {
-            scores.insert(player.session_ref.id, player.score);
+        match (&answer.answer, &question.data) {
+            (A::Single { answer }, Q::Single { answers, .. }) => {
+                let is_valid = answers.contains(answer);
+                if is_valid {
+                    Score::Correct(base_score)
+                } else {
+                    Score::Incorrect
+                }
+            }
+            (
+                A::Multiple { answers },
+                Q::Multiple {
+                    answers: q_answers, ..
+                },
+            ) => {
+                let mut total = 0;
+                let mut correct = 0usize;
+
+                for answer in answers {
+                    total += 1;
+
+                    if q_answers.contains(answer) {
+                        correct += 1;
+                    }
+                }
+
+                // % correct out of total answers
+                let percent = correct as f32 / total as f32;
+
+                if correct == q_answers.len() {
+                    Score::Correct(base_score)
+                } else if correct == 0 {
+                    Score::Incorrect
+                } else {
+                    let score = ((base_score as f32) * percent).round() as u32;
+                    Score::Partial(score)
+                }
+            }
+            (
+                A::ClickableImage { answer: (x, y) },
+                Q::ClickableImage {
+                    top: (tx, ty),
+                    bottom: (bx, by),
+                    ..
+                },
+            ) => {
+                if x >= tx && x <= bx && y >= ty && y <= by {
+                    Score::Correct(base_score)
+                } else {
+                    Score::Incorrect
+                }
+            }
+            // Mismatched types shouldn't be possible but
+            // will be marked as incorrect
+            _ => Score::Incorrect,
         }
-        self.send_all(ServerMessage::ScoreUpdate { scores })
     }
 }
 
@@ -499,11 +499,14 @@ impl Handler<ConnectMessage> for Game {
             return Err(ServerError::UsernameTaken);
         }
 
+        // Initialize the empty answers list
+        let answers = vec![None; self.config.questions.len()];
+
         let game_player = PlayerSession {
             name: msg.name,
             session_ref: msg.session_ref,
             ready: false,
-            answers: Vec::new(),
+            answers,
             results: Vec::new(),
             score: 0,
         };
@@ -739,13 +742,20 @@ pub struct PlayerAnswerMessage {
     /// Reference of the session that is answering
     pub session_ref: SessionRef,
     /// Answer to the question
-    pub answer: QuestionAnswer,
+    pub answer: Answer,
 }
 
 impl Handler<PlayerAnswerMessage> for Game {
     type Result = Result<(), ServerError>;
 
     fn handle(&mut self, msg: PlayerAnswerMessage, _ctx: &mut Self::Context) -> Self::Result {
+        let elapsed = self.timer.elapsed();
+
+        // Answers are not being accepted at the current time
+        if self.state != GameState::AwaitingAnswers {
+            return Err(ServerError::UnexpectedMessage);
+        }
+
         let question = self
             .config
             .questions
@@ -766,12 +776,15 @@ impl Handler<PlayerAnswerMessage> for Game {
         }
 
         // Ensure the answer is the right type of answer
-        if !msg.answer.is_valid(&question.ty) {
+        if !msg.answer.is_valid(&question.data) {
             return Err(ServerError::InvalidAnswer);
         }
 
-        // Add to player answers
-        player.answers.push(msg.answer);
+        // Set the player answer
+        player.answers[self.question_index] = Some(AnswerData {
+            answer: msg.answer,
+            elapsed,
+        });
 
         Ok(())
     }
@@ -790,9 +803,9 @@ pub struct PlayerSession {
     /// The player ready state
     ready: bool,
     /// The players answers and the score they got for them
-    answers: Vec<QuestionAnswer>,
+    answers: Vec<Option<AnswerData>>,
     /// Marked version of each question answer
-    results: Vec<AnswerResult>,
+    results: Vec<Score>,
     /// The player total score
     score: u32,
 }
@@ -837,122 +850,10 @@ pub struct BasicConfig {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct Scoring {
-    /// Minimum score awarded for the longest time taken
-    pub min_score: u32,
-    /// Maximum score awarded for the shortest time taken
-    pub max_score: u32,
-    /// The amount awarded if scored within the bonus time
-    pub bonus_score: u32,
-}
-
-#[derive(Serialize, Deserialize)]
 pub struct GameTiming {
-    /// The time to wait before displaying each question
-    pub wait_time: u64,
+    /// The time to wait before displaying each question (ms)
+    pub wait_time: u32,
     /// The time that a bonus score will be granted within
-    /// bonus score is disabled if none
-    pub bonus_score_time: u64,
-}
-
-/// Type for a string which represents a reference to a tmp stored image
-pub type ImageRef = Uuid;
-
-#[derive(Debug, Clone)]
-pub struct Image {
-    /// Mime type for the image
-    pub mime: Mime,
-    /// The actual image data bytes
-    pub data: Bytes,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct Question {
-    /// The title of the question
-    title: String,
-    /// The text of the question
-    text: String,
-    /// Optional UUID from created image
-    image: Option<ImageRef>,
-    /// The content of the question
-    ty: QuestionType,
-    /// The time given to answer the question
-    answer_time: u64,
-    /// The point scoring for the question
-    scoring: Scoring,
-}
-
-#[derive(Deserialize)]
-#[serde(tag = "ty")]
-pub enum QuestionAnswer {
-    Single { answer: usize },
-    Multiple { answers: Vec<usize> },
-    ClickableImage { answer: (f32, f32) },
-}
-impl QuestionAnswer {
-    pub fn is_valid(&self, qt: &QuestionType) -> bool {
-        match (self, qt) {
-            (Self::Single { .. }, QuestionType::Single { .. })
-            | (Self::Multiple { .. }, QuestionType::Multiple { .. })
-            | (Self::ClickableImage { .. }, QuestionType::ClickableImage { .. }) => true,
-            _ => false,
-        }
-    }
-}
-
-#[derive(Serialize, Clone, Copy)]
-#[serde(tag = "ty", content = "value")]
-pub enum AnswerResult {
-    // Answer was 100% correct
-    Correct(u32),
-    // Answer was incorrect
-    Incorrect,
-    // Multiple choice has some asnwers right
-    Partial(u32),
-}
-
-impl AnswerResult {
-    pub fn score(&self) -> u32 {
-        match self {
-            Self::Correct(value) => *value,
-            Self::Incorrect => 0,
-            Self::Partial(value) => *value,
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize)]
-#[serde(tag = "ty")]
-pub enum QuestionType {
-    /// Single choice question
-    Single {
-        /// Vec of indexes of correct answers
-        #[serde(skip)]
-        answers: Vec<usize>,
-        /// Vec of the possible answers
-        values: Vec<String>,
-    },
-    /// Multiple choice question
-    Multiple {
-        /// Vec of indexes of correct answers
-        #[serde(skip)]
-        answers: Vec<usize>,
-        /// Vec of the possible answers
-        values: Vec<String>,
-        /// The optional minimum number of required answers
-        min: Option<usize>,
-        /// The optional maximum number of required answers
-        max: Option<usize>,
-    },
-    /// Image where you must click an area
-    ClickableImage {
-        /// The image url to take clicking on
-        image: ImageRef,
-        /// Top left box coordinate
-        #[serde(skip)]
-        top: (f32, f32),
-        /// Bottom right box coordinate
-        #[serde(skip)]
-        bottom: (f32, f32),
-    },
+    /// bonus score is disabled if none (ms)
+    pub bonus_score_time: u32,
 }

@@ -23,9 +23,10 @@ use thiserror::Error;
 use uuid::Uuid;
 
 use crate::{
-    game::{BasicConfig, GameConfig, GameTiming, GetImageMessage, Image, Question},
+    game::{BasicConfig, GameConfig, GameTiming, GetImageMessage},
     games::{GameToken, Games, GetGameMessage, PrepareGameMessage},
     session::Session,
+    types::{Image, Question},
 };
 
 /// Configuration function for configuring
