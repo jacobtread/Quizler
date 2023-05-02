@@ -358,7 +358,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Session {
         let message = match item {
             Ok(message) => message,
             Err(err) => {
-                error!("Got error while recieving websocket messages: {:?}", err);
+                error!("Got error while recieving websocket messages: {}", err);
                 return;
             }
         };
@@ -382,7 +382,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Session {
         let value = match serde_json::from_slice::<ClientMessage>(text.as_bytes()) {
             Ok(value) => value,
             Err(err) => {
-                error!("Unable to decode client message: {:?}", err);
+                error!("Unable to decode client message: {}", err);
                 Self::write_error(ctx, ServerError::MalformedMessage);
                 return;
             }
