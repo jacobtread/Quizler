@@ -20,13 +20,19 @@ pub enum ClientMessage {
         /// The UUID of the game to initialize
         uuid: Uuid,
     },
-    // Message to connect self to the game with the associated ID
+
+    // Message to associate the session with the provided game
     Connect {
-        // The game token to try and connect to (e.g. W2133)
+        /// The game token to try and connect to (e.g. W2133)
         token: String,
-        // The username to try and connect with
+    },
+
+    /// Message to attempt to join the game using the provided name
+    Join {
+        /// The name to attempt to access with
         name: String,
     },
+
     /// Message indicating the client is ready to play
     ///
     /// (This is done internally by clients once everything has been loaded)
@@ -56,7 +62,7 @@ pub enum ServerMessage {
         config: Arc<GameConfig>,
     },
     /// Message indicating a complete successful connection
-    Connected {
+    Joined {
         /// The session ID
         id: SessionId,
         /// The uniquely generated game token (e.g A3DLM)

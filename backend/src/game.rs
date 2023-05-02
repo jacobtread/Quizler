@@ -462,8 +462,8 @@ impl Actor for Game {
 
 /// Message to attempt to connect from a new client
 #[derive(Message)]
-#[rtype(result = "Result<ConnectedMessage, ServerError>")]
-pub struct ConnectMessage {
+#[rtype(result = "Result<JoinedMessage, ServerError>")]
+pub struct JoinMessage {
     /// The session ID of the session trying to connect
     pub id: SessionId,
     /// The address of the session connecting
@@ -473,7 +473,7 @@ pub struct ConnectMessage {
 }
 
 /// Message containing the connected details for a connected player
-pub struct ConnectedMessage {
+pub struct JoinedMessage {
     /// The session ID
     pub id: SessionId,
     /// The uniquely generated game token (e.g A3DLM)
@@ -484,10 +484,10 @@ pub struct ConnectedMessage {
     pub game: Addr<Game>,
 }
 
-impl Handler<ConnectMessage> for Game {
-    type Result = Result<ConnectedMessage, ServerError>;
+impl Handler<JoinMessage> for Game {
+    type Result = Result<JoinedMessage, ServerError>;
 
-    fn handle(&mut self, msg: ConnectMessage, ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: JoinMessage, ctx: &mut Self::Context) -> Self::Result {
         // Cannot join games that are already started or finished
         if !matches!(self.state, GameState::Lobby | GameState::Starting) {
             return Err(ServerError::NotJoinable);
@@ -529,7 +529,7 @@ impl Handler<ConnectMessage> for Game {
 
         self.players.push(game_player);
 
-        Ok(ConnectedMessage {
+        Ok(JoinedMessage {
             id: msg.id,
             token: self.token,
             config: PlayerGameConfig(self.config.clone()),

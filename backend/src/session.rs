@@ -1,6 +1,6 @@
 use crate::{
     game::{
-        ConnectMessage, Game, HostActionMessage, PlayerAnswerMessage, ReadyMessage,
+        Game, HostActionMessage, JoinMessage, PlayerAnswerMessage, ReadyMessage,
         RemovePlayerMessage,
     },
     games::{GameToken, Games, GetGameMessage, InitializeMessage},
@@ -12,7 +12,7 @@ use actix::{
     WrapFuture,
 };
 use actix_web_actors::ws;
-use log::{debug, error, info};
+use log::{error, info};
 use serde::Serialize;
 use std::sync::Arc;
 
@@ -137,56 +137,66 @@ impl Session {
             }
 
             // Handle try connect messages
-            ClientMessage::Connect { token, name } => {
+            ClientMessage::Connect { token } => {
                 if self.game.is_some() {
                     return Err(ServerError::UnexpectedMessage);
                 }
 
-                let id = self.id;
-                let addr = ctx.address();
-
-                let games = self.games.clone();
+                // Parse the token ensuring it is valid
+                let token: GameToken = token.parse()?;
 
                 // Spawn the connect task
                 ctx.spawn(
-                    async move {
-                        // Parse the token
-                        let token: GameToken = token.parse()?;
+                    self.games
+                        .send(GetGameMessage { token })
+                        .into_actor(self)
+                        .map(|result, act, ctx| {
+                            if let Some(game) = result.expect("Games service was stopped") {
+                                // Set the session associated game
+                                act.game = Some(game);
+                            } else {
+                                // Game didn't exsit
+                                Self::write_error(ctx, ServerError::InvalidToken);
+                            }
+                        }),
+                );
+            }
 
-                        // Attempting to connect to AED32E as Jacob
-                        debug!("Attempting to connect to {} as {}", token, name);
+            // Handle join messages
+            ClientMessage::Join { name } => {
+                let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
 
-                        // Obtain a addr to the game
-                        let game_addr = games
-                            .send(GetGameMessage { token })
-                            .await
-                            .expect("Games service was stopped")
-                            .ok_or(ServerError::InvalidToken)?;
-                        // Attempt the connection
-                        game_addr
-                            .send(ConnectMessage { id, addr, name })
-                            .await
-                            .map_err(|_| ServerError::InvalidToken)?
-                    }
-                    .into_actor(self)
-                    .map(|result, act, ctx| {
-                        // Transform the output message
-                        let msg = match result {
-                            Ok(msg) => {
-                                act.game = Some(msg.game);
+                // Spawn the join task
+                ctx.spawn(
+                    game
+                        // Send the initliaze message
+                        .send(JoinMessage {
+                            id: self.id,
+                            addr: ctx.address(),
+                            name,
+                        })
+                        .into_actor(self)
+                        .map(|msg, act, ctx| {
+                            let result = match msg {
+                                Ok(value) => value,
+                                Err(_) => {
+                                    act.game = None;
+                                    return;
+                                }
+                            };
 
-                                ServerMessage::Connected {
+                            let msg = match result {
+                                Ok(msg) => ServerMessage::Joined {
                                     id: msg.id,
                                     token: msg.token,
                                     config: msg.config,
-                                }
-                            }
-                            Err(error) => ServerMessage::Error { error },
-                        };
+                                },
+                                // Handle game being stopped
+                                Err(error) => ServerMessage::Error { error },
+                            };
 
-                        // Write the response
-                        Self::write_message(ctx, &msg);
-                    }),
+                            Self::write_message(ctx, &msg);
+                        }),
                 );
             }
 
@@ -310,7 +320,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Session {
         // Only expect text messages
         let text = match message {
             ws::Message::Text(value) => value,
-            ws::Message::Pong(ping) => {
+            ws::Message::Ping(ping) => {
                 ctx.pong(&ping);
                 return;
             }
