@@ -1,8 +1,9 @@
 use crate::{
     error::ServerError,
     game::{
-        AnswerResult, CancelMessage, ConnectMessage, ConnectedMessage, Game, GameState, Question,
-        QuestionAnswer, ReadyMessage, RemovePlayerMessage, SkipTimerMessage, StartMessage,
+        AnswerResult, CancelMessage, ConnectMessage, ConnectedMessage, Game, GameState,
+        PlayerAnswerMessage, Question, QuestionAnswer, ReadyMessage, RemovePlayerMessage,
+        SkipTimerMessage, StartMessage,
     },
     games::{GameToken, Games, GetGameMessage, InitializeMessage, InitializedMessage},
 };
@@ -293,7 +294,32 @@ impl Session {
             }
 
             // Handle message for an answer to the current question
-            ClientMessage::Answer(_answer) => todo!(),
+            ClientMessage::Answer(answer) => {
+                let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
+                // Spawn the answer task
+                ctx.spawn(
+                    game
+                        // Send the initliaze message
+                        .send(PlayerAnswerMessage {
+                            session_ref,
+                            answer,
+                        })
+                        .into_actor(self)
+                        .map(|msg, _z, ctx| {
+                            let msg = match msg {
+                                Ok(Err(error)) => ServerMessage::Error { error },
+                                // Handle game being stopped
+                                Err(_) => ServerMessage::Error {
+                                    error: ServerError::Unexpected,
+                                },
+                                _ => return,
+                            };
+
+                            // Write the response
+                            Self::write_message(ctx, &msg);
+                        }),
+                );
+            }
 
             // Handle message for kicking a player
             ClientMessage::Kick { id } => {

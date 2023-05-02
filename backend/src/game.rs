@@ -3,9 +3,7 @@ use crate::{
     games::{GameToken, Games, RemoveGameMessage},
     session::{KickMessage, KickReason, ServerMessage, SessionId, SessionRef},
 };
-use actix::{
-    Actor, ActorContext, Addr, AsyncContext, Context, Handler, Message, MessageResult, SpawnHandle,
-};
+use actix::{Actor, ActorContext, Addr, AsyncContext, Context, Handler, Message, SpawnHandle};
 use bytes::Bytes;
 use log::error;
 use mime::Mime;
@@ -446,12 +444,12 @@ pub struct ConnectedMessage {
 }
 
 impl Handler<ConnectMessage> for Game {
-    type Result = MessageResult<ConnectMessage>;
+    type Result = Result<ConnectedMessage, ServerError>;
 
     fn handle(&mut self, msg: ConnectMessage, _ctx: &mut Self::Context) -> Self::Result {
         match self.state {
             GameState::Lobby | GameState::Starting => {}
-            _ => return MessageResult(Err(ServerError::NotJoinable)),
+            _ => return Err(ServerError::NotJoinable),
         }
 
         // Error if username is already taken
@@ -461,7 +459,7 @@ impl Handler<ConnectMessage> for Game {
             .find(|player| player.name.eq(&msg.name))
             .is_some()
         {
-            return MessageResult(Err(ServerError::UsernameTaken));
+            return Err(ServerError::UsernameTaken);
         }
 
         let game_player = PlayerSession {
@@ -500,11 +498,11 @@ impl Handler<ConnectMessage> for Game {
 
         self.players.push(game_player);
 
-        MessageResult(Ok(ConnectedMessage {
+        Ok(ConnectedMessage {
             id,
             token: self.token,
             config: PlayerGameConfig(self.config.clone()),
-        }))
+        })
     }
 }
 
@@ -588,7 +586,7 @@ pub struct ReadyMessage {
 }
 
 impl Handler<ReadyMessage> for Game {
-    type Result = MessageResult<ReadyMessage>;
+    type Result = Result<(), ServerError>;
 
     fn handle(&mut self, msg: ReadyMessage, ctx: &mut Self::Context) -> Self::Result {
         // Whether all players are ready
@@ -604,14 +602,14 @@ impl Handler<ReadyMessage> for Game {
         }
 
         if !found_player {
-            return MessageResult(Err(ServerError::UnknownPlayer));
+            return Err(ServerError::UnknownPlayer);
         }
 
         if all_ready {
             self.ready_question(ctx);
         }
 
-        MessageResult(Ok(()))
+        Ok(())
     }
 }
 
@@ -623,10 +621,10 @@ pub struct GetImageMessage {
 }
 
 impl Handler<GetImageMessage> for Game {
-    type Result = MessageResult<GetImageMessage>;
+    type Result = Option<Image>;
+
     fn handle(&mut self, msg: GetImageMessage, _ctx: &mut Self::Context) -> Self::Result {
-        let image = self.config.images.get(&msg.uuid).cloned();
-        MessageResult(image)
+        self.config.images.get(&msg.uuid).cloned()
     }
 }
 
@@ -696,6 +694,46 @@ impl Handler<RemovePlayerMessage> for Game {
         let target = self.players.remove(index);
         // Tell the session itself that its been kicked
         target.session_ref.addr.do_send(KickMessage);
+    }
+}
+
+/// Message asking to remove a player from the game
+#[derive(Message)]
+#[rtype(result = "Result<(), ServerError>")]
+pub struct PlayerAnswerMessage {
+    /// Reference of the session that is answering
+    pub session_ref: SessionRef,
+    /// Answer to the question
+    pub answer: QuestionAnswer,
+}
+
+impl Handler<PlayerAnswerMessage> for Game {
+    type Result = Result<(), ServerError>;
+
+    fn handle(&mut self, msg: PlayerAnswerMessage, _ctx: &mut Self::Context) -> Self::Result {
+        let question = self.question();
+
+        // Find the player within the game
+        let player = self
+            .players
+            .iter_mut()
+            .find(|player| player.session_ref.id == msg.session_ref.id)
+            .ok_or(ServerError::UnknownPlayer)?;
+
+        // Ensure the player hasn't already answered
+        if player.answers.len() >= self.question_index {
+            return Err(ServerError::AlreadyAnswered);
+        }
+
+        // Ensure the answer is the right type of answer
+        if !msg.answer.is_valid(&question.ty) {
+            return Err(ServerError::InvalidAnswer);
+        }
+
+        // Add to player answers
+        player.answers.push(msg.answer);
+
+        Ok(())
     }
 }
 
@@ -810,6 +848,16 @@ pub enum QuestionAnswer {
     Multiple { answers: Vec<usize> },
     ClickableImage { answer: (f32, f32) },
 }
+impl QuestionAnswer {
+    pub fn is_valid(&self, qt: &QuestionType) -> bool {
+        match (self, qt) {
+            (Self::Single { .. }, QuestionType::Single { .. })
+            | (Self::Multiple { .. }, QuestionType::Multiple { .. })
+            | (Self::ClickableImage { .. }, QuestionType::ClickableImage { .. }) => true,
+            _ => false,
+        }
+    }
+}
 
 #[derive(Serialize, Clone, Copy)]
 pub enum AnswerResult {
@@ -820,6 +868,7 @@ pub enum AnswerResult {
     // Multiple choice has some asnwers right
     Partial(u32),
 }
+
 impl AnswerResult {
     pub fn score(&self) -> u32 {
         match self {

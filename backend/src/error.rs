@@ -22,4 +22,8 @@ pub enum ServerError {
     /// Message was recieved but wasn't expected at the current
     /// state
     UnexpectedMessage = 0x7,
+    /// Already provided an answer
+    AlreadyAnswered = 0x8,
+    /// Provided answer is not valid for the type of question
+    InvalidAnswer = 0x9,
 }
