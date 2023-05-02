@@ -62,18 +62,14 @@ pub enum CreateError {
 
     #[error("Uploaded content was over 100mb")]
     TooLarge,
+
+    #[error("Quiz must have atleast 1 question")]
+    MissingQuestions,
 }
 
 impl ResponseError for CreateError {
     fn status_code(&self) -> StatusCode {
-        match self {
-            CreateError::MissingConfig
-            | CreateError::InvalidConfig(_)
-            | CreateError::InvalidImageUuid(_)
-            | CreateError::MissingImageType(_)
-            | CreateError::Multipart(_)
-            | CreateError::TooLarge => StatusCode::BAD_REQUEST,
-        }
+        StatusCode::BAD_REQUEST
     }
 }
 
@@ -138,6 +134,12 @@ async fn create_quiz(
 
     // Create the full configuration
     let config = config.ok_or(CreateError::MissingConfig)?;
+
+    // Validate the config is correct
+    if config.questions.is_empty() {
+        return Err(CreateError::MissingQuestions);
+    }
+
     let config = GameConfig {
         basic: config.basic,
         timing: config.timing,
