@@ -9,17 +9,17 @@ use actix_web::{
 };
 use actix_web_actors::ws::{self};
 use bytes::BytesMut;
-use futures::TryStreamExt;
+use futures_util::TryStreamExt;
 use log::debug;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
+    fmt::Display,
     sync::{
         atomic::{AtomicU32, Ordering},
         Arc,
     },
 };
-use thiserror::Error;
 use uuid::Uuid;
 
 use crate::{
@@ -44,34 +44,15 @@ pub struct GameConfigUpload {
     pub questions: Vec<Arc<Question>>,
 }
 
-#[derive(Debug, Error)]
+#[derive(Debug)]
 pub enum CreateError {
-    #[error("Missing config data")]
     MissingConfig,
-
-    #[error(transparent)]
-    InvalidConfig(#[from] serde_json::Error),
-
-    #[error(transparent)]
-    InvalidImageUuid(#[from] uuid::Error),
-
-    #[error("Missing image mime type for {0}")]
+    InvalidConfig(serde_json::Error),
+    InvalidImageUuid(uuid::Error),
     MissingImageType(Uuid),
-
-    #[error(transparent)]
-    Multipart(#[from] MultipartError),
-
-    #[error("Uploaded content was over 100mb")]
+    Multipart(MultipartError),
     TooLarge,
-
-    #[error("Quiz must have atleast 1 question")]
     MissingQuestions,
-}
-
-impl ResponseError for CreateError {
-    fn status_code(&self) -> StatusCode {
-        StatusCode::BAD_REQUEST
-    }
 }
 
 #[derive(Serialize)]
@@ -113,12 +94,13 @@ async fn create_quiz(
 
         // Handle the config
         if name == "config" {
-            let value: GameConfigUpload = serde_json::from_slice(&buffer)?;
+            let value: GameConfigUpload =
+                serde_json::from_slice(&buffer).map_err(CreateError::InvalidConfig)?;
             config = Some(value);
             continue;
         }
 
-        let uuid: Uuid = name.parse()?;
+        let uuid: Uuid = name.parse().map_err(CreateError::InvalidImageUuid)?;
         let mime = field
             .content_type()
             .ok_or_else(|| CreateError::MissingImageType(uuid))?
@@ -156,20 +138,10 @@ async fn create_quiz(
     Ok(HttpResponse::Created().json(QuizCreated { uuid }))
 }
 
-#[derive(Debug, Error)]
+#[derive(Debug)]
 pub enum ImageError {
-    #[error("The target game could not be found")]
     UnknownGame,
-    #[error("The target image could not be found")]
     UnknownImage,
-}
-
-impl ResponseError for ImageError {
-    fn status_code(&self) -> StatusCode {
-        match self {
-            ImageError::UnknownGame | ImageError::UnknownImage => StatusCode::BAD_REQUEST,
-        }
-    }
 }
 
 #[get("/api/quiz/{token}/{image}")]
@@ -214,4 +186,49 @@ async fn quiz_socket(
         &req,
         stream,
     )
+}
+
+impl From<MultipartError> for CreateError {
+    fn from(value: MultipartError) -> Self {
+        CreateError::Multipart(value)
+    }
+}
+
+impl Display for CreateError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CreateError::MissingConfig => f.write_str("Missing config data"),
+            CreateError::InvalidConfig(err) => err.fmt(f),
+            CreateError::InvalidImageUuid(err) => err.fmt(f),
+            CreateError::MissingImageType(uuid) => {
+                write!(f, "Missing image mime type for {}", uuid)
+            }
+            CreateError::Multipart(err) => err.fmt(f),
+            CreateError::TooLarge => f.write_str("Uploaded content was over 100mb"),
+            CreateError::MissingQuestions => f.write_str("Quiz must have atleast 1 question"),
+        }
+    }
+}
+
+impl ResponseError for CreateError {
+    fn status_code(&self) -> StatusCode {
+        StatusCode::BAD_REQUEST
+    }
+}
+
+impl Display for ImageError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ImageError::UnknownGame => f.write_str("The target game could not be found"),
+            ImageError::UnknownImage => f.write_str("The target image could not be found"),
+        }
+    }
+}
+
+impl ResponseError for ImageError {
+    fn status_code(&self) -> StatusCode {
+        match self {
+            ImageError::UnknownGame | ImageError::UnknownImage => StatusCode::BAD_REQUEST,
+        }
+    }
 }
