@@ -53,16 +53,17 @@ export const enum ServerMessageType {
     Kicked = "Kicked",
 }
 
-export type ServerMessage = (
-    ({ ty: ServerMessageType.Joined } & JoinedMessage) |
-    ({ ty: ServerMessageType.OtherPlayer } & OtherPlayerMessage) |
-    ({ ty: ServerMessageType.GameState } & GameStateMessage) |
-    ({ ty: ServerMessageType.TimeSync } & TimeSyncMessage) |
-    ({ ty: ServerMessageType.Question } & QuestionMessage) |
-    ({ ty: ServerMessageType.Scores } & ScoresMessage) |
-    ({ ty: ServerMessageType.Error } & ErrorMessage) |
-    ({ ty: ServerMessageType.Kicked } & KickedMessage)
-);
+
+
+export type ServerMessage<T> =
+    T extends ServerMessageType.Joined ? JoinedMessage :
+    T extends ServerMessageType.OtherPlayer ? OtherPlayerMessage :
+    T extends ServerMessageType.GameState ? GameStateMessage :
+    T extends ServerMessageType.TimeSync ? TimeSyncMessage :
+    T extends ServerMessageType.Question ? QuestionMessage :
+    T extends ServerMessageType.Scores ? ScoresMessage :
+    T extends ServerMessageType.Error ? ErrorMessage :
+    T extends ServerMessageType.Kicked ? KickedMessage : unknown;
 
 
 export interface InitializeMessage {
