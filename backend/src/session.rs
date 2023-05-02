@@ -3,7 +3,7 @@ use crate::{
     game::{
         AnswerResult, CancelMessage, ConnectMessage, Game, GameConfig, GameState,
         PlayerAnswerMessage, PlayerGameConfig, Question, QuestionAnswer, ReadyMessage,
-        RemovePlayerMessage, SkipTimerMessage, StartMessage,
+        RemovePlayerMessage, SkipTimerMessage, StartMessage, TimeSync,
     },
     games::{GameToken, Games, GetGameMessage, InitializeMessage},
 };
@@ -106,12 +106,7 @@ pub enum ServerMessage {
     GameState { state: GameState },
 
     /// Message for syncing the time between the game and clients
-    TimeSync {
-        /// The total time that is being waited for
-        total: u32,
-        /// The time that has already passed
-        elapsed: u32,
-    },
+    TimeSync(TimeSync),
 
     /// Question data for the next question
     Question(Arc<Question>),

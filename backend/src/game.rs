@@ -3,7 +3,7 @@ use crate::{
     games::{GameToken, Games, RemoveGameMessage},
     session::{KickMessage, KickReason, ServerMessage, SessionId, SessionRef},
 };
-use actix::{Actor, ActorContext, Addr, AsyncContext, Context, Handler, Message, SpawnHandle};
+use actix::{Actor, ActorContext, Addr, AsyncContext, Context, Handler, Message};
 use bytes::Bytes;
 use log::error;
 use mime::Mime;
@@ -26,10 +26,9 @@ pub struct Game {
     config: Arc<GameConfig>,
     /// The state of the game
     state: GameState,
-    /// Spawn handle for the tick task
-    task: Option<DelayedTask>,
     /// The index of the current question
     question_index: usize,
+
     /// Game timer
     timer: GameTimer,
     /// Address to the games manager
@@ -37,57 +36,68 @@ pub struct Game {
 }
 
 pub struct GameTimer {
-    last: Instant,
-    want: Duration,
-}
-
-/// Task that is delayed
-pub struct DelayedTask {
-    // Spawn handle for the timer update task
-    timer_handle: SpawnHandle,
-    /// Spawn handle for the delayed task call
-    task_handle: SpawnHandle,
-    /// Underlying task to execute
-    task: Box<dyn FnOnce(&mut Game, &mut Context<Game>)>,
-}
-
-impl DelayedTask {
-    pub fn finish(self, game: &mut Game, ctx: &mut Context<Game>) {
-        // Cancel the timer and task handlers
-        ctx.cancel_future(self.timer_handle);
-        ctx.cancel_future(self.task_handle);
-
-        // Call the task fn
-        (self.task)(game, ctx);
-    }
-
-    pub fn cancel(self, ctx: &mut Context<Game>) {
-        ctx.cancel_future(self.timer_handle);
-        ctx.cancel_future(self.task_handle);
-    }
+    /// The start time for the timer
+    start: Instant,
+    /// The duration of time the timer is waiting for
+    length: Duration,
+    /// Whether the game timer has already emitted
+    /// completion
+    complete: bool,
+    /// The current number of ticks that have been processed
+    /// (We only produce sync messages every 5 ticks (500ms))
+    tick: u8,
 }
 
 impl GameTimer {
     pub fn new() -> Self {
         Self {
-            last: Instant::now(),
-            want: Duration::from_millis(0),
+            start: Instant::now(),
+            length: Duration::from_millis(0),
+            complete: false,
+            tick: 0,
         }
     }
 
-    pub fn elapsed(&self) -> Duration {
-        self.last.elapsed()
-    }
-
-    pub fn has_elapsed(&self) -> bool {
-        let elapsed = self.elapsed();
-        elapsed >= self.want
-    }
-
     pub fn set(&mut self, want: Duration) {
-        self.last = Instant::now();
-        self.want = want;
+        self.start = Instant::now();
+        self.length = want;
     }
+
+    #[inline]
+    pub fn elapsed(&self) -> Duration {
+        self.start.elapsed()
+    }
+
+    pub fn sync(&mut self) -> Option<TimeSync> {
+        self.tick += 1;
+
+        if self.complete || self.tick != 5 {
+            self.tick = 0;
+            return None;
+        }
+
+        let elapsed = self.start.elapsed();
+
+        let total_ms = self.length.as_millis() as u32;
+        let elapsed_ms = (elapsed.as_millis() as u32).min(total_ms);
+
+        // Update the complete state
+        if total_ms == elapsed_ms {
+            self.complete = true;
+        }
+
+        // Create the time sync data
+        Some(TimeSync {
+            total: total_ms,
+            elapsed: elapsed_ms,
+        })
+    }
+}
+
+#[derive(Debug, Serialize)]
+pub struct TimeSync {
+    pub total: u32,
+    pub elapsed: u32,
 }
 
 #[derive(Serialize, Clone, Copy)]
@@ -95,6 +105,7 @@ impl GameTimer {
 pub enum GameState {
     /// The game is in the lobby
     Lobby = 0x0,
+
     /// The game is starting
     Starting = 0x1,
 
@@ -104,13 +115,145 @@ pub enum GameState {
     /// The game has started and is waiting for answers
     AwaitingAnswers = 0x3,
 
+    /// The questions have been marked
+    Marked = 0x4,
+
     /// The game has finished
-    Finished = 0x4,
+    Finished = 0x5,
 }
 
-const TIMER_INTERVAL: Duration = Duration::from_millis(500);
+impl GameState {
+    fn requires_timing(&self) -> bool {
+        match self {
+            GameState::Starting | GameState::AwaitingAnswers | GameState::Marked => true,
+            _ => false,
+        }
+    }
+}
 
 impl Game {
+    fn tick(&mut self, _ctx: &mut Context<Self>) {
+        let state = self.state;
+        let complete = self.sync_timer();
+
+        // Handle states that have timing requirements
+        if state.requires_timing() && !complete {
+            return;
+        }
+
+        match state {
+            // Ticking in the lobby does nothing...
+            GameState::Lobby => {}
+            // Ticking the starting timer
+            GameState::Starting => {
+                self.ready_question();
+            }
+            // Ticking await ready does nothing...
+            GameState::AwaitingReady => {}
+
+            // Answers have been awaited
+            GameState::AwaitingAnswers => {
+                self.mark_answers();
+                self.marked();
+            }
+
+            // Question has been marked, the game can now move
+            // to the next question
+            GameState::Marked => {
+                self.ready_question();
+            }
+
+            GameState::Finished => todo!(),
+        }
+    }
+
+    fn set_state(&mut self, state: GameState) {
+        self.state = state;
+        self.send_all(ServerMessage::GameState { state });
+    }
+
+    fn reset_state(&mut self) {
+        self.set_state(GameState::Lobby);
+        self.skip_timer();
+    }
+
+    fn start(&mut self) {
+        const START_DURATION: Duration = Duration::from_secs(5);
+        self.set_state(GameState::Starting);
+        self.set_timer(START_DURATION);
+    }
+
+    /// Handles progressing the state to [`GameState::AwaitingAnswers`]
+    /// once all the players have provided the Ready state message
+    fn all_ready(&mut self) {
+        self.set_state(GameState::AwaitingAnswers);
+        let question = self.question();
+        self.set_timer(Duration::from_millis(question.answer_time));
+    }
+
+    fn marked(&mut self) {
+        self.set_state(GameState::Marked);
+        self.set_timer(Duration::from_millis(self.config.timing.wait_time));
+    }
+
+    fn finished(&mut self) {
+        self.set_state(GameState::Finished);
+    }
+
+    fn ready_question(&mut self) {
+        // Handle reaching the end of the questions
+        if self.question_index + 1 >= self.config.questions.len() {
+            self.finished();
+            return;
+        }
+
+        // Increase the question index
+        self.question_index += 1;
+
+        // Obtain the current question
+        let question = self.config.questions[self.question_index].clone();
+
+        // Reset ready states for the players
+        self.reset_ready();
+
+        // Send the question contents to the clients
+        self.send_all(ServerMessage::Question(question));
+
+        // Begin awaiting for ready messages
+        self.set_state(GameState::AwaitingReady);
+    }
+
+    /// Syncronizes the timers between the clients and the server
+    /// returnig whether the current timer is complete
+    fn sync_timer(&mut self) -> bool {
+        if let Some(sync) = self.timer.sync() {
+            self.send_all(ServerMessage::TimeSync(sync));
+        }
+        self.timer.complete
+    }
+
+    /// Skips the current timer ahead to the ending
+    fn skip_timer(&mut self) {
+        let total_ms = self.timer.length.as_millis() as u32;
+        self.send_all(ServerMessage::TimeSync(TimeSync {
+            total: total_ms,
+            elapsed: total_ms,
+        }));
+        self.timer.complete = true;
+    }
+
+    /// Sets the current timer waiting duration
+    fn set_timer(&mut self, duration: Duration) {
+        // Set timer duration
+        self.timer.set(duration);
+
+        // Send initialize time sync message
+        self.send_all(ServerMessage::TimeSync(TimeSync {
+            total: duration.as_millis() as u32,
+            elapsed: 0,
+        }));
+    }
+
     pub fn new(
         token: GameToken,
         host_ref: SessionRef,
@@ -125,108 +268,10 @@ impl Game {
             players: Default::default(),
             config,
             state: GameState::Lobby,
-            task: None,
             timer: GameTimer::new(),
             question_index: 0,
             games,
         }
-    }
-
-    /// Spawns the game starting time which will handle when the game
-    /// moves from the starting state to the started state.
-    ///
-    /// `ctx` The game context
-    fn starting_task(&mut self, ctx: &mut Context<Self>) {
-        // Game starts after 5 seconds unless skipped
-        const START_DURATION: Duration = Duration::from_secs(5);
-
-        self.delayed_task(ctx, START_DURATION, |actor, ctx| {
-            actor.begin_question(ctx, 0);
-        })
-    }
-
-    /// Spawns a delayed task to execute after duration where all the clients
-    /// have their times updated until said duration
-    fn delayed_task<F>(&mut self, ctx: &mut Context<Self>, duration: Duration, f: F)
-    where
-        F: Fn(&mut Self, &mut Context<Self>) + 'static,
-    {
-        // Set the timer start point and end duration
-        self.timer.set(duration);
-
-        // Intital time update
-        let total = self.timer.want.as_millis() as u32;
-        self.send_all(ServerMessage::TimeSync { total, elapsed: 0 });
-
-        // Interval for updating the timers for all the clients to ensure
-        // they are up to date with the server time
-        let timer_handle = ctx.run_interval(TIMER_INTERVAL, |actor, _ctx| {
-            let timer = &actor.timer;
-            let (total, elapsed) = if timer.has_elapsed() {
-                let total = timer.want.as_millis() as u32;
-                (total, total)
-            } else {
-                // Size down casted to u32 which is probbably even larger than nessicary
-                let total = timer.want.as_millis() as u32;
-                let elapsed = timer.elapsed().as_millis() as u32;
-                (total, elapsed)
-            };
-            actor.send_all(ServerMessage::TimeSync { total, elapsed })
-        });
-
-        // Task handle for finish the task after the desired duration
-        let task_handle = ctx.run_later(duration, |actor, ctx| {
-            if let Some(task) = actor.task.take() {
-                task.finish(actor, ctx);
-            }
-        });
-
-        // Delayed task for storing the task
-        let task = DelayedTask {
-            task: Box::new(f),
-            task_handle,
-            timer_handle,
-        };
-        self.task = Some(task)
-    }
-
-    /// Immediately completes the current delayed task
-    fn immediate_task(&mut self, ctx: &mut Context<Self>) {
-        if let Some(task) = self.task.take() {
-            task.finish(self, ctx);
-        }
-    }
-
-    /// Begins the question at the provided index
-    ///
-    /// `ctx`   The game context
-    /// `index` The question index
-    fn begin_question(&mut self, _ctx: &mut Context<Self>, index: usize) {
-        self.reset_ready();
-        let question = match self.config.questions.get(index) {
-            Some(value) => value,
-            None => {
-                error!("Attempted to begin a question at an index which doesn't exist");
-                return;
-            }
-        };
-        self.question_index = index;
-        self.send_all(ServerMessage::Question(question.clone()));
-        // Begin awaiting for ready messages
-        self.set_state(GameState::AwaitingReady);
-    }
-
-    /// Called after all the ready messages have been recieved from all the
-    /// clients
-    fn ready_question(&mut self, ctx: &mut Context<Self>) {
-        self.set_state(GameState::AwaitingAnswers);
-
-        let question = self.question();
-        self.delayed_task(
-            ctx,
-            Duration::from_millis(question.answer_time),
-            Self::mark_answers,
-        )
     }
 
     fn question(&self) -> Arc<Question> {
@@ -238,7 +283,7 @@ impl Game {
     }
 
     /// Task for marking the answers
-    fn mark_answers(&mut self, ctx: &mut Context<Self>) {
+    fn mark_answers(&mut self) {
         let question = self.question();
 
         let scoring = &question.scoring;
@@ -339,40 +384,13 @@ impl Game {
 
         // Update everyones scores
         self.update_scores();
-
-        // Wait the between question wait time then ask the next question
-        self.delayed_task(
-            ctx,
-            Duration::from_millis(self.config.timing.wait_time),
-            Self::next_question,
-        )
-    }
-
-    fn next_question(&mut self, ctx: &mut Context<Self>) {
-        if self.question_index + 1 < self.config.questions.len() {
-            self.question_index += 1;
-            self.begin_question(ctx, self.question_index);
-        } else {
-            self.set_state(GameState::Finished);
-        }
     }
 
     /// Resets the plaeyr ready states of all the players
     fn reset_ready(&mut self) {
-        for player in &mut self.players {
-            player.ready = false;
-        }
-    }
-
-    fn cancel_task(&mut self, ctx: &mut Context<Self>) {
-        if let Some(task) = self.task.take() {
-            task.cancel(ctx);
-        }
-    }
-
-    fn set_state(&mut self, state: GameState) {
-        self.state = state;
-        self.send_all(ServerMessage::GameState { state });
+        self.players
+            .iter_mut()
+            .for_each(|player| player.ready = false);
     }
 
     /// Send a message to all clients
@@ -390,7 +408,7 @@ impl Game {
     }
 
     fn update_scores(&self) {
-        let mut scores = HashMap::new();
+        let mut scores = HashMap::with_capacity(self.players.len());
         for player in &self.players {
             scores.insert(player.session_ref.id, player.score);
         }
@@ -401,7 +419,12 @@ impl Game {
 impl Actor for Game {
     type Context = Context<Self>;
 
-    fn started(&mut self, _ctx: &mut Self::Context) {}
+    fn started(&mut self, ctx: &mut Self::Context) {
+        const TICK_INTERVAL: Duration = Duration::from_millis(100);
+
+        // Run the tick function every 100ms
+        ctx.run_interval(TICK_INTERVAL, Self::tick);
+    }
 
     /// Handle stopping of a game actor
     fn stopped(&mut self, _ctx: &mut Self::Context) {
@@ -520,7 +543,7 @@ pub struct StartMessage {
 impl Handler<StartMessage> for Game {
     type Result = ();
 
-    fn handle(&mut self, msg: StartMessage, ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: StartMessage, _ctx: &mut Self::Context) -> Self::Result {
         let host = &self.host.session_ref;
 
         // Handle messages that aren't from the game host
@@ -529,9 +552,7 @@ impl Handler<StartMessage> for Game {
             return;
         }
 
-        self.set_state(GameState::Starting);
-        // Begin the start time
-        self.starting_task(ctx);
+        self.start();
     }
 }
 
@@ -547,15 +568,14 @@ pub struct CancelMessage {
 impl Handler<CancelMessage> for Game {
     type Result = ();
 
-    fn handle(&mut self, msg: CancelMessage, ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: CancelMessage, _ctx: &mut Self::Context) -> Self::Result {
         // Handle messages that aren't from the game host
         if self.host.session_ref.id != msg.session_ref.id {
             msg.session_ref.addr.do_send(ServerError::InvalidPermission);
             return;
         }
 
-        self.cancel_task(ctx);
-        self.set_state(GameState::Lobby);
+        self.reset_state();
     }
 }
 
@@ -569,14 +589,14 @@ pub struct SkipTimerMessage {
 impl Handler<SkipTimerMessage> for Game {
     type Result = ();
 
-    fn handle(&mut self, msg: SkipTimerMessage, ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: SkipTimerMessage, _ctx: &mut Self::Context) -> Self::Result {
         // Handle messages that aren't from the game host
         if self.host.session_ref.id != msg.session_ref.id {
             msg.session_ref.addr.do_send(ServerError::InvalidPermission);
             return;
         }
 
-        self.immediate_task(ctx);
+        self.skip_timer();
     }
 }
 
@@ -590,7 +610,7 @@ pub struct ReadyMessage {
 impl Handler<ReadyMessage> for Game {
     type Result = Result<(), ServerError>;
 
-    fn handle(&mut self, msg: ReadyMessage, ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: ReadyMessage, _ctx: &mut Self::Context) -> Self::Result {
         // Whether all players are ready
         let mut all_ready = true;
         let mut found_player = false;
@@ -608,7 +628,7 @@ impl Handler<ReadyMessage> for Game {
         }
 
         if all_ready {
-            self.ready_question(ctx);
+            self.all_ready();
         }
 
         Ok(())
