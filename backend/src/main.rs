@@ -1,4 +1,5 @@
-use actix_web::{App, HttpServer};
+use actix::Actor;
+use actix_web::{web::Data, App, HttpServer};
 use dotenvy::dotenv;
 use log::info;
 
@@ -19,14 +20,19 @@ async fn main() -> std::io::Result<()> {
     // Initialize logger
     env_logger::init();
 
-    // Initialize the global games state
-    Games::init();
+    // Create the games store
+    let games = Games::start_default();
+    let games = Data::new(games);
 
     let port = env::from_env(env::PORT);
+
     info!("Starting Quizler on port {}", port);
 
-    HttpServer::new(move || App::new().configure(http::configure))
-        .bind(("0.0.0.0", port))?
-        .run()
-        .await
+    HttpServer::new(move || {
+        let games = games.clone();
+        App::new().app_data(games).configure(http::configure)
+    })
+    .bind(("0.0.0.0", port))?
+    .run()
+    .await
 }

@@ -23,6 +23,8 @@ pub struct Session {
     pub id: SessionId,
     /// Address to the current game if apart of one
     pub game: Option<Addr<Game>>,
+    /// Address to the games store
+    pub games: Addr<Games>,
 }
 
 /// Reference to a session, contains the ID of the
@@ -205,12 +207,15 @@ impl Session {
         match message {
             // Handle initializing new games
             ClientMessage::Initialize { uuid } => {
-                self.async_message(Self::initialize(session_ref, uuid), ctx);
+                self.async_message(Self::initialize(self.games.clone(), session_ref, uuid), ctx);
             }
 
             // Handle try connect messages
             ClientMessage::Connect { token, username } => {
-                self.async_message(Self::try_connect(session_ref, token, username), ctx);
+                self.async_message(
+                    Self::try_connect(self.games.clone(), session_ref, token, username),
+                    ctx,
+                );
             }
 
             // Handle message to start game
@@ -305,8 +310,11 @@ impl Session {
         ctx.spawn(future);
     }
 
-    async fn initialize(session_ref: SessionRef, uuid: Uuid) -> Result<ServerMessage, ServerError> {
-        let games = Games::get();
+    async fn initialize(
+        games: Addr<Games>,
+        session_ref: SessionRef,
+        uuid: Uuid,
+    ) -> Result<ServerMessage, ServerError> {
         let msg: InitializedMessage = games
             .send(InitializeMessage { uuid, session_ref })
             .await
@@ -315,6 +323,7 @@ impl Session {
     }
 
     async fn try_connect(
+        games: Addr<Games>,
         session_ref: SessionRef,
         token: String,
         name: String,
@@ -326,7 +335,6 @@ impl Session {
         debug!("Attempting to connect to {} as {}", token, name);
 
         // Obtain a addr to the game
-        let games = Games::get();
         let game_addr = games
             .send(GetGameMessage { token })
             .await

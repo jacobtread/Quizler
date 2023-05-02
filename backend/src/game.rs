@@ -4,7 +4,7 @@ use crate::{
     session::{KickMessage, KickReason, ServerMessage, SessionId, SessionRef},
 };
 use actix::{
-    Actor, ActorContext, AsyncContext, Context, Handler, Message, MessageResult, SpawnHandle,
+    Actor, ActorContext, Addr, AsyncContext, Context, Handler, Message, MessageResult, SpawnHandle,
 };
 use bytes::Bytes;
 use log::error;
@@ -34,6 +34,8 @@ pub struct Game {
     question_index: usize,
     /// Game timer
     timer: GameTimer,
+    /// Address to the games manager
+    games: Addr<Games>,
 }
 
 pub struct GameTimer {
@@ -111,7 +113,12 @@ pub enum GameState {
 const TIMER_INTERVAL: Duration = Duration::from_millis(500);
 
 impl Game {
-    pub fn new(token: GameToken, host_ref: SessionRef, config: Arc<GameConfig>) -> Self {
+    pub fn new(
+        token: GameToken,
+        host_ref: SessionRef,
+        config: Arc<GameConfig>,
+        games: Addr<Games>,
+    ) -> Self {
         Self {
             token,
             host: HostSession {
@@ -123,6 +130,7 @@ impl Game {
             task: None,
             timer: GameTimer::new(),
             question_index: 0,
+            games,
         }
     }
 
@@ -400,8 +408,7 @@ impl Actor for Game {
     /// Handle stopping of a game actor
     fn stopped(&mut self, _ctx: &mut Self::Context) {
         // Remove the game from the list of games
-        let games = Games::get();
-        games.do_send(RemoveGameMessage { token: self.token });
+        self.games.do_send(RemoveGameMessage { token: self.token });
 
         // Tell all the players they've been kicked
         for player in &self.players {

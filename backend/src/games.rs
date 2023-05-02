@@ -3,7 +3,7 @@ use crate::{
     game::{Game, GameConfig},
     session::SessionRef,
 };
-use actix::{Actor, Addr, Context, Handler, Message, MessageResult};
+use actix::{Actor, Addr, AsyncContext, Context, Handler, Message, MessageResult};
 use rand_core::{OsRng, RngCore};
 use serde::Serialize;
 use std::{collections::HashMap, fmt::Display, str::FromStr, sync::Arc};
@@ -17,20 +17,6 @@ pub struct Games {
     games: HashMap<GameToken, Addr<Game>>,
     /// Map of UUID's to game configurations that are preparing to start
     preparing: HashMap<Uuid, GameConfig>,
-}
-
-/// Static global state for Games pre initialization
-static mut GAMES: Option<Addr<Games>> = None;
-
-impl Games {
-    pub fn init() {
-        let this = Self::start_default();
-        unsafe { GAMES = Some(this) }
-    }
-
-    pub fn get() -> &'static Addr<Games> {
-        unsafe { GAMES.as_ref().expect("Games not initialized yet") }
-    }
 }
 
 impl Actor for Games {
@@ -162,7 +148,7 @@ pub struct InitializedMessage {
 impl Handler<InitializeMessage> for Games {
     type Result = MessageResult<InitializeMessage>;
 
-    fn handle(&mut self, msg: InitializeMessage, _ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: InitializeMessage, ctx: &mut Self::Context) -> Self::Result {
         // Find the config data from the pre init list
         let config = match self.preparing.remove(&msg.uuid) {
             Some(value) => Arc::new(value),
@@ -172,7 +158,7 @@ impl Handler<InitializeMessage> for Games {
         // Create a new game token
         let token = GameToken::unique_token(&self.games);
 
-        let game = Game::new(token, msg.session_ref, config.clone()).start();
+        let game = Game::new(token, msg.session_ref, config.clone(), ctx.address()).start();
         self.games.insert(token, game);
 
         MessageResult(Ok(InitializedMessage {

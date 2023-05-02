@@ -1,9 +1,10 @@
+use actix::Addr;
 use actix_multipart::{Multipart, MultipartError};
 use actix_web::{
     get,
     http::StatusCode,
     post,
-    web::{self, ServiceConfig},
+    web::{self, Data, ServiceConfig},
     HttpRequest, HttpResponse, Responder, ResponseError,
 };
 use actix_web_actors::ws::{self};
@@ -83,7 +84,10 @@ struct QuizCreated {
 
 /// Endpoint for creating a new quiz
 #[post("/api/quiz")]
-async fn create_quiz(mut payload: Multipart) -> Result<impl Responder, CreateError> {
+async fn create_quiz(
+    mut payload: Multipart,
+    games: Data<Addr<Games>>,
+) -> Result<impl Responder, CreateError> {
     // Configuration data
     let mut config: Option<GameConfigUpload> = None;
     // Map of stored uploaded images
@@ -141,8 +145,6 @@ async fn create_quiz(mut payload: Multipart) -> Result<impl Responder, CreateErr
         images,
     };
 
-    let games = Games::get();
-
     let uuid = games
         .send(PrepareGameMessage { config })
         .await
@@ -168,10 +170,12 @@ impl ResponseError for ImageError {
 }
 
 #[get("/api/quiz/{token}/{image}")]
-async fn quiz_image(path: web::Path<(String, Uuid)>) -> Result<impl Responder, ImageError> {
+async fn quiz_image(
+    path: web::Path<(String, Uuid)>,
+    games: Data<Addr<Games>>,
+) -> Result<impl Responder, ImageError> {
     let (token, uuid) = path.into_inner();
     let token: GameToken = token.parse().unwrap();
-    let games = Games::get();
 
     let game = games
         .send(GetGameMessage { token })
@@ -194,12 +198,15 @@ static SESSION_ID: AtomicU32 = AtomicU32::new(0);
 async fn quiz_socket(
     req: HttpRequest,
     stream: web::Payload,
+    games: Data<Addr<Games>>,
 ) -> Result<impl Responder, actix_web::Error> {
     let session_id = SESSION_ID.fetch_add(1, Ordering::AcqRel);
     ws::start(
         Session {
             id: session_id,
             game: None,
+            // Take refernece to the games addr
+            games: games.get_ref().clone(),
         },
         &req,
         stream,
