@@ -1,11 +1,11 @@
 use crate::{
-    error::ServerError,
     game::{
-        ConnectMessage, Game, GameConfig, GameState, HostActionMessage, PlayerAnswerMessage,
-        PlayerGameConfig, ReadyMessage, RemovePlayerMessage, TimeSync,
+        ConnectMessage, Game, HostActionMessage, PlayerAnswerMessage, ReadyMessage,
+        RemovePlayerMessage,
     },
     games::{GameToken, Games, GetGameMessage, InitializeMessage},
-    types::{Answer, Question},
+    msg::{ClientMessage, ServerMessage},
+    types::{KickReason, ServerError},
 };
 use actix::{
     Actor, ActorContext, ActorFutureExt, Addr, AsyncContext, Handler, Message, StreamHandler,
@@ -13,9 +13,8 @@ use actix::{
 };
 use actix_web_actors::ws;
 use log::{debug, error, info};
-use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, sync::Arc};
-use uuid::Uuid;
+use serde::Serialize;
+use std::sync::Arc;
 
 /// Type alias for numbers that represent Session ID's
 pub type SessionId = u32;
@@ -27,95 +26,6 @@ pub struct Session {
     pub game: Option<Addr<Game>>,
     /// Address to the games store
     pub games: Addr<Games>,
-}
-
-/// Messages recieved from the client
-#[derive(Deserialize)]
-#[serde(tag = "ty")]
-pub enum ClientMessage {
-    // Message to initialize the desired game as a host
-    Initialize {
-        /// The UUID of the game to initialize
-        uuid: Uuid,
-    },
-    // Message to connect self to the game with the associated ID
-    Connect {
-        // The game token to try and connect to (e.g. W2133)
-        token: String,
-        // The username to try and connect with
-        name: String,
-    },
-    /// Message indicating the client is ready to play
-    ///
-    /// (This is done internally by clients once everything has been loaded)
-    Ready,
-    /// Message for actions from the host session
-    HostAction { action: HostAction },
-    /// Message to answer the question
-    Answer(Answer),
-    /// Message for the host to kick a player from the game
-    Kick {
-        /// The ID of the player to kick
-        id: SessionId,
-    },
-}
-
-/// Actions that can be executed by the host
-/// session of a game
-
-#[derive(Debug, Copy, Clone, Deserialize)]
-#[repr(u8)]
-pub enum HostAction {
-    /// Begin the starting process
-    Start = 0x1,
-    /// Cancel the starting process
-    Cancel = 0x2,
-    /// Skip the current waiting timer state
-    Skip = 0x3,
-}
-
-/// Messages sent by the server
-#[derive(Message, Serialize)]
-#[rtype(result = "()")]
-#[serde(tag = "ty")]
-pub enum ServerMessage {
-    /// Message sent to the host after they've initialized
-    /// a game
-    Initialized {
-        /// The uniquely generated game token (e.g A3DLM)
-        token: GameToken,
-        /// The full game config to be used while playing
-        config: Arc<GameConfig>,
-    },
-    /// Message indicating a complete successful connection
-    Connected {
-        /// The session ID
-        id: SessionId,
-        /// The uniquely generated game token (e.g A3DLM)
-        token: GameToken,
-        /// Copy of the game configuration to send back
-        config: PlayerGameConfig,
-    },
-    /// Message providing information about another player in
-    /// the game
-    OtherPlayer { id: SessionId, name: String },
-    /// Message indicating the current state of the game
-    GameState { state: GameState },
-    /// Message for syncing the time between the game and clients
-    TimeSync(TimeSync),
-    /// Question data for the next question
-    Question(Arc<Question>),
-    /// Updates the player scores with the new scores
-    Scores { scores: HashMap<SessionId, u32> },
-    /// Server error
-    Error { error: ServerError },
-    /// Player has been kicked from the game
-    Kicked {
-        /// The ID of the player that was kicked
-        session_id: SessionId,
-        /// The reason the player was kicked
-        reason: KickReason,
-    },
 }
 
 /// Message send to sessions to inform them that they've
@@ -135,18 +45,6 @@ impl Handler<KickMessage> for Session {
         // Session is stopped now that they aren't in a game
         ctx.stop();
     }
-}
-
-#[derive(Message, Debug, Copy, Clone, Serialize)]
-#[rtype(result = "()")]
-#[repr(u8)]
-pub enum KickReason {
-    /// Player was manually kicked by the host
-    RemovedByHost = 0x1,
-    /// The host diconnected ending the game
-    HostDisconnect = 0x2,
-    /// Connection was lost to the player
-    LostConnection = 0x3,
 }
 
 impl Actor for Session {

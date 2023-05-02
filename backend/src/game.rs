@@ -1,11 +1,14 @@
 use crate::{
-    error::ServerError,
     games::{GameToken, Games, RemoveGameMessage},
-    session::{HostAction, KickMessage, KickReason, ServerMessage, Session, SessionId},
-    types::{Answer, AnswerData, Image, ImageRef, Question, QuestionData, Score},
+    msg::ServerMessage,
+    session::{KickMessage, Session, SessionId},
+    types::{
+        Answer, AnswerData, HostAction, Image, ImageRef, KickReason, PlayerGameConfig, Question,
+        QuestionData, Score, ServerError,
+    },
 };
 use actix::{Actor, ActorContext, Addr, AsyncContext, Context, Handler, Message};
-use serde::{ser::SerializeStruct, Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     sync::Arc,
@@ -783,24 +786,6 @@ pub struct GameConfig {
     /// image data
     #[serde(skip)]
     pub images: HashMap<ImageRef, Image>,
-}
-
-/// Serializable verison of the reference counted game config
-/// that only serializes the parts that should be visible to
-/// non host users (only "basic")
-#[derive(Clone)]
-pub struct PlayerGameConfig(Arc<GameConfig>);
-
-impl Serialize for PlayerGameConfig {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        let mut stru = serializer.serialize_struct("GameConfig", 2)?;
-        let this = &*self.0;
-        stru.serialize_field("basic", &this.basic)?;
-        stru.end()
-    }
 }
 
 #[derive(Serialize, Deserialize)]

@@ -1,7 +1,7 @@
 use crate::{
-    error::ServerError,
     game::{Game, GameConfig},
     session::{Session, SessionId},
+    types::ServerError,
 };
 use actix::{Actor, Addr, AsyncContext, Context, Handler, Message, MessageResult};
 use rand_core::{OsRng, RngCore};

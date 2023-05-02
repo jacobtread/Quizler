@@ -1,9 +1,61 @@
-use std::time::Duration;
-
+use crate::game::GameConfig;
+use actix::Message;
 use bytes::Bytes;
 use mime::Mime;
-use serde::{Deserialize, Serialize};
+use serde::{ser::SerializeStruct, Deserialize, Serialize};
+use std::{sync::Arc, time::Duration};
 use uuid::Uuid;
+
+#[derive(Message, Debug, Copy, Clone, Serialize)]
+#[rtype(result = "()")]
+#[repr(u8)]
+pub enum ServerError {
+    /// The last proivded message was malformed
+    MalformedMessage = 0x0,
+    /// The provided token didn't match up to any game
+    InvalidToken = 0x1,
+    /// The provided username is already in use
+    UsernameTaken = 0x2,
+    /// The game is already started or finish so cannot be joined
+    NotJoinable = 0x3,
+    /// An action was attempting on a player that wasnt found
+    UnknownPlayer = 0x4,
+    /// Something unexpected went wrong on the server
+    Unexpected = 0x5,
+    /// Didn't have permission to complete that action
+    InvalidPermission = 0x6,
+    /// Message was recieved but wasn't expected at the current
+    /// state
+    UnexpectedMessage = 0x7,
+    /// Already provided an answer
+    AlreadyAnswered = 0x8,
+    /// Provided answer is not valid for the type of question
+    InvalidAnswer = 0x9,
+}
+
+/// Actions that can be executed by the host
+/// session of a game
+#[derive(Debug, Copy, Clone, Deserialize)]
+#[repr(u8)]
+pub enum HostAction {
+    /// Begin the starting process
+    Start = 0x1,
+    /// Cancel the starting process
+    Cancel = 0x2,
+    /// Skip the current waiting timer state
+    Skip = 0x3,
+}
+
+#[derive(Debug, Copy, Clone, Serialize)]
+#[repr(u8)]
+pub enum KickReason {
+    /// Player was manually kicked by the host
+    RemovedByHost = 0x1,
+    /// The host diconnected ending the game
+    HostDisconnect = 0x2,
+    /// Connection was lost to the player
+    LostConnection = 0x3,
+}
 
 /// Type alias for UUIDs used to represent image references
 pub type ImageRef = Uuid;
@@ -157,5 +209,23 @@ impl Score {
             Self::Correct(value) | Self::Partial(value) => *value,
             Self::Incorrect => 0,
         }
+    }
+}
+
+/// Serializable verison of the reference counted game config
+/// that only serializes the parts that should be visible to
+/// non host users (only "basic")
+#[derive(Clone)]
+pub struct PlayerGameConfig(pub Arc<GameConfig>);
+
+impl Serialize for PlayerGameConfig {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let mut stru = serializer.serialize_struct("GameConfig", 2)?;
+        let this = &*self.0;
+        stru.serialize_field("basic", &this.basic)?;
+        stru.end()
     }
 }

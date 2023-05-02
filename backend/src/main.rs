@@ -4,10 +4,10 @@ use actix_web::{web::Data, App, HttpServer};
 use dotenvy::dotenv;
 use log::info;
 
-mod error;
 mod game;
 mod games;
 mod http;
+mod msg;
 mod session;
 mod types;
 
