@@ -51,7 +51,7 @@ pub enum ClientMessage {
         // The game token to try and connect to (e.g. W2133)
         token: String,
         // The username to try and connect with
-        username: String,
+        name: String,
     },
 
     /// Message indicating the client is ready to play
@@ -215,18 +215,68 @@ impl Session {
                     return Err(ServerError::UnexpectedMessage);
                 }
 
-                self.async_message(Self::initialize(self.games.clone(), session_ref, uuid), ctx);
+                // Spawn the initialization task
+                ctx.spawn(
+                    self.games
+                        // Send the initliaze message
+                        .send(InitializeMessage { uuid, session_ref })
+                        .into_actor(self)
+                        .map(|msg, act, ctx| {
+                            // Handle games service being stopped
+                            let result = msg.expect("Games service was not running");
+
+                            // Transform the output message
+                            let msg = match result {
+                                Ok(msg) => ServerMessage::Initialized(msg),
+                                Err(error) => ServerMessage::Error { error },
+                            };
+
+                            // Write the response
+                            Self::write_message(ctx, &msg);
+                        }),
+                );
             }
 
             // Handle try connect messages
-            ClientMessage::Connect { token, username } => {
+            ClientMessage::Connect { token, name } => {
                 if self.game.is_some() {
                     return Err(ServerError::UnexpectedMessage);
                 }
 
-                self.async_message(
-                    Self::try_connect(self.games.clone(), session_ref, token, username),
-                    ctx,
+                let games = self.games.clone();
+
+                // Spawn the connect task
+                ctx.spawn(
+                    async move {
+                        // Parse the token
+                        let token: GameToken = token.parse()?;
+
+                        // Attempting to connect to AED32E as Jacob
+                        debug!("Attempting to connect to {} as {}", token, name);
+
+                        // Obtain a addr to the game
+                        let game_addr = games
+                            .send(GetGameMessage { token })
+                            .await
+                            .expect("Games service was stopped")
+                            .ok_or(ServerError::InvalidToken)?;
+                        // Attempt the connection
+                        game_addr
+                            .send(ConnectMessage { session_ref, name })
+                            .await
+                            .map_err(|_| ServerError::InvalidToken)?
+                    }
+                    .into_actor(self)
+                    .map(|result, act, ctx| {
+                        // Transform the output message
+                        let msg = match result {
+                            Ok(msg) => ServerMessage::Connected(msg),
+                            Err(error) => ServerMessage::Error { error },
+                        };
+
+                        // Write the response
+                        Self::write_message(ctx, &msg);
+                    }),
                 );
             }
 
@@ -268,64 +318,6 @@ impl Session {
             }
         }
         Ok(())
-    }
-
-    fn async_message<F>(&self, future: F, ctx: &mut SessionContext)
-    where
-        F: Future<Output = Result<ServerMessage, ServerError>> + 'static,
-    {
-        let future = future.into_actor(self).map(|result, _act, ctx| {
-            // Handle error cases
-            let msg = match result {
-                Ok(msg) => msg,
-                Err(error) => ServerMessage::Error { error },
-            };
-
-            // Write the response
-            Self::write_message(ctx, &msg);
-        });
-
-        ctx.spawn(future);
-    }
-
-    async fn initialize(
-        games: Addr<Games>,
-        session_ref: SessionRef,
-        uuid: Uuid,
-    ) -> Result<ServerMessage, ServerError> {
-        let msg: InitializedMessage = games
-            .send(InitializeMessage { uuid, session_ref })
-            .await
-            .expect("Games service was stopped")?;
-        Ok(ServerMessage::Initialized(msg))
-    }
-
-    async fn try_connect(
-        games: Addr<Games>,
-        session_ref: SessionRef,
-        token: String,
-        name: String,
-    ) -> Result<ServerMessage, ServerError> {
-        // Parse the token
-        let token: GameToken = token.parse()?;
-
-        // Attempting to connect to AED32E as Jacob
-        debug!("Attempting to connect to {} as {}", token, name);
-
-        // Obtain a addr to the game
-        let game_addr = games
-            .send(GetGameMessage { token })
-            .await
-            .expect("Games service was stopped")
-            .ok_or(ServerError::InvalidToken)?;
-
-        // Attempt the connection
-        let msg: ConnectedMessage = game_addr
-            .send(ConnectMessage { session_ref, name })
-            .await
-            .map_err(|_| ServerError::InvalidToken)??;
-
-        Ok(ServerMessage::Connected(msg))
     }
 }
 
