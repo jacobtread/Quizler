@@ -103,7 +103,7 @@ pub enum ServerMessage {
     OtherPlayer { id: SessionId, name: String },
 
     /// Message indicating the current state of the game
-    GameState(GameState),
+    GameState { state: GameState },
 
     /// Message for syncing the time between the game and clients
     TimeSync {

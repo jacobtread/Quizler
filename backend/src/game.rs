@@ -372,7 +372,7 @@ impl Game {
 
     fn set_state(&mut self, state: GameState) {
         self.state = state;
-        self.send_all(ServerMessage::GameState(state));
+        self.send_all(ServerMessage::GameState { state });
     }
 
     /// Send a message to all clients
@@ -845,6 +845,7 @@ pub struct Question {
 }
 
 #[derive(Deserialize)]
+#[serde(tag = "ty")]
 pub enum QuestionAnswer {
     Single { answer: usize },
     Multiple { answers: Vec<usize> },
@@ -862,6 +863,7 @@ impl QuestionAnswer {
 }
 
 #[derive(Serialize, Clone, Copy)]
+#[serde(tag = "ty", content = "value")]
 pub enum AnswerResult {
     // Answer was 100% correct
     Correct(u32),
