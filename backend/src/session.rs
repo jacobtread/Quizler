@@ -29,15 +29,6 @@ pub struct Session {
     pub games: Addr<Games>,
 }
 
-/// Reference to a session, contains the ID of the
-/// session along with the session addr
-pub struct SessionRef {
-    /// The ID of the referenced session
-    pub id: SessionId,
-    /// The addr to the session
-    pub addr: Addr<Session>,
-}
-
 /// Messages recieved from the client
 #[derive(Deserialize)]
 #[serde(tag = "ty")]
@@ -168,7 +159,7 @@ impl Actor for Session {
         if let Some(game) = self.game.take() {
             // Inform game to remove self
             game.do_send(RemovePlayerMessage {
-                session_ref: None,
+                session_id: self.id,
                 target_id: self.id,
                 reason: KickReason::LostConnection,
             });
@@ -208,12 +199,6 @@ impl Session {
         message: ClientMessage,
         ctx: &mut SessionContext,
     ) -> Result<(), ServerError> {
-        // Create a reference to the session
-        let session_ref = SessionRef {
-            id: self.id,
-            addr: ctx.address(),
-        };
-
         match message {
             // Handle initializing new games
             ClientMessage::Initialize { uuid } => {
@@ -225,7 +210,11 @@ impl Session {
                 ctx.spawn(
                     self.games
                         // Send the initliaze message
-                        .send(InitializeMessage { uuid, session_ref })
+                        .send(InitializeMessage {
+                            uuid,
+                            id: self.id,
+                            addr: ctx.address(),
+                        })
                         .into_actor(self)
                         .map(|msg, act, ctx| {
                             // Handle games service being stopped
@@ -255,6 +244,9 @@ impl Session {
                     return Err(ServerError::UnexpectedMessage);
                 }
 
+                let id = self.id;
+                let addr = ctx.address();
+
                 let games = self.games.clone();
 
                 // Spawn the connect task
@@ -274,7 +266,7 @@ impl Session {
                             .ok_or(ServerError::InvalidToken)?;
                         // Attempt the connection
                         game_addr
-                            .send(ConnectMessage { session_ref, name })
+                            .send(ConnectMessage { id, addr, name })
                             .await
                             .map_err(|_| ServerError::InvalidToken)?
                     }
@@ -303,13 +295,17 @@ impl Session {
             // Handle message to start game
             ClientMessage::Start => {
                 let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
-                game.do_send(StartMessage { session_ref });
+                game.do_send(StartMessage {
+                    session_id: self.id,
+                });
             }
 
             // Handle message to cancel starting game
             ClientMessage::Cancel => {
                 let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
-                game.do_send(CancelMessage { session_ref });
+                game.do_send(CancelMessage {
+                    session_id: self.id,
+                });
             }
 
             // Handle message for an answer to the current question
@@ -320,7 +316,7 @@ impl Session {
                     game
                         // Send the initliaze message
                         .send(PlayerAnswerMessage {
-                            session_ref,
+                            session_id: self.id,
                             answer,
                         })
                         .into_actor(self)
@@ -344,7 +340,7 @@ impl Session {
             ClientMessage::Kick { id } => {
                 let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
                 game.do_send(RemovePlayerMessage {
-                    session_ref: Some(session_ref),
+                    session_id: self.id,
                     target_id: id,
                     reason: KickReason::RemovedByHost,
                 });
@@ -353,13 +349,15 @@ impl Session {
             // Handle message for skipping the current question
             ClientMessage::Skip => {
                 let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
-                game.do_send(SkipTimerMessage { session_ref });
+                game.do_send(SkipTimerMessage {
+                    session_id: self.id,
+                });
             }
 
             // Handle client ready messages
             ClientMessage::Ready => {
                 let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
-                game.do_send(ReadyMessage { id: session_ref.id });
+                game.do_send(ReadyMessage { id: self.id });
             }
         }
         Ok(())

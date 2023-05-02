@@ -1,7 +1,7 @@
 use crate::{
     error::ServerError,
     games::{GameToken, Games, RemoveGameMessage},
-    session::{KickMessage, KickReason, ServerMessage, SessionId, SessionRef},
+    session::{KickMessage, KickReason, ServerMessage, Session, SessionId},
     types::{Answer, AnswerData, Image, ImageRef, Question, QuestionData, Score},
 };
 use actix::{Actor, ActorContext, Addr, AsyncContext, Context, Handler, Message};
@@ -134,15 +134,14 @@ impl Game {
     /// Creates a new game instance
     pub fn new(
         token: GameToken,
-        host_ref: SessionRef,
+        host_id: SessionId,
+        host_addr: Addr<Session>,
         config: Arc<GameConfig>,
         games: Addr<Games>,
     ) -> Self {
         Self {
             token,
-            host: HostSession {
-                session_ref: host_ref,
-            },
+            host: HostSession::new(host_id, host_addr),
             players: Default::default(),
             config,
             state: GameState::Lobby,
@@ -203,11 +202,11 @@ impl Game {
 
         // Send the message to all the players
         for player in &self.players {
-            player.session_ref.addr.do_send(message.clone());
+            player.addr.do_send(message.clone());
         }
 
         // Send the message to the host
-        self.host.session_ref.addr.do_send(message);
+        self.host.addr.do_send(message);
     }
 
     /// Syncronizes the timers between the clients and the server
@@ -330,7 +329,7 @@ impl Game {
             player.score += score.value();
             player.results.push(score);
 
-            scores.insert(player.session_ref.id, player.score);
+            scores.insert(player.id, player.score);
         }
 
         // Update everyones scores
@@ -447,13 +446,13 @@ impl Actor for Game {
         // Tell all the players they've been kicked
         for player in &self.players {
             // Send the visual kick message
-            player.session_ref.addr.do_send(ServerMessage::Kicked {
-                session_id: player.session_ref.id,
+            player.addr.do_send(ServerMessage::Kicked {
+                session_id: player.id,
                 reason: KickReason::HostDisconnect,
             });
 
             // Notify the session that its been kicked
-            player.session_ref.addr.do_send(KickMessage);
+            player.addr.do_send(KickMessage);
         }
     }
 }
@@ -462,8 +461,10 @@ impl Actor for Game {
 #[derive(Message)]
 #[rtype(result = "Result<ConnectedMessage, ServerError>")]
 pub struct ConnectMessage {
-    /// Reference to the session trying to connect
-    pub session_ref: SessionRef,
+    /// The session ID of the session trying to connect
+    pub id: SessionId,
+    /// The address of the session connecting
+    pub addr: Addr<Session>,
     /// The name for the connecting player
     pub name: String,
 }
@@ -484,9 +485,9 @@ impl Handler<ConnectMessage> for Game {
     type Result = Result<ConnectedMessage, ServerError>;
 
     fn handle(&mut self, msg: ConnectMessage, ctx: &mut Self::Context) -> Self::Result {
-        match self.state {
-            GameState::Lobby | GameState::Starting => {}
-            _ => return Err(ServerError::NotJoinable),
+        // Cannot join games that are already started or finished
+        if !matches!(self.state, GameState::Lobby | GameState::Starting) {
+            return Err(ServerError::NotJoinable);
         }
 
         // Error if username is already taken
@@ -499,47 +500,34 @@ impl Handler<ConnectMessage> for Game {
             return Err(ServerError::UsernameTaken);
         }
 
-        // Initialize the empty answers list
-        let answers = vec![None; self.config.questions.len()];
-
-        let game_player = PlayerSession {
-            name: msg.name,
-            session_ref: msg.session_ref,
-            ready: false,
-            answers,
-            results: Vec::new(),
-            score: 0,
-        };
+        // Create the player
+        let game_player =
+            PlayerSession::new(msg.id, msg.addr, msg.name, self.config.questions.len());
 
         // Message sent to existing players for this player
         let joiner_message = Arc::new(ServerMessage::OtherPlayer {
-            id: game_player.session_ref.id,
+            id: game_player.id,
             name: game_player.name.clone(),
         });
 
         // Notify all players of the existence of eachother
         for player in &self.players {
-            player.session_ref.addr.do_send(joiner_message.clone());
+            player.addr.do_send(joiner_message.clone());
 
             // Message describing the other player
-            game_player
-                .session_ref
-                .addr
-                .do_send(ServerMessage::OtherPlayer {
-                    id: player.session_ref.id,
-                    name: player.name.clone(),
-                });
+            game_player.addr.do_send(ServerMessage::OtherPlayer {
+                id: player.id,
+                name: player.name.clone(),
+            });
         }
 
         // Notify the host of the join
-        self.host.session_ref.addr.do_send(joiner_message);
-
-        let id = game_player.session_ref.id;
+        self.host.addr.do_send(joiner_message);
 
         self.players.push(game_player);
 
         Ok(ConnectedMessage {
-            id,
+            id: msg.id,
             token: self.token,
             config: PlayerGameConfig(self.config.clone()),
             game: ctx.address(),
@@ -549,105 +537,97 @@ impl Handler<ConnectMessage> for Game {
 
 /// Message from the host to start the game
 #[derive(Message)]
-#[rtype(result = "()")]
+#[rtype(result = "Result<(), ServerError>")]
 pub struct StartMessage {
     /// The session reference who is attempting
     /// to start the game
-    pub session_ref: SessionRef,
+    pub session_id: SessionId,
 }
 
 impl Handler<StartMessage> for Game {
-    type Result = ();
+    type Result = Result<(), ServerError>;
 
     fn handle(&mut self, msg: StartMessage, _ctx: &mut Self::Context) -> Self::Result {
-        let host = &self.host.session_ref;
-
         // Handle messages that aren't from the game host
-        if host.id != msg.session_ref.id {
-            msg.session_ref.addr.do_send(ServerError::InvalidPermission);
-            return;
+        if self.host.id != msg.session_id {
+            return Err(ServerError::InvalidPermission);
         }
 
         self.start();
+
+        Ok(())
     }
 }
 
 /// Message from the host to cancel starting the game
 #[derive(Message)]
-#[rtype(result = "()")]
+#[rtype(result = "Result<(), ServerError>")]
 pub struct CancelMessage {
     /// The session reference who is attempting to
     /// cancel starting the game
-    pub session_ref: SessionRef,
+    pub session_id: SessionId,
 }
 
 impl Handler<CancelMessage> for Game {
-    type Result = ();
+    type Result = Result<(), ServerError>;
 
     fn handle(&mut self, msg: CancelMessage, _ctx: &mut Self::Context) -> Self::Result {
         // Handle messages that aren't from the game host
-        if self.host.session_ref.id != msg.session_ref.id {
-            msg.session_ref.addr.do_send(ServerError::InvalidPermission);
-            return;
+        if self.host.id != msg.session_id {
+            return Err(ServerError::InvalidPermission);
         }
 
         self.reset_state();
+        Ok(())
     }
 }
 
 /// Message to skip the current timer
 #[derive(Message)]
-#[rtype(result = "()")]
+#[rtype(result = "Result<(), ServerError>")]
 pub struct SkipTimerMessage {
-    pub session_ref: SessionRef,
+    pub session_id: SessionId,
 }
 
 impl Handler<SkipTimerMessage> for Game {
-    type Result = ();
+    type Result = Result<(), ServerError>;
 
     fn handle(&mut self, msg: SkipTimerMessage, _ctx: &mut Self::Context) -> Self::Result {
         // Handle messages that aren't from the game host
-        if self.host.session_ref.id != msg.session_ref.id {
-            msg.session_ref.addr.do_send(ServerError::InvalidPermission);
-            return;
+        if self.host.id != msg.session_id {
+            return Err(ServerError::InvalidPermission);
         }
 
         self.skip_timer();
+        Ok(())
     }
 }
 
 /// Request to inform that a player is ready
 #[derive(Message)]
-#[rtype(result = "Result<(), ServerError>")]
+#[rtype(result = "()")]
 pub struct ReadyMessage {
     pub id: SessionId,
 }
 
 impl Handler<ReadyMessage> for Game {
-    type Result = Result<(), ServerError>;
+    type Result = ();
 
     fn handle(&mut self, msg: ReadyMessage, _ctx: &mut Self::Context) -> Self::Result {
         // Whether all players are ready
         let mut all_ready = true;
-        let mut found_player = false;
+
         for player in &mut self.players {
-            if player.session_ref.id == msg.id {
+            if player.id == msg.id {
                 player.ready = true;
-                found_player = true;
             } else if !player.ready {
                 all_ready = false;
             }
         }
 
-        if !found_player {
-            return Err(ServerError::UnknownPlayer);
-        }
-
         if all_ready {
             self.all_ready();
         }
-
-        Ok(())
     }
 }
 
@@ -668,11 +648,11 @@ impl Handler<GetImageMessage> for Game {
 
 /// Message asking to remove a player from the game
 #[derive(Message)]
-#[rtype(result = "()")]
+#[rtype(result = "Result<(), ServerError>")]
 pub struct RemovePlayerMessage {
     /// Reference of who is attempting to remove the player
     /// (Unless the server is removing)
-    pub session_ref: Option<SessionRef>,
+    pub session_id: SessionId,
     /// The ID of the player to remove
     pub target_id: SessionId,
     /// Reason for the player removal (Sent to clients)
@@ -680,22 +660,19 @@ pub struct RemovePlayerMessage {
 }
 
 impl Handler<RemovePlayerMessage> for Game {
-    type Result = ();
+    type Result = Result<(), ServerError>;
 
     fn handle(&mut self, msg: RemovePlayerMessage, ctx: &mut Self::Context) -> Self::Result {
-        if let Some(session_ref) = &msg.session_ref {
-            // Handle messages that aren't from the game host
-            if self.host.session_ref.id != session_ref.id {
-                session_ref.addr.do_send(ServerError::InvalidPermission);
-                return;
-            }
+        // Handle messages that aren't from the game host
+        if self.host.id != msg.session_id {
+            return Err(ServerError::InvalidPermission);
+        }
 
-            // Host is removing itself (Game is stopping)
-            if msg.target_id == session_ref.id {
-                // Stop the game
-                ctx.stop();
-                return;
-            }
+        // Host is removing itself (Game is stopping)
+        if msg.target_id == self.host.id {
+            // Stop the game
+            ctx.stop();
+            return Ok(());
         }
 
         let kick_msg = Arc::new(ServerMessage::Kicked {
@@ -706,32 +683,24 @@ impl Handler<RemovePlayerMessage> for Game {
         // Inform each player of the removal
         self.players
             .iter()
-            .for_each(|player| player.session_ref.addr.do_send(kick_msg.clone()));
+            .for_each(|player| player.addr.do_send(kick_msg.clone()));
 
         // Inform the host of the player removal
-        self.host.session_ref.addr.do_send(kick_msg.clone());
+        self.host.addr.do_send(kick_msg.clone());
 
         // Find the player position
         let index = self
             .players
             .iter()
-            .position(|player| player.session_ref.id == msg.target_id);
-
-        let index = match index {
-            Some(value) => value,
-            None => {
-                // Send the error message to the return addr
-                if let Some(session_ref) = msg.session_ref {
-                    session_ref.addr.do_send(ServerError::UnknownPlayer);
-                }
-                return;
-            }
-        };
+            .position(|player| player.id == msg.target_id)
+            .ok_or(ServerError::UnknownPlayer)?;
 
         // Remove the player
         let target = self.players.remove(index);
         // Tell the session itself that its been kicked
-        target.session_ref.addr.do_send(KickMessage);
+        target.addr.do_send(KickMessage);
+
+        Ok(())
     }
 }
 
@@ -740,7 +709,7 @@ impl Handler<RemovePlayerMessage> for Game {
 #[rtype(result = "Result<(), ServerError>")]
 pub struct PlayerAnswerMessage {
     /// Reference of the session that is answering
-    pub session_ref: SessionRef,
+    pub session_id: SessionId,
     /// Answer to the question
     pub answer: Answer,
 }
@@ -767,7 +736,7 @@ impl Handler<PlayerAnswerMessage> for Game {
         let player = self
             .players
             .iter_mut()
-            .find(|player| player.session_ref.id == msg.session_ref.id)
+            .find(|player| player.id == msg.session_id)
             .ok_or(ServerError::UnknownPlayer)?;
 
         // Ensure the player hasn't already answered
@@ -791,13 +760,24 @@ impl Handler<PlayerAnswerMessage> for Game {
 }
 
 pub struct HostSession {
-    /// Reference to the session
-    session_ref: SessionRef,
+    /// The ID of the referenced session
+    id: SessionId,
+    /// The addr to the session
+    addr: Addr<Session>,
+}
+
+impl HostSession {
+    pub fn new(id: SessionId, addr: Addr<Session>) -> Self {
+        Self { id, addr }
+    }
 }
 
 pub struct PlayerSession {
-    /// Reference to the session
-    session_ref: SessionRef,
+    /// The ID of the referenced session
+    id: SessionId,
+    /// The addr to the session
+    addr: Addr<Session>,
+
     /// The player name
     name: String,
     /// The player ready state
@@ -808,6 +788,23 @@ pub struct PlayerSession {
     results: Vec<Score>,
     /// The player total score
     score: u32,
+}
+
+impl PlayerSession {
+    pub fn new(id: SessionId, addr: Addr<Session>, name: String, question_len: usize) -> Self {
+        // Initialize the empty answers list
+        let answers = vec![None; question_len];
+
+        Self {
+            id,
+            addr,
+            name,
+            ready: false,
+            answers,
+            results: Vec::new(),
+            score: 0,
+        }
+    }
 }
 
 /// Configuration data for a game

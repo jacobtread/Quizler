@@ -1,7 +1,7 @@
 use crate::{
     error::ServerError,
     game::{Game, GameConfig},
-    session::SessionRef,
+    session::{Session, SessionId},
 };
 use actix::{Actor, Addr, AsyncContext, Context, Handler, Message, MessageResult};
 use rand_core::{OsRng, RngCore};
@@ -131,8 +131,10 @@ impl Handler<PrepareGameMessage> for Games {
 pub struct InitializeMessage {
     /// The UUID of the prepared game configuration to start
     pub uuid: Uuid,
-    /// Reference to the session trying to connect
-    pub session_ref: SessionRef,
+    /// The ID of the referenced session
+    pub id: SessionId,
+    /// The addr to the session
+    pub addr: Addr<Session>,
 }
 
 /// Message containing the details of a game that has been successfully
@@ -161,7 +163,7 @@ impl Handler<InitializeMessage> for Games {
         // Create a new game token
         let token = GameToken::unique_token(&self.games);
 
-        let game = Game::new(token, msg.session_ref, config.clone(), ctx.address()).start();
+        let game = Game::new(token, msg.id, msg.addr, config.clone(), ctx.address()).start();
         self.games.insert(token, game.clone());
 
         Ok(InitializedMessage {
