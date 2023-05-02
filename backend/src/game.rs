@@ -1,7 +1,7 @@
 use crate::{
     games::{GameToken, Games, RemoveGameMessage},
     msg::ServerMessage,
-    session::{KickMessage, Session, SessionId},
+    session::{ClearGameMessage, Session, SessionId},
     types::{
         Answer, AnswerData, HostAction, Image, ImageRef, Question, QuestionData, RemoveReason,
         Score, ServerError,
@@ -455,7 +455,7 @@ impl Actor for Game {
             });
 
             // Notify the session that its been kicked
-            player.addr.do_send(KickMessage);
+            player.addr.do_send(ClearGameMessage);
         }
     }
 }
@@ -567,7 +567,7 @@ impl Handler<HostActionMessage> for Game {
 #[derive(Message)]
 #[rtype(result = "()")]
 pub struct ReadyMessage {
-    pub id: SessionId,
+    pub session_id: SessionId,
 }
 
 impl Handler<ReadyMessage> for Game {
@@ -578,7 +578,7 @@ impl Handler<ReadyMessage> for Game {
         let mut all_ready = true;
 
         for player in &mut self.players {
-            if player.id == msg.id {
+            if player.id == msg.session_id {
                 player.ready = true;
             } else if !player.ready {
                 all_ready = false;
@@ -635,6 +635,13 @@ impl Handler<RemovePlayerMessage> for Game {
             return Ok(());
         }
 
+        // Find the player position
+        let index = self
+            .players
+            .iter()
+            .position(|player| player.id == msg.target_id)
+            .ok_or(ServerError::UnknownPlayer)?;
+
         let kick_msg = Arc::new(ServerMessage::Kicked {
             session_id: msg.target_id,
             reason: msg.reason,
@@ -648,17 +655,10 @@ impl Handler<RemovePlayerMessage> for Game {
         // Inform the host of the player removal
         self.host.addr.do_send(kick_msg.clone());
 
-        // Find the player position
-        let index = self
-            .players
-            .iter()
-            .position(|player| player.id == msg.target_id)
-            .ok_or(ServerError::UnknownPlayer)?;
-
         // Remove the player
         let target = self.players.remove(index);
         // Tell the session itself that its been kicked
-        target.addr.do_send(KickMessage);
+        target.addr.do_send(ClearGameMessage);
 
         Ok(())
     }

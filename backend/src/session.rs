@@ -13,7 +13,6 @@ use actix::{
 };
 use actix_web_actors::ws;
 use log::{error, info};
-use serde::Serialize;
 use std::sync::Arc;
 
 /// Type alias for numbers that represent Session ID's
@@ -26,25 +25,6 @@ pub struct Session {
     pub game: Option<Addr<Game>>,
     /// Address to the games store
     pub games: Addr<Games>,
-}
-
-/// Message send to sessions to inform them that they've
-/// been removed from their game
-#[derive(Message, Debug, Copy, Clone, Serialize)]
-#[rtype(result = "()")]
-pub struct KickMessage;
-
-impl Handler<KickMessage> for Session {
-    type Result = ();
-
-    fn handle(&mut self, _: KickMessage, ctx: &mut Self::Context) -> Self::Result {
-        // Clear the active game so we don't attempt to send
-        // a LostConnection message
-        self.game = None;
-
-        // Session is stopped now that they aren't in a game
-        ctx.stop();
-    }
 }
 
 impl Actor for Session {
@@ -65,15 +45,13 @@ impl Actor for Session {
     }
 }
 
-type SessionContext = ws::WebsocketContext<Session>;
-
 impl Session {
     /// Writes a server message by encoding it to json and then sending it
     /// as a text message through the web socket context
     ///
     /// `ctx` The context to write to
     /// `msg` The message to write
-    fn write_message(ctx: &mut SessionContext, msg: &ServerMessage) {
+    fn write_message(ctx: &mut <Self as Actor>::Context, msg: &ServerMessage) {
         // Serialize the message
         let value = match serde_json::to_string(msg) {
             Ok(value) => value,
@@ -87,7 +65,7 @@ impl Session {
         ctx.text(value);
     }
 
-    fn write_error(ctx: &mut SessionContext, error: ServerError) {
+    fn write_error(ctx: &mut <Self as Actor>::Context, error: ServerError) {
         Self::write_message(ctx, &ServerMessage::Error { error })
     }
 
@@ -95,7 +73,7 @@ impl Session {
     fn handle_message(
         &mut self,
         message: ClientMessage,
-        ctx: &mut SessionContext,
+        ctx: &mut <Self as Actor>::Context,
     ) -> Result<(), ServerError> {
         match message {
             // Handle initializing new games
@@ -275,7 +253,9 @@ impl Session {
             // Handle client ready messages
             ClientMessage::Ready => {
                 let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
-                game.do_send(ReadyMessage { id: self.id });
+                game.do_send(ReadyMessage {
+                    session_id: self.id,
+                });
             }
         }
         Ok(())
@@ -352,5 +332,19 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Session {
         if let Err(error) = Self::handle_message(self, value, ctx) {
             Self::write_error(ctx, error);
         }
+    }
+}
+
+/// Message sent to sessions to inform them that they've been
+/// removed from their current game
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct ClearGameMessage;
+
+impl Handler<ClearGameMessage> for Session {
+    type Result = ();
+
+    fn handle(&mut self, _: ClearGameMessage, _ctx: &mut Self::Context) -> Self::Result {
+        self.game = None;
     }
 }
