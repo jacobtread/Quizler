@@ -1,11 +1,11 @@
 use crate::{
     error::ServerError,
     game::{
-        AnswerResult, CancelMessage, ConnectMessage, ConnectedMessage, Game, GameState,
-        PlayerAnswerMessage, Question, QuestionAnswer, ReadyMessage, RemovePlayerMessage,
-        SkipTimerMessage, StartMessage,
+        AnswerResult, CancelMessage, ConnectMessage, Game, GameConfig, GameState,
+        PlayerAnswerMessage, PlayerGameConfig, Question, QuestionAnswer, ReadyMessage,
+        RemovePlayerMessage, SkipTimerMessage, StartMessage,
     },
-    games::{GameToken, Games, GetGameMessage, InitializeMessage, InitializedMessage},
+    games::{GameToken, Games, GetGameMessage, InitializeMessage},
 };
 use actix::{
     Actor, ActorContext, ActorFutureExt, Addr, AsyncContext, Handler, Message, StreamHandler,
@@ -81,10 +81,22 @@ pub enum ClientMessage {
 pub enum ServerMessage {
     /// Message sent to the host after they've initialized
     /// a game
-    Initialized(InitializedMessage),
+    Initialized {
+        /// The uniquely generated game token (e.g A3DLM)
+        token: GameToken,
+        /// The full game config to be used while playing
+        config: Arc<GameConfig>,
+    },
 
     /// Message indicating a complete successful connection
-    Connected(ConnectedMessage),
+    Connected {
+        /// The session ID
+        id: SessionId,
+        /// The uniquely generated game token (e.g A3DLM)
+        token: GameToken,
+        /// Copy of the game configuration to send back
+        config: PlayerGameConfig,
+    },
 
     /// Message providing information about another player in
     /// the game
@@ -222,13 +234,19 @@ impl Session {
                         // Send the initliaze message
                         .send(InitializeMessage { uuid, session_ref })
                         .into_actor(self)
-                        .map(|msg, _z, ctx| {
+                        .map(|msg, act, ctx| {
                             // Handle games service being stopped
                             let result = msg.expect("Games service was not running");
 
                             // Transform the output message
                             let msg = match result {
-                                Ok(msg) => ServerMessage::Initialized(msg),
+                                Ok(msg) => {
+                                    act.game = Some(msg.game);
+                                    ServerMessage::Initialized {
+                                        config: msg.config,
+                                        token: msg.token,
+                                    }
+                                }
                                 Err(error) => ServerMessage::Error { error },
                             };
 
@@ -268,10 +286,18 @@ impl Session {
                             .map_err(|_| ServerError::InvalidToken)?
                     }
                     .into_actor(self)
-                    .map(|result, _, ctx| {
+                    .map(|result, act, ctx| {
                         // Transform the output message
                         let msg = match result {
-                            Ok(msg) => ServerMessage::Connected(msg),
+                            Ok(msg) => {
+                                act.game = Some(msg.game);
+
+                                ServerMessage::Connected {
+                                    id: msg.id,
+                                    token: msg.token,
+                                    config: msg.config,
+                                }
+                            }
                             Err(error) => ServerMessage::Error { error },
                         };
 

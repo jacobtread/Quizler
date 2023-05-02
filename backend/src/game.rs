@@ -433,7 +433,6 @@ pub struct ConnectMessage {
 }
 
 /// Message containing the connected details for a connected player
-#[derive(Serialize)]
 pub struct ConnectedMessage {
     /// The session ID
     pub id: SessionId,
@@ -441,12 +440,14 @@ pub struct ConnectedMessage {
     pub token: GameToken,
     /// Copy of the game configuration to send back
     pub config: PlayerGameConfig,
+    /// Address to the game
+    pub game: Addr<Game>,
 }
 
 impl Handler<ConnectMessage> for Game {
     type Result = Result<ConnectedMessage, ServerError>;
 
-    fn handle(&mut self, msg: ConnectMessage, _ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: ConnectMessage, ctx: &mut Self::Context) -> Self::Result {
         match self.state {
             GameState::Lobby | GameState::Starting => {}
             _ => return Err(ServerError::NotJoinable),
@@ -502,6 +503,7 @@ impl Handler<ConnectMessage> for Game {
             id,
             token: self.token,
             config: PlayerGameConfig(self.config.clone()),
+            game: ctx.address(),
         })
     }
 }

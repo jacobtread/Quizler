@@ -137,34 +137,38 @@ pub struct InitializeMessage {
 
 /// Message containing the details of a game that has been successfully
 /// connected to by the host (The game has finished being prepared)
-#[derive(Serialize)]
 pub struct InitializedMessage {
     /// The uniquely generated game token (e.g A3DLM)
     pub token: GameToken,
     /// The full game config to be used while playing
     pub config: Arc<GameConfig>,
+    /// The address to the game
+    pub game: Addr<Game>,
 }
 
 impl Handler<InitializeMessage> for Games {
-    type Result = MessageResult<InitializeMessage>;
+    type Result = Result<InitializedMessage, ServerError>;
 
     fn handle(&mut self, msg: InitializeMessage, ctx: &mut Self::Context) -> Self::Result {
         // Find the config data from the pre init list
-        let config = match self.preparing.remove(&msg.uuid) {
-            Some(value) => Arc::new(value),
-            None => return MessageResult(Err(ServerError::InvalidToken)),
-        };
+        let config = self
+            .preparing
+            .remove(&msg.uuid)
+            .ok_or(ServerError::InvalidToken)?;
+
+        let config = Arc::new(config);
 
         // Create a new game token
         let token = GameToken::unique_token(&self.games);
 
         let game = Game::new(token, msg.session_ref, config.clone(), ctx.address()).start();
-        self.games.insert(token, game);
+        self.games.insert(token, game.clone());
 
-        MessageResult(Ok(InitializedMessage {
+        Ok(InitializedMessage {
             token,
             config: config.clone(),
-        }))
+            game,
+        })
     }
 }
 
@@ -177,11 +181,10 @@ pub struct GetGameMessage {
 }
 
 impl Handler<GetGameMessage> for Games {
-    type Result = MessageResult<GetGameMessage>;
+    type Result = Option<Addr<Game>>;
 
     fn handle(&mut self, msg: GetGameMessage, _ctx: &mut Self::Context) -> Self::Result {
-        let game: Option<Addr<Game>> = self.games.get(&msg.token).cloned();
-        MessageResult(game)
+        self.games.get(&msg.token).cloned()
     }
 }
 
