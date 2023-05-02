@@ -1,9 +1,8 @@
 use crate::{
     error::ServerError,
     game::{
-        CancelMessage, ConnectMessage, Game, GameConfig, GameState, PlayerAnswerMessage,
-        PlayerGameConfig, ReadyMessage, RemovePlayerMessage, SkipTimerMessage, StartMessage,
-        TimeSync,
+        ConnectMessage, Game, GameConfig, GameState, HostActionMessage, PlayerAnswerMessage,
+        PlayerGameConfig, ReadyMessage, RemovePlayerMessage, TimeSync,
     },
     games::{GameToken, Games, GetGameMessage, InitializeMessage},
     types::{Answer, Question},
@@ -18,6 +17,7 @@ use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, sync::Arc};
 use uuid::Uuid;
 
+/// Type alias for numbers that represent Session ID's
 pub type SessionId = u32;
 
 pub struct Session {
@@ -38,7 +38,6 @@ pub enum ClientMessage {
         /// The UUID of the game to initialize
         uuid: Uuid,
     },
-
     // Message to connect self to the game with the associated ID
     Connect {
         // The game token to try and connect to (e.g. W2133)
@@ -46,24 +45,33 @@ pub enum ClientMessage {
         // The username to try and connect with
         name: String,
     },
-
     /// Message indicating the client is ready to play
     ///
     /// (This is done internally by clients once everything has been loaded)
     Ready,
-    /// Message to start the game
-    Start,
-    /// Message to cancel starting the game
-    Cancel,
+    /// Message for actions from the host session
+    HostAction { action: HostAction },
     /// Message to answer the question
     Answer(Answer),
-    /// Message for the host to skip the current question
-    Skip,
     /// Message for the host to kick a player from the game
     Kick {
         /// The ID of the player to kick
         id: SessionId,
     },
+}
+
+/// Actions that can be executed by the host
+/// session of a game
+
+#[derive(Debug, Copy, Clone, Deserialize)]
+#[repr(u8)]
+pub enum HostAction {
+    /// Begin the starting process
+    Start = 0x1,
+    /// Cancel the starting process
+    Cancel = 0x2,
+    /// Skip the current waiting timer state
+    Skip = 0x3,
 }
 
 /// Messages sent by the server
@@ -79,7 +87,6 @@ pub enum ServerMessage {
         /// The full game config to be used while playing
         config: Arc<GameConfig>,
     },
-
     /// Message indicating a complete successful connection
     Connected {
         /// The session ID
@@ -89,26 +96,19 @@ pub enum ServerMessage {
         /// Copy of the game configuration to send back
         config: PlayerGameConfig,
     },
-
     /// Message providing information about another player in
     /// the game
     OtherPlayer { id: SessionId, name: String },
-
     /// Message indicating the current state of the game
     GameState { state: GameState },
-
     /// Message for syncing the time between the game and clients
     TimeSync(TimeSync),
-
     /// Question data for the next question
     Question(Arc<Question>),
-
     /// Updates the player scores with the new scores
     Scores { scores: HashMap<SessionId, u32> },
-
     /// Server error
     Error { error: ServerError },
-
     /// Player has been kicked from the game
     Kicked {
         /// The ID of the player that was kicked
@@ -292,20 +292,31 @@ impl Session {
                 );
             }
 
-            // Handle message to start game
-            ClientMessage::Start => {
+            ClientMessage::HostAction { action } => {
                 let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
-                game.do_send(StartMessage {
-                    session_id: self.id,
-                });
-            }
+                // Spawn the answer task
+                ctx.spawn(
+                    game
+                        // Send the initliaze message
+                        .send(HostActionMessage {
+                            session_id: self.id,
+                            action,
+                        })
+                        .into_actor(self)
+                        .map(|msg, _, ctx| {
+                            let msg = match msg {
+                                Ok(Err(error)) => ServerMessage::Error { error },
+                                // Handle game being stopped
+                                Err(_) => ServerMessage::Error {
+                                    error: ServerError::Unexpected,
+                                },
+                                _ => return,
+                            };
 
-            // Handle message to cancel starting game
-            ClientMessage::Cancel => {
-                let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
-                game.do_send(CancelMessage {
-                    session_id: self.id,
-                });
+                            // Write the response
+                            Self::write_message(ctx, &msg);
+                        }),
+                );
             }
 
             // Handle message for an answer to the current question
@@ -343,14 +354,6 @@ impl Session {
                     session_id: self.id,
                     target_id: id,
                     reason: KickReason::RemovedByHost,
-                });
-            }
-
-            // Handle message for skipping the current question
-            ClientMessage::Skip => {
-                let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
-                game.do_send(SkipTimerMessage {
-                    session_id: self.id,
                 });
             }
 

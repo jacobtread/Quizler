@@ -1,7 +1,7 @@
 use crate::{
     error::ServerError,
     games::{GameToken, Games, RemoveGameMessage},
-    session::{KickMessage, KickReason, ServerMessage, Session, SessionId},
+    session::{HostAction, KickMessage, KickReason, ServerMessage, Session, SessionId},
     types::{Answer, AnswerData, Image, ImageRef, Question, QuestionData, Score},
 };
 use actix::{Actor, ActorContext, Addr, AsyncContext, Context, Handler, Message};
@@ -535,70 +535,33 @@ impl Handler<ConnectMessage> for Game {
     }
 }
 
-/// Message from the host to start the game
+/// Message from the host to complete an
+/// action on the game
 #[derive(Message)]
 #[rtype(result = "Result<(), ServerError>")]
-pub struct StartMessage {
+pub struct HostActionMessage {
     /// The session reference who is attempting
-    /// to start the game
+    /// the action (Validated against the host)
     pub session_id: SessionId,
+    /// The action
+    pub action: HostAction,
 }
 
-impl Handler<StartMessage> for Game {
+impl Handler<HostActionMessage> for Game {
     type Result = Result<(), ServerError>;
 
-    fn handle(&mut self, msg: StartMessage, _ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: HostActionMessage, _ctx: &mut Self::Context) -> Self::Result {
         // Handle messages that aren't from the game host
         if self.host.id != msg.session_id {
             return Err(ServerError::InvalidPermission);
         }
 
-        self.start();
+        match msg.action {
+            HostAction::Start => self.start(),
+            HostAction::Cancel => self.reset_state(),
+            HostAction::Skip => self.skip_timer(),
+        };
 
-        Ok(())
-    }
-}
-
-/// Message from the host to cancel starting the game
-#[derive(Message)]
-#[rtype(result = "Result<(), ServerError>")]
-pub struct CancelMessage {
-    /// The session reference who is attempting to
-    /// cancel starting the game
-    pub session_id: SessionId,
-}
-
-impl Handler<CancelMessage> for Game {
-    type Result = Result<(), ServerError>;
-
-    fn handle(&mut self, msg: CancelMessage, _ctx: &mut Self::Context) -> Self::Result {
-        // Handle messages that aren't from the game host
-        if self.host.id != msg.session_id {
-            return Err(ServerError::InvalidPermission);
-        }
-
-        self.reset_state();
-        Ok(())
-    }
-}
-
-/// Message to skip the current timer
-#[derive(Message)]
-#[rtype(result = "Result<(), ServerError>")]
-pub struct SkipTimerMessage {
-    pub session_id: SessionId,
-}
-
-impl Handler<SkipTimerMessage> for Game {
-    type Result = Result<(), ServerError>;
-
-    fn handle(&mut self, msg: SkipTimerMessage, _ctx: &mut Self::Context) -> Self::Result {
-        // Handle messages that aren't from the game host
-        if self.host.id != msg.session_id {
-            return Err(ServerError::InvalidPermission);
-        }
-
-        self.skip_timer();
         Ok(())
     }
 }
