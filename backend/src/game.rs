@@ -5,7 +5,7 @@ use crate::{
 };
 use actix::{Actor, ActorContext, Addr, AsyncContext, Context, Handler, Message};
 use bytes::Bytes;
-use log::{debug, error};
+use log::error;
 use mime::Mime;
 use serde::{ser::SerializeStruct, Deserialize, Serialize};
 use std::{
@@ -133,6 +133,27 @@ impl GameState {
 }
 
 impl Game {
+    /// Creates a new game instance
+    pub fn new(
+        token: GameToken,
+        host_ref: SessionRef,
+        config: Arc<GameConfig>,
+        games: Addr<Games>,
+    ) -> Self {
+        Self {
+            token,
+            host: HostSession {
+                session_ref: host_ref,
+            },
+            players: Default::default(),
+            config,
+            state: GameState::Lobby,
+            timer: GameTimer::new(),
+            question_index: 0,
+            games,
+        }
+    }
+
     fn tick(&mut self, _ctx: &mut Context<Self>) {
         // Handle states that have timing requirements
         if self.state.requires_timing() {
@@ -145,14 +166,14 @@ impl Game {
         }
 
         match self.state {
-            // Ticking in the lobby does nothing...
-            GameState::Lobby => {}
-            // Ticking the starting timer
+            // Ticking empty states that have no time based actions
+            GameState::Lobby | GameState::AwaitingReady | GameState::Finished => {}
+
+            // Starting timer has completed we can now send
+            // the first question to the players
             GameState::Starting => {
-                self.ready_question();
+                self.question(0);
             }
-            // Ticking await ready does nothing...
-            GameState::AwaitingReady => {}
 
             // Answers have been awaited
             GameState::AwaitingAnswers => {
@@ -163,24 +184,37 @@ impl Game {
             // Question has been marked, the game can now move
             // to the next question
             GameState::Marked => {
-                self.ready_question();
-            }
+                // Handle reaching the end of the questions
+                if self.question_index + 1 >= self.config.questions.len() {
+                    // Move to the finished state
+                    self.finished();
+                    return;
+                }
 
-            // Ticking finished...
-            GameState::Finished => {}
+                // Increase the question index
+                self.question_index += 1;
+                self.question(self.question_index);
+            }
         }
     }
 
+    /// Sets the current game state to the provided `state` and
+    /// sends a state update message to all the clients including
+    /// the host
     fn set_state(&mut self, state: GameState) {
         self.state = state;
         self.send_all(ServerMessage::GameState { state });
     }
 
+    /// Resets the game state to lobby and resets the game timer
+    /// by skipping it to the end time
     fn reset_state(&mut self) {
         self.set_state(GameState::Lobby);
         self.skip_timer();
     }
 
+    /// Handles progresing the state to [`GameState::Starting`].
+    /// This is called when the host starts the game
     fn start(&mut self) {
         const START_DURATION: Duration = Duration::from_secs(5);
         self.set_state(GameState::Starting);
@@ -191,10 +225,17 @@ impl Game {
     /// once all the players have provided the Ready state message
     fn all_ready(&mut self) {
         self.set_state(GameState::AwaitingAnswers);
-        let question = self.question();
+        let question = self
+            .config
+            .questions
+            .get(self.question_index)
+            .expect("Attempted to access a question at an index that does not exist")
+            .clone();
         self.set_timer(Duration::from_millis(question.answer_time));
     }
 
+    /// Handles progresing the state to [`GameState::Marked`].
+    /// This is called once `mark_answers` has been completed
     fn marked(&mut self) {
         self.set_state(GameState::Marked);
         self.set_timer(Duration::from_millis(self.config.timing.wait_time));
@@ -204,18 +245,14 @@ impl Game {
         self.set_state(GameState::Finished);
     }
 
-    fn ready_question(&mut self) {
-        // Handle reaching the end of the questions
-        if self.question_index + 1 >= self.config.questions.len() {
-            self.finished();
-            return;
-        }
-
-        // Increase the question index
-        self.question_index += 1;
-
+    fn question(&mut self, index: usize) {
         // Obtain the current question
-        let question = self.config.questions[self.question_index].clone();
+        let question = self
+            .config
+            .questions
+            .get(index)
+            .cloned()
+            .expect("Server attempted to display out of bounds question");
 
         // Reset ready states for the players
         self.players
@@ -260,37 +297,14 @@ impl Game {
         }));
     }
 
-    pub fn new(
-        token: GameToken,
-        host_ref: SessionRef,
-        config: Arc<GameConfig>,
-        games: Addr<Games>,
-    ) -> Self {
-        Self {
-            token,
-            host: HostSession {
-                session_ref: host_ref,
-            },
-            players: Default::default(),
-            config,
-            state: GameState::Lobby,
-            timer: GameTimer::new(),
-            question_index: 0,
-            games,
-        }
-    }
-
-    fn question(&self) -> Arc<Question> {
-        self.config
+    /// Task for marking the answers
+    fn mark_answers(&mut self) {
+        let question = self
+            .config
             .questions
             .get(self.question_index)
             .expect("Attempted to access a question at an index that does not exist")
-            .clone()
-    }
-
-    /// Task for marking the answers
-    fn mark_answers(&mut self) {
-        let question = self.question();
+            .clone();
 
         let scoring = &question.scoring;
 
@@ -732,7 +746,12 @@ impl Handler<PlayerAnswerMessage> for Game {
     type Result = Result<(), ServerError>;
 
     fn handle(&mut self, msg: PlayerAnswerMessage, _ctx: &mut Self::Context) -> Self::Result {
-        let question = self.question();
+        let question = self
+            .config
+            .questions
+            .get(self.question_index)
+            .expect("Attempted to access a question at an index that does not exist")
+            .clone();
 
         // Find the player within the game
         let player = self
