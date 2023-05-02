@@ -5,7 +5,7 @@ use crate::{
 };
 use actix::{Actor, ActorContext, Addr, AsyncContext, Context, Handler, Message};
 use bytes::Bytes;
-use log::error;
+use log::{debug, error};
 use mime::Mime;
 use serde::{ser::SerializeStruct, Deserialize, Serialize};
 use std::{
@@ -72,7 +72,6 @@ impl GameTimer {
         self.tick += 1;
 
         if self.complete || self.tick != 5 {
-            self.tick = 0;
             return None;
         }
 
@@ -85,6 +84,8 @@ impl GameTimer {
         if total_ms == elapsed_ms {
             self.complete = true;
         }
+
+        self.tick = 0;
 
         // Create the time sync data
         Some(TimeSync {
@@ -133,15 +134,17 @@ impl GameState {
 
 impl Game {
     fn tick(&mut self, _ctx: &mut Context<Self>) {
-        let state = self.state;
-        let complete = self.sync_timer();
-
         // Handle states that have timing requirements
-        if state.requires_timing() && !complete {
-            return;
+        if self.state.requires_timing() {
+            // Sync the timer and don't continue the tick until the
+            // timer is complete
+            let complete = self.sync_timer();
+            if !complete {
+                return;
+            }
         }
 
-        match state {
+        match self.state {
             // Ticking in the lobby does nothing...
             GameState::Lobby => {}
             // Ticking the starting timer
@@ -163,7 +166,8 @@ impl Game {
                 self.ready_question();
             }
 
-            GameState::Finished => todo!(),
+            // Ticking finished...
+            GameState::Finished => {}
         }
     }
 
@@ -214,7 +218,9 @@ impl Game {
         let question = self.config.questions[self.question_index].clone();
 
         // Reset ready states for the players
-        self.reset_ready();
+        self.players
+            .iter_mut()
+            .for_each(|player| player.ready = false);
 
         // Send the question contents to the clients
         self.send_all(ServerMessage::Question(question));
@@ -384,13 +390,6 @@ impl Game {
 
         // Update everyones scores
         self.update_scores();
-    }
-
-    /// Resets the plaeyr ready states of all the players
-    fn reset_ready(&mut self) {
-        self.players
-            .iter_mut()
-            .for_each(|player| player.ready = false);
     }
 
     /// Send a message to all clients
