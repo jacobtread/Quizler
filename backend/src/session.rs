@@ -197,7 +197,11 @@ impl Session {
     }
 
     /// Handles a recieved client message
-    fn handle_message(&mut self, message: ClientMessage, ctx: &mut SessionContext) {
+    fn handle_message(
+        &mut self,
+        message: ClientMessage,
+        ctx: &mut SessionContext,
+    ) -> Result<(), ServerError> {
         // Create a reference to the session
         let session_ref = SessionRef {
             id: self.id,
@@ -207,11 +211,19 @@ impl Session {
         match message {
             // Handle initializing new games
             ClientMessage::Initialize { uuid } => {
+                if self.game.is_some() {
+                    return Err(ServerError::UnexpectedMessage);
+                }
+
                 self.async_message(Self::initialize(self.games.clone(), session_ref, uuid), ctx);
             }
 
             // Handle try connect messages
             ClientMessage::Connect { token, username } => {
+                if self.game.is_some() {
+                    return Err(ServerError::UnexpectedMessage);
+                }
+
                 self.async_message(
                     Self::try_connect(self.games.clone(), session_ref, token, username),
                     ctx,
@@ -220,27 +232,13 @@ impl Session {
 
             // Handle message to start game
             ClientMessage::Start => {
-                let game = match &self.game {
-                    Some(value) => value.clone(),
-                    None => {
-                        // Expected the game to exist
-                        Self::write_error(ctx, ServerError::Unexpected);
-                        return;
-                    }
-                };
+                let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
                 game.do_send(StartMessage { session_ref });
             }
 
             // Handle message to cancel starting game
             ClientMessage::Cancel => {
-                let game = match &self.game {
-                    Some(value) => value.clone(),
-                    None => {
-                        // Expected the game to exist
-                        Self::write_error(ctx, ServerError::Unexpected);
-                        return;
-                    }
-                };
+                let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
                 game.do_send(CancelMessage { session_ref });
             }
 
@@ -249,14 +247,7 @@ impl Session {
 
             // Handle message for kicking a player
             ClientMessage::Kick { id } => {
-                let game = match &self.game {
-                    Some(value) => value.clone(),
-                    None => {
-                        // Expected the game to exist
-                        Self::write_error(ctx, ServerError::Unexpected);
-                        return;
-                    }
-                };
+                let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
                 game.do_send(RemovePlayerMessage {
                     session_ref: Some(session_ref),
                     target_id: id,
@@ -266,30 +257,17 @@ impl Session {
 
             // Handle message for skipping the current question
             ClientMessage::Skip => {
-                let game = match &self.game {
-                    Some(value) => value.clone(),
-                    None => {
-                        // Expected the game to exist
-                        Self::write_error(ctx, ServerError::Unexpected);
-                        return;
-                    }
-                };
+                let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
                 game.do_send(SkipTimerMessage { session_ref });
             }
 
             // Handle client ready messages
             ClientMessage::Ready => {
-                let game = match &self.game {
-                    Some(value) => value.clone(),
-                    None => {
-                        // Expected the game to exist
-                        Self::write_error(ctx, ServerError::Unexpected);
-                        return;
-                    }
-                };
+                let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
                 game.do_send(ReadyMessage { id: session_ref.id });
             }
         }
+        Ok(())
     }
 
     fn async_message<F>(&self, future: F, ctx: &mut SessionContext)
@@ -418,6 +396,8 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Session {
             }
         };
 
-        Self::handle_message(self, value, ctx)
+        if let Err(error) = Self::handle_message(self, value, ctx) {
+            Self::write_error(ctx, error);
+        }
     }
 }
