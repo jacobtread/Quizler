@@ -1,11 +1,9 @@
+use crate::games::Games;
 use actix::Actor;
 use actix_web::{web::Data, App, HttpServer};
 use dotenvy::dotenv;
 use log::info;
 
-use crate::games::Games;
-
-mod env;
 mod error;
 mod game;
 mod games;
@@ -24,7 +22,13 @@ async fn main() -> std::io::Result<()> {
     let games = Games::start_default();
     let games = Data::new(games);
 
-    let port = env::from_env(env::PORT);
+    let port: u16 = std::env::var("QUIZLER_PORT")
+        .map(|value| {
+            value
+                .parse()
+                .expect("Provided QUIZLER_PORT was not a valid port")
+        })
+        .unwrap_or(80);
 
     info!("Starting Quizler on port {}", port);
 
