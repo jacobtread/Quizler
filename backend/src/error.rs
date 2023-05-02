@@ -19,4 +19,7 @@ pub enum ServerError {
     Unexpected = 0x5,
     /// Didn't have permission to complete that action
     InvalidPermission = 0x6,
+    /// Message was recieved but wasn't expected at the current
+    /// state
+    UnexpectedMessage = 0x7,
 }

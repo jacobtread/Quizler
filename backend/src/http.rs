@@ -7,7 +7,7 @@ use actix_web::{
     HttpRequest, HttpResponse, Responder, ResponseError,
 };
 use actix_web_actors::ws::{self};
-use bytes::{buf, BytesMut};
+use bytes::BytesMut;
 use futures::TryStreamExt;
 use log::debug;
 use serde::{Deserialize, Serialize};

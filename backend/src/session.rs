@@ -39,18 +39,19 @@ pub struct SessionRef {
 #[serde(tag = "ty")]
 pub enum ClientMessage {
     // Message to initialize the desired game as a host
-    InitializeGame {
+    Initialize {
         /// The UUID of the game to initialize
         uuid: Uuid,
     },
 
     // Message to connect self to the game with the associated ID
-    TryConnect {
+    Connect {
         // The game token to try and connect to (e.g. W2133)
         token: String,
         // The username to try and connect with
         username: String,
     },
+
     /// Message indicating the client is ready to play
     ///
     /// (This is done internally by clients once everything has been loaded)
@@ -203,12 +204,12 @@ impl Session {
 
         match message {
             // Handle initializing new games
-            ClientMessage::InitializeGame { uuid } => {
+            ClientMessage::Initialize { uuid } => {
                 self.async_message(Self::initialize(session_ref, uuid), ctx);
             }
 
             // Handle try connect messages
-            ClientMessage::TryConnect { token, username } => {
+            ClientMessage::Connect { token, username } => {
                 self.async_message(Self::try_connect(session_ref, token, username), ctx);
             }
 

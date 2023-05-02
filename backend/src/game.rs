@@ -729,7 +729,7 @@ pub struct GameConfig {
 
 /// Serializable verison of the reference counted game config
 /// that only serializes the parts that should be visible to
-/// non host users ("timing" and "basic" not "questions")
+/// non host users (only "basic")
 #[derive(Clone)]
 pub struct PlayerGameConfig(Arc<GameConfig>);
 
@@ -741,7 +741,6 @@ impl Serialize for PlayerGameConfig {
         let mut stru = serializer.serialize_struct("GameConfig", 2)?;
         let this = &*self.0;
         stru.serialize_field("basic", &this.basic)?;
-        stru.serialize_field("timing", &this.timing)?;
         stru.end()
     }
 }
