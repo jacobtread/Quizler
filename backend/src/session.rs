@@ -5,7 +5,7 @@ use crate::{
     },
     games::{GameToken, Games, GetGameMessage, InitializeMessage},
     msg::{ClientMessage, ServerMessage},
-    types::{KickReason, ServerError},
+    types::{RemoveReason, ServerError},
 };
 use actix::{
     Actor, ActorContext, ActorFutureExt, Addr, AsyncContext, Handler, Message, StreamHandler,
@@ -59,7 +59,7 @@ impl Actor for Session {
             game.do_send(RemovePlayerMessage {
                 session_id: self.id,
                 target_id: self.id,
-                reason: KickReason::LostConnection,
+                reason: RemoveReason::LostConnection,
             });
         }
     }
@@ -122,7 +122,8 @@ impl Session {
                             let msg = match result {
                                 Ok(msg) => {
                                     act.game = Some(msg.game);
-                                    ServerMessage::Initialized {
+                                    ServerMessage::Joined {
+                                        id: act.id,
                                         config: msg.config,
                                         token: msg.token,
                                     }
@@ -138,8 +139,13 @@ impl Session {
 
             // Handle try connect messages
             ClientMessage::Connect { token } => {
-                if self.game.is_some() {
-                    return Err(ServerError::UnexpectedMessage);
+                // If already in a game infrom the game that we've left
+                if let Some(game) = self.game.take() {
+                    game.do_send(RemovePlayerMessage {
+                        session_id: self.id,
+                        target_id: self.id,
+                        reason: RemoveReason::Disconnected,
+                    });
                 }
 
                 // Parse the token ensuring it is valid
@@ -180,6 +186,7 @@ impl Session {
                             let result = match msg {
                                 Ok(value) => value,
                                 Err(_) => {
+                                    // Game link is broken clear the game
                                     act.game = None;
                                     return;
                                 }
@@ -187,7 +194,7 @@ impl Session {
 
                             let msg = match result {
                                 Ok(msg) => ServerMessage::Joined {
-                                    id: msg.id,
+                                    id: act.id,
                                     token: msg.token,
                                     config: msg.config,
                                 },
@@ -261,7 +268,7 @@ impl Session {
                 game.do_send(RemovePlayerMessage {
                     session_id: self.id,
                     target_id: id,
-                    reason: KickReason::RemovedByHost,
+                    reason: RemoveReason::RemovedByHost,
                 });
             }
 

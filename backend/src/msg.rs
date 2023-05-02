@@ -4,7 +4,7 @@ use crate::{
     game::{GameConfig, GameState, TimeSync},
     games::GameToken,
     session::SessionId,
-    types::{Answer, HostAction, KickReason, PlayerGameConfig, Question, ServerError},
+    types::{Answer, HostAction, Question, RemoveReason, ServerError},
 };
 use actix::Message;
 use serde::{Deserialize, Serialize};
@@ -53,14 +53,6 @@ pub enum ClientMessage {
 #[rtype(result = "()")]
 #[serde(tag = "ty")]
 pub enum ServerMessage {
-    /// Message sent to the host after they've initialized
-    /// a game
-    Initialized {
-        /// The uniquely generated game token (e.g A3DLM)
-        token: GameToken,
-        /// The full game config to be used while playing
-        config: Arc<GameConfig>,
-    },
     /// Message indicating a complete successful connection
     Joined {
         /// The session ID
@@ -68,7 +60,7 @@ pub enum ServerMessage {
         /// The uniquely generated game token (e.g A3DLM)
         token: GameToken,
         /// Copy of the game configuration to send back
-        config: PlayerGameConfig,
+        config: Arc<GameConfig>,
     },
     /// Message providing information about another player in
     /// the game
@@ -88,6 +80,6 @@ pub enum ServerMessage {
         /// The ID of the player that was kicked
         session_id: SessionId,
         /// The reason the player was kicked
-        reason: KickReason,
+        reason: RemoveReason,
     },
 }

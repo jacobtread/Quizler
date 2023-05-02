@@ -3,8 +3,8 @@ use crate::{
     msg::ServerMessage,
     session::{KickMessage, Session, SessionId},
     types::{
-        Answer, AnswerData, HostAction, Image, ImageRef, KickReason, PlayerGameConfig, Question,
-        QuestionData, Score, ServerError,
+        Answer, AnswerData, HostAction, Image, ImageRef, Question, QuestionData, RemoveReason,
+        Score, ServerError,
     },
 };
 use actix::{Actor, ActorContext, Addr, AsyncContext, Context, Handler, Message};
@@ -451,7 +451,7 @@ impl Actor for Game {
             // Send the visual kick message
             player.addr.do_send(ServerMessage::Kicked {
                 session_id: player.id,
-                reason: KickReason::HostDisconnect,
+                reason: RemoveReason::HostDisconnect,
             });
 
             // Notify the session that its been kicked
@@ -474,20 +474,16 @@ pub struct JoinMessage {
 
 /// Message containing the connected details for a connected player
 pub struct JoinedMessage {
-    /// The session ID
-    pub id: SessionId,
     /// The uniquely generated game token (e.g A3DLM)
     pub token: GameToken,
     /// Copy of the game configuration to send back
-    pub config: PlayerGameConfig,
-    /// Address to the game
-    pub game: Addr<Game>,
+    pub config: Arc<GameConfig>,
 }
 
 impl Handler<JoinMessage> for Game {
     type Result = Result<JoinedMessage, ServerError>;
 
-    fn handle(&mut self, msg: JoinMessage, ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: JoinMessage, _ctx: &mut Self::Context) -> Self::Result {
         // Cannot join games that are already started or finished
         if !matches!(self.state, GameState::Lobby | GameState::Starting) {
             return Err(ServerError::NotJoinable);
@@ -530,10 +526,8 @@ impl Handler<JoinMessage> for Game {
         self.players.push(game_player);
 
         Ok(JoinedMessage {
-            id: msg.id,
             token: self.token,
-            config: PlayerGameConfig(self.config.clone()),
-            game: ctx.address(),
+            config: self.config.clone(),
         })
     }
 }
@@ -622,7 +616,7 @@ pub struct RemovePlayerMessage {
     /// The ID of the player to remove
     pub target_id: SessionId,
     /// Reason for the player removal (Sent to clients)
-    pub reason: KickReason,
+    pub reason: RemoveReason,
 }
 
 impl Handler<RemovePlayerMessage> for Game {
@@ -779,8 +773,10 @@ pub struct GameConfig {
     /// Basic configuration such as name and subtext
     pub basic: BasicConfig,
     /// Timing data for different game events
+    #[serde(skip)]
     pub timing: GameTiming,
     /// The game questions
+    #[serde(skip)]
     pub questions: Vec<Arc<Question>>,
     /// Map of uploaded image UUIDs to their respective
     /// image data

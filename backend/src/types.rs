@@ -1,9 +1,8 @@
-use crate::game::GameConfig;
 use actix::Message;
 use bytes::Bytes;
 use mime::Mime;
-use serde::{ser::SerializeStruct, Deserialize, Serialize};
-use std::{sync::Arc, time::Duration};
+use serde::{Deserialize, Serialize};
+use std::time::Duration;
 use uuid::Uuid;
 
 #[derive(Message, Debug, Copy, Clone, Serialize)]
@@ -46,15 +45,18 @@ pub enum HostAction {
     Skip = 0x3,
 }
 
+/// Reasons why a player was removed from the game
 #[derive(Debug, Copy, Clone, Serialize)]
 #[repr(u8)]
-pub enum KickReason {
+pub enum RemoveReason {
     /// Player was manually kicked by the host
     RemovedByHost = 0x1,
     /// The host diconnected ending the game
     HostDisconnect = 0x2,
     /// Connection was lost to the player
     LostConnection = 0x3,
+    /// Player disconnected
+    Disconnected = 0x4,
 }
 
 /// Type alias for UUIDs used to represent image references
@@ -209,23 +211,5 @@ impl Score {
             Self::Correct(value) | Self::Partial(value) => *value,
             Self::Incorrect => 0,
         }
-    }
-}
-
-/// Serializable verison of the reference counted game config
-/// that only serializes the parts that should be visible to
-/// non host users (only "basic")
-#[derive(Clone)]
-pub struct PlayerGameConfig(pub Arc<GameConfig>);
-
-impl Serialize for PlayerGameConfig {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        let mut stru = serializer.serialize_struct("GameConfig", 2)?;
-        let this = &*self.0;
-        stru.serialize_field("basic", &this.basic)?;
-        stru.end()
     }
 }
