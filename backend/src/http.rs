@@ -7,8 +7,9 @@ use actix_web::{
     HttpRequest, HttpResponse, Responder, ResponseError,
 };
 use actix_web_actors::ws::{self};
-use bytes::BytesMut;
+use bytes::{buf, BytesMut};
 use futures::TryStreamExt;
+use log::debug;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
@@ -90,11 +91,12 @@ async fn create_quiz(mut payload: Multipart) -> Result<impl Responder, CreateErr
 
     while let Some(mut field) = payload.try_next().await? {
         /// Cap the image max size to 100mb
-        const MAX_BUFFER_SIZE_BYTES: usize = 1024 * 100;
+        const MAX_BUFFER_SIZE_BYTES: usize = 1024 * 1024 * 1024;
 
         // Read all the buffered content for the config message
         let mut buffer = BytesMut::new();
         loop {
+            debug!("Loading buffered data: {}", buffer.len());
             if buffer.len() >= MAX_BUFFER_SIZE_BYTES {
                 return Err(CreateError::TooLarge);
             }
@@ -165,7 +167,7 @@ impl ResponseError for ImageError {
     }
 }
 
-#[post("/api/quiz/{token}/{image}")]
+#[get("/api/quiz/{token}/{image}")]
 async fn quiz_image(path: web::Path<(String, Uuid)>) -> Result<impl Responder, ImageError> {
     let (token, uuid) = path.into_inner();
     let token: GameToken = token.parse().unwrap();
