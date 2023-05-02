@@ -13,7 +13,7 @@ use actix::{
 use actix_web_actors::ws;
 use log::{debug, error, info};
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, future::Future, sync::Arc};
+use std::{collections::HashMap, sync::Arc};
 use uuid::Uuid;
 
 pub type SessionId = u32;
@@ -183,7 +183,7 @@ impl Session {
         let value = match serde_json::to_string(msg) {
             Ok(value) => value,
             Err(err) => {
-                error!("Failed to encode server message as JSON: {:?}", err);
+                error!("Failed to encode server message as JSON: {}", err);
                 return;
             }
         };
@@ -221,7 +221,7 @@ impl Session {
                         // Send the initliaze message
                         .send(InitializeMessage { uuid, session_ref })
                         .into_actor(self)
-                        .map(|msg, act, ctx| {
+                        .map(|msg, _z, ctx| {
                             // Handle games service being stopped
                             let result = msg.expect("Games service was not running");
 
@@ -267,7 +267,7 @@ impl Session {
                             .map_err(|_| ServerError::InvalidToken)?
                     }
                     .into_actor(self)
-                    .map(|result, act, ctx| {
+                    .map(|result, _, ctx| {
                         // Transform the output message
                         let msg = match result {
                             Ok(msg) => ServerMessage::Connected(msg),
@@ -379,7 +379,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Session {
         };
 
         // Decode the recieved client message
-        let value = match serde_json::from_str::<ClientMessage>(&*text) {
+        let value = match serde_json::from_slice::<ClientMessage>(text.as_bytes()) {
             Ok(value) => value,
             Err(err) => {
                 error!("Unable to decode client message: {:?}", err);
