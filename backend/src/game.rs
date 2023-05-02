@@ -427,7 +427,7 @@ impl Actor for Game {
 /// Message to attempt to connect from a new client
 #[derive(Message)]
 #[rtype(result = "Result<ConnectedMessage, ServerError>")]
-pub struct TryConnectMessage {
+pub struct ConnectMessage {
     /// Reference to the session trying to connect
     pub session_ref: SessionRef,
     /// The name for the connecting player
@@ -445,10 +445,10 @@ pub struct ConnectedMessage {
     pub config: PlayerGameConfig,
 }
 
-impl Handler<TryConnectMessage> for Game {
-    type Result = MessageResult<TryConnectMessage>;
+impl Handler<ConnectMessage> for Game {
+    type Result = MessageResult<ConnectMessage>;
 
-    fn handle(&mut self, msg: TryConnectMessage, _ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: ConnectMessage, _ctx: &mut Self::Context) -> Self::Result {
         match self.state {
             GameState::Lobby | GameState::Starting => {}
             _ => return MessageResult(Err(ServerError::NotJoinable)),

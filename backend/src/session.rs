@@ -1,8 +1,8 @@
 use crate::{
     error::ServerError,
     game::{
-        AnswerResult, CancelMessage, ConnectedMessage, Game, GameState, Question, QuestionAnswer,
-        ReadyMessage, RemovePlayerMessage, SkipTimerMessage, StartMessage, TryConnectMessage,
+        AnswerResult, CancelMessage, ConnectMessage, ConnectedMessage, Game, GameState, Question,
+        QuestionAnswer, ReadyMessage, RemovePlayerMessage, SkipTimerMessage, StartMessage,
     },
     games::{GameToken, Games, GetGameMessage, InitializeMessage, InitializedMessage},
 };
@@ -343,7 +343,7 @@ impl Session {
 
         // Attempt the connection
         let msg: ConnectedMessage = game_addr
-            .send(TryConnectMessage { session_ref, name })
+            .send(ConnectMessage { session_ref, name })
             .await
             .map_err(|_| ServerError::InvalidToken)??;
 
