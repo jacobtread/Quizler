@@ -22,13 +22,12 @@ async fn main() -> std::io::Result<()> {
     let games = Games::start_default();
     let games = Data::new(games);
 
-    let port: u16 = std::env::var("QUIZLER_PORT")
-        .map(|value| {
-            value
-                .parse()
-                .expect("Provided QUIZLER_PORT was not a valid port")
-        })
-        .unwrap_or(80);
+    let port: u16 = match std::env::var("QUIZLER_PORT") {
+        Ok(value) => value
+            .parse()
+            .expect("Provided QUIZLER_PORT was not a valid port"),
+        Err(_) => 80,
+    };
 
     info!("Starting Quizler on port {}", port);
 
