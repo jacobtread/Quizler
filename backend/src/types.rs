@@ -71,10 +71,6 @@ pub struct Image {
     pub data: Bytes,
 }
 
-/// Type alias for a number representing an index of
-/// a question
-pub type QuestionIndex = usize;
-
 /// Structure of a quiz question
 #[derive(Serialize, Deserialize)]
 pub struct Question {
@@ -94,6 +90,19 @@ pub struct Question {
     pub scoring: Scoring,
 }
 
+#[derive(Deserialize, Serialize)]
+pub struct AnswerValue {
+    /// The actual message for the answer
+    pub value: String,
+    /// Whether the answer is a correct one
+    /// (Not sent to clients)
+    #[serde(skip)]
+    pub correct: bool,
+}
+
+/// Alias representing an index within an answers list
+pub type AnswerIndex = usize;
+
 /// The different types of questions and their
 /// associated question data
 #[derive(Serialize, Deserialize)]
@@ -102,22 +111,17 @@ pub enum QuestionData {
     /// Single choice question
     Single {
         /// Vec of indexes of correct answers
-        #[serde(skip)]
-        answers: Vec<QuestionIndex>,
-        /// Vec of the possible answers
-        values: Vec<String>,
+        answers: Vec<AnswerValue>,
     },
     /// Multiple choice question
     Multiple {
         /// Vec of indexes of correct answers
         #[serde(skip)]
-        answers: Vec<QuestionIndex>,
-        /// Vec of the possible answers
-        values: Vec<String>,
-        /// The optional minimum number of required answers
-        min: Option<usize>,
-        /// The optional maximum number of required answers
-        max: Option<usize>,
+        answers: Vec<AnswerValue>,
+        /// The minimum number of required answers
+        min: usize,
+        /// The maximum number of required answers
+        max: usize,
     },
 }
 
@@ -153,12 +157,12 @@ pub enum Answer {
     /// Answer for a single choice question
     Single {
         /// The index of the chosen answer
-        answer: QuestionIndex,
+        answer: AnswerIndex,
     },
     /// Answers for a multiple choice question
     Multiple {
         /// The list of chosen answers
-        answers: Vec<QuestionIndex>,
+        answers: Vec<AnswerIndex>,
     },
 }
 

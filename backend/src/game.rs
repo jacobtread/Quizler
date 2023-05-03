@@ -374,7 +374,11 @@ impl Game {
 
         match (&answer.answer, &question.data) {
             (A::Single { answer }, Q::Single { answers, .. }) => {
-                let is_valid = answers.contains(answer);
+                let is_valid = answers
+                    .get(*answer)
+                    .map(|value| value.correct)
+                    .unwrap_or(false);
+
                 if is_valid {
                     Score::Correct(base_score)
                 } else {
@@ -382,26 +386,28 @@ impl Game {
                 }
             }
             (
-                A::Multiple { answers },
-                Q::Multiple {
-                    answers: q_answers, ..
+                A::Multiple {
+                    answers: answer_indexes,
                 },
+                Q::Multiple { answers, .. },
             ) => {
                 let mut total = 0;
                 let mut correct = 0usize;
 
-                for answer in answers {
+                for answer in answer_indexes {
                     total += 1;
 
-                    if q_answers.contains(answer) {
-                        correct += 1;
+                    if let Some(answer) = answers.get(*answer) {
+                        if answer.correct {
+                            correct += 1;
+                        }
                     }
                 }
 
                 // % correct out of total answers
                 let percent = correct as f32 / total as f32;
 
-                if correct == q_answers.len() {
+                if correct == answers.len() {
                     Score::Correct(base_score)
                 } else if correct == 0 {
                     Score::Incorrect
