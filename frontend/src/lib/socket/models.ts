@@ -165,16 +165,20 @@ type QuestionIndex = number;
 
 interface SingleQuestionData {
   values: string[];
+  answers: QuestionIndex[];
 }
 
 export interface MultipleQuestionData {
   values: string[];
+  answers: QuestionIndex[];
   min: number | null;
   max: number | null;
 }
 
 export interface ClickableImageQuestionData {
   imag: ImageRef;
+  top: [number, number];
+  bottom: [number, number];
 }
 
 export const enum QuestionDataType {
