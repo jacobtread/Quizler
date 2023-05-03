@@ -163,16 +163,20 @@ export const enum RemoveReason {
 export type ImageRef = string;
 export type QuestionIndex = number;
 
+export interface AnswerValue {
+  id: number;
+  value: string;
+  correct: boolean;
+}
+
 interface SingleQuestionData {
-  values: string[];
-  answers: QuestionIndex[];
+  answers: AnswerValue[];
 }
 
 export interface MultipleQuestionData {
-  values: string[];
-  answers: QuestionIndex[];
-  min: number | null;
-  max: number | null;
+  answers: AnswerValue[];
+  min: number;
+  max: number;
 }
 
 
@@ -200,6 +204,7 @@ export interface Scoring {
   max_score: number;
   bonus_score: number;
 }
+
 
 export const enum AnswerType {
   Single = "Single",

@@ -17,8 +17,12 @@
       max_score: DEFAULT_MAX_SCORE,
       bonus_score: DEFAULT_BONUS_SCORE,
     },
-    values: ["Example A", "Example B", "Example C", "Example D"],
-    answers: [0],
+    answers: [
+      { id: 0, value: "Example A", correct: true },
+      { id: 1, value: "Example B", correct: false },
+      { id: 2, value: "Example C", correct: false },
+      { id: 3, value: "Example D", correct: false },
+    ],
   };
 
   const questions: Question[] = [DEFAULT_QUESTION];

@@ -96,7 +96,7 @@ pub struct AnswerValue {
     pub value: String,
     /// Whether the answer is a correct one
     /// (Not sent to clients)
-    #[serde(skip)]
+    #[serde(skip_serializing)]
     pub correct: bool,
 }
 
@@ -116,7 +116,6 @@ pub enum QuestionData {
     /// Multiple choice question
     Multiple {
         /// Vec of indexes of correct answers
-        #[serde(skip)]
         answers: Vec<AnswerValue>,
         /// The minimum number of required answers
         min: usize,
