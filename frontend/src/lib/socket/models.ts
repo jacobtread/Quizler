@@ -125,39 +125,41 @@ export interface BasicConfig {
   text: string;
 }
 
+
+
 export const enum GameState {
-  Lobby = 0x0,
-  Starting = 0x1,
-  AwaitingReady = 0x2,
-  AwaitingAnswers = 0x3,
-  Marked = 0x4,
-  Finished = 0x5,
+  Lobby = "Lobby",
+  Starting = "Starting",
+  AwaitingReady = "AwaitingReady",
+  AwaitingAnswers = "AwaitingAnswers",
+  Marked = "Marked",
+  Finished = "Finished",
 }
 
 export const enum ServerError {
-  MalformedMessage = 0x0,
-  InvalidToken = 0x1,
-  UsernameTaken = 0x2,
-  NotJoinable = 0x3,
-  UnknownPlayer = 0x4,
-  Unexpected = 0x5,
-  InvalidPermission = 0x6,
-  UnexpectedMessage = 0x7,
-  AlreadyAnswered = 0x8,
-  InvalidAnswer = 0x9,
+  MalformedMessage = "MalformedMessage",
+  InvalidToken = "InvalidToken",
+  UsernameTaken = "UsernameTaken",
+  NotJoinable = "NotJoinable",
+  UnknownPlayer = "UnknownPlayer",
+  Unexpected = "Unexpected",
+  InvalidPermission = "InvalidPermission",
+  UnexpectedMessage = "UnexpectedMessage",
+  AlreadyAnswered = "AlreadyAnswered",
+  InvalidAnswer = "InvalidAnswer",
 }
 
 export const enum HostAction {
-  Start = 0x1,
-  Cancel = 0x2,
-  Skip = 0x3,
+  Start = "Start",
+  Cancel = "Cancel",
+  Skip = "Skip",
 }
 
 export const enum RemoveReason {
-  RemovedByHost = 0x1,
-  HostDisconnect = 0x2,
-  LostConnection = 0x3,
-  Disconnected = 0x4,
+  RemovedByHost = "RemovedByHost",
+  HostDisconnect = "HostDisconnect",
+  LostConnection = "LostConnection",
+  Disconnected = "Disconnected",
 }
 
 export type ImageRef = string;
