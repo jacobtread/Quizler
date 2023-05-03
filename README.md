@@ -18,6 +18,5 @@ This new version makes use of **Rust** for the backend and **Svelte** for the fr
 - Multiple question types, this new version aims to add multiple new question types to choose from:
     - Question with multiple choice but only 1 is right
     - Multiple choice question with multiple right answers
-    - Image question where you select a region on the image
 - Customizable timings, you will be able to customize the time given for each question, the time between questions, the time available for bonus scoring.
 - Customizible scoring, you will be able to decide the minimum and maximum score that can be earned for a question based on the time it took to answer along with customizing the amount of score gained if answered within the bonus period.

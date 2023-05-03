@@ -160,8 +160,8 @@ export const enum RemoveReason {
   Disconnected = 0x4,
 }
 
-type ImageRef = string;
-type QuestionIndex = number;
+export type ImageRef = string;
+export type QuestionIndex = number;
 
 interface SingleQuestionData {
   values: string[];
@@ -175,16 +175,10 @@ export interface MultipleQuestionData {
   max: number | null;
 }
 
-export interface ClickableImageQuestionData {
-  imag: ImageRef;
-  top: [number, number];
-  bottom: [number, number];
-}
 
 export const enum QuestionDataType {
   Single = "Single",
   Multiple = "Multiple",
-  ClickableImage = "ClickableImage",
 }
 
 export interface QuestionBase {
@@ -199,7 +193,6 @@ export type Question = QuestionBase &
   (
     | ({ ty: QuestionDataType.Single } & SingleQuestionData)
     | ({ ty: QuestionDataType.Multiple } & MultipleQuestionData)
-    | ({ ty: QuestionDataType.ClickableImage } & ClickableImageQuestionData)
   );
 
 export interface Scoring {
@@ -211,7 +204,6 @@ export interface Scoring {
 export const enum AnswerType {
   Single = "Single",
   Multiple = "Multiple",
-  ClickableImage = "ClickableImage",
 }
 
 interface SingleAnswer {
@@ -222,11 +214,7 @@ export interface MultipleAnswer {
   answers: QuestionIndex[];
 }
 
-export interface ClickableImageAnswer {
-  answer: [number, number];
-}
 
 export type Answer =
   | ({ ty: AnswerType.Single } & SingleAnswer)
   | ({ ty: AnswerType.Multiple } & MultipleAnswer)
-  | ({ ty: AnswerType.ClickableImage } & ClickableImageAnswer);

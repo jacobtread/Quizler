@@ -1,4 +1,5 @@
 <script lang="ts">
+  import CreateQuestion from "./CreateQuestion.svelte";
   import { QuestionDataType, type Question } from "./socket/models";
 
   const DEFAULT_ANSWER_TIME_MS: number = 1000 * 10; /* 10s */
@@ -29,7 +30,10 @@
 <button>Load</button>
 
 <div class="questions">
-  {#each questions as question}
-    <div class="question" />
+  {#each questions as question, index}
+    <CreateQuestion {question} {index} />
   {/each}
 </div>
+
+<style>
+</style>

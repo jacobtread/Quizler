@@ -119,17 +119,6 @@ pub enum QuestionData {
         /// The optional maximum number of required answers
         max: Option<usize>,
     },
-    /// Image where you must click an area
-    ClickableImage {
-        /// The image ref to take clicking on
-        image: ImageRef,
-        /// Top left box coordinate
-        #[serde(skip)]
-        top: (f32, f32),
-        /// Bottom right box coordinate
-        #[serde(skip)]
-        bottom: (f32, f32),
-    },
 }
 
 /// Game settings for global min/max scoring along with
@@ -171,11 +160,6 @@ pub enum Answer {
         /// The list of chosen answers
         answers: Vec<QuestionIndex>,
     },
-    /// Answer for a clickable region image
-    ClickableImage {
-        /// The X and Y position that was clicked
-        answer: (f32, f32),
-    },
 }
 
 impl Answer {
@@ -184,8 +168,7 @@ impl Answer {
     pub fn is_valid(&self, qt: &QuestionData) -> bool {
         match (self, qt) {
             (Self::Single { .. }, QuestionData::Single { .. })
-            | (Self::Multiple { .. }, QuestionData::Multiple { .. })
-            | (Self::ClickableImage { .. }, QuestionData::ClickableImage { .. }) => true,
+            | (Self::Multiple { .. }, QuestionData::Multiple { .. }) => true,
             _ => false,
         }
     }

@@ -410,20 +410,7 @@ impl Game {
                     Score::Partial(score)
                 }
             }
-            (
-                A::ClickableImage { answer: (x, y) },
-                Q::ClickableImage {
-                    top: (tx, ty),
-                    bottom: (bx, by),
-                    ..
-                },
-            ) => {
-                if x >= tx && x <= bx && y >= ty && y <= by {
-                    Score::Correct(base_score)
-                } else {
-                    Score::Incorrect
-                }
-            }
+
             // Mismatched types shouldn't be possible but
             // will be marked as incorrect
             _ => Score::Incorrect,
