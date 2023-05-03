@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { QuestionDataType, type Question } from "$lib/socket/models";
+  import { QuestionDataType, type Question } from "./socket/models";
 
   const DEFAULT_ANSWER_TIME_MS: number = 1000 * 10; /* 10s */
   const DEFAULT_MIN_SCORE: number = 10;
