@@ -103,25 +103,24 @@ pub struct TimeSync {
 }
 
 #[derive(Serialize, Clone, Copy, PartialEq, Eq)]
-#[repr(u8)]
 pub enum GameState {
     /// The game is in the lobby
-    Lobby = 0x0,
+    Lobby,
 
     /// The game is starting
-    Starting = 0x1,
+    Starting,
 
     /// The game is waiting for ready from all the players
-    AwaitingReady = 0x2,
+    AwaitingReady,
 
     /// The game has started and is waiting for answers
-    AwaitingAnswers = 0x3,
+    AwaitingAnswers,
 
     /// The questions have been marked
-    Marked = 0x4,
+    Marked,
 
     /// The game has finished
-    Finished = 0x5,
+    Finished,
 }
 
 impl GameState {

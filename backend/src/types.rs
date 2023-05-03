@@ -7,56 +7,53 @@ use uuid::Uuid;
 
 #[derive(Message, Debug, Copy, Clone, Serialize)]
 #[rtype(result = "()")]
-#[repr(u8)]
 pub enum ServerError {
     /// The last proivded message was malformed
-    MalformedMessage = 0x0,
+    MalformedMessage,
     /// The provided token didn't match up to any game
-    InvalidToken = 0x1,
+    InvalidToken,
     /// The provided username is already in use
-    UsernameTaken = 0x2,
+    UsernameTaken,
     /// The game is already started or finish so cannot be joined
-    NotJoinable = 0x3,
+    NotJoinable,
     /// An action was attempting on a player that wasnt found
-    UnknownPlayer = 0x4,
+    UnknownPlayer,
     /// Something unexpected went wrong on the server
-    Unexpected = 0x5,
+    Unexpected,
     /// Didn't have permission to complete that action
-    InvalidPermission = 0x6,
+    InvalidPermission,
     /// Message was recieved but wasn't expected at the current
     /// state
-    UnexpectedMessage = 0x7,
+    UnexpectedMessage,
     /// Already provided an answer
-    AlreadyAnswered = 0x8,
+    AlreadyAnswered,
     /// Provided answer is not valid for the type of question
-    InvalidAnswer = 0x9,
+    InvalidAnswer,
 }
 
 /// Actions that can be executed by the host
 /// session of a game
 #[derive(Debug, Copy, Clone, Deserialize)]
-#[repr(u8)]
 pub enum HostAction {
     /// Begin the starting process
-    Start = 0x1,
+    Start,
     /// Cancel the starting process
-    Cancel = 0x2,
+    Cancel,
     /// Skip the current waiting timer state
-    Skip = 0x3,
+    Skip,
 }
 
 /// Reasons why a player was removed from the game
 #[derive(Debug, Copy, Clone, Serialize)]
-#[repr(u8)]
 pub enum RemoveReason {
     /// Player was manually kicked by the host
-    RemovedByHost = 0x1,
+    RemovedByHost,
     /// The host diconnected ending the game
-    HostDisconnect = 0x2,
+    HostDisconnect,
     /// Connection was lost to the player
-    LostConnection = 0x3,
+    LostConnection,
     /// Player disconnected
-    Disconnected = 0x4,
+    Disconnected,
 }
 
 /// Type alias for UUIDs used to represent image references
