@@ -1,4 +1,4 @@
-import { writable } from "svelte/store";
+import { get, writable, type Subscriber, type Unsubscriber } from "svelte/store";
 import { DEBUG } from "../constants";
 import {
   ServerMessage,
@@ -20,7 +20,7 @@ type MessageHandlers = {
 };
 
 // Reference to the socket
-let socket: WebSocket = createSocket();
+let socket: WebSocket | null = createSocket();
 
 // Map of the message types to their handlers
 const messageHandlers: MessageHandlers = {
@@ -36,6 +36,24 @@ const messageHandlers: MessageHandlers = {
 
 // Socket readiness state
 export const socketReady = writable<boolean>(false);
+
+/**
+ * Creates a promise that subscribes to when
+ * the socket connection is ready to be used
+ * 
+ * @returns The ready promise
+ */
+export function getSocketReady(): Promise<void> {
+  let unsub: Unsubscriber = () => { };
+  return new Promise<void>((resolve, reject) => {
+    unsub = socketReady.subscribe((value) => {
+      if (value) {
+        resolve();
+      }
+    })
+  })
+    .finally(unsub);
+}
 
 /**
  * Creates a new socket connection assigning
@@ -59,24 +77,30 @@ function createSocket(): WebSocket {
   // Handle close events
   ws.onclose = (event: CloseEvent) => {
     // Handle the socket becoming unavailable
-    socketReady.set(false);
     console.warn("WebSocket connetion closed", event);
 
-    // Reconnect the socket
-    socket = createSocket();
+    queueReconnect();
   };
 
   // Handle error events
   ws.onerror = (event: Event) => {
     // Handle the socket becoming unavailable
-    socketReady.set(false);
     console.error("WebSocket error", event);
 
-    // Reconnect the socket
-    socket = createSocket();
+    queueReconnect();
   };
 
   return ws;
+}
+
+function queueReconnect() {
+  socketReady.set(false);
+
+  // Don't immediately try to reconnect
+  setTimeout(() => {
+    // Try reconnect the socket
+    socket = createSocket();
+  }, 1000)
 }
 
 /**

@@ -116,6 +116,12 @@ export type ClientMessage =
   | ({ ty: ClientMessageType.Answer } & AnswerMessage)
   | ({ ty: ClientMessageType.Kick } & KickMessage);
 
+export interface UploadConfig {
+  basic: BasicConfig;
+  timing: TimingConfig;
+  questions: Question[];
+}
+
 export interface GameConfig {
   basic: BasicConfig;
 }
@@ -125,7 +131,10 @@ export interface BasicConfig {
   text: string;
 }
 
-
+export interface TimingConfig {
+  wait_time: number;
+  bonus_score_time: number;
+}
 
 export const enum GameState {
   Lobby = "Lobby",

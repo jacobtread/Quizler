@@ -37,8 +37,6 @@
   }
 </script>
 
-<button>Save</button>
-<button>Load</button>
 <button on:click={addQuestion}>Add Question</button>
 
 <ol class="questions">

@@ -1,5 +1,6 @@
 use crate::games::Games;
 use actix::Actor;
+use actix_cors::Cors;
 use actix_web::{web::Data, App, HttpServer};
 use dotenvy::dotenv;
 use log::info;
@@ -33,8 +34,12 @@ async fn main() -> std::io::Result<()> {
     info!("Starting Quizler on port {}", port);
 
     HttpServer::new(move || {
+        let cors = Cors::permissive();
         let games = games.clone();
-        App::new().app_data(games).configure(http::configure)
+        App::new()
+            .app_data(games)
+            .wrap(cors)
+            .configure(http::configure)
     })
     .bind(("0.0.0.0", port))?
     .run()
