@@ -2,7 +2,7 @@
 
 import { get } from "svelte/store";
 import { imageStore, loadImagePreview, type StoredImage } from "./imageStore";
-import type { Question, TimingConfig, UploadConfig } from "./socket/models";
+import type { Question, TimingConfig } from "./socket/models";
 
 interface SerializedQuiz {
   name: string;
@@ -79,9 +79,9 @@ export async function saveQuiz(
  * @param ext    The output file extension
  * @param object The object to stringify
  */
-function saveObject(name: string, ext: string, object: any) {
+function saveObject<T>(name: string, ext: string, object: T) {
   const json = JSON.stringify(object);
-  const safeName: string = name.replace(/[ ^\/]/g, "_");
+  const safeName: string = name.replace(/[ ^/]/g, "_");
   const blob = new Blob([json], { type: "application/json" });
 
   const URL = window.webkitURL ?? window.URL;
@@ -118,8 +118,8 @@ export async function loadQuiz(file: Blob): Promise<DeserializedQuiz> {
   // Load the string contents of the file blob
   const data: string = await new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = (event) => {
-      const data = event.target.result as string;
+    reader.onload = () => {
+      const data = reader.result as string;
       resolve(data);
     };
     reader.onerror = reject;

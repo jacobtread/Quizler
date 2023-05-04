@@ -4,7 +4,7 @@
     imageStore,
     selectImageStore,
     uploadFile,
-    type StoredImage,
+    type StoredImage
   } from "./imageStore";
 
   let input: HTMLInputElement;
@@ -17,12 +17,24 @@
   }
 
   async function onUpload() {
-    for (let i = 0; i < input.files.length; i++) {
-      let file: File = input.files.item(i);
+    const files = input.files;
+
+    if (files == null) {
+      console.error("Failed to upload images, files was null");
+      return;
+    }
+
+    for (let i = 0; i < files.length; i++) {
+      const file: File | null = files.item(i);
+      if (file == null) {
+        console.error("Failed to upload image file was null");
+        continue;
+      }
+
       uploading.push({
         name: file.name,
         progress: 0,
-        error: null,
+        error: null
       });
       uploading = uploading;
       uploadFile(file, (progress) => {

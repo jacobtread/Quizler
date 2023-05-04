@@ -8,7 +8,7 @@
   export let editing: Question | null;
 
   function addQuestion() {
-    let nextId: number = 0;
+    let nextId = 0;
 
     for (const question of questions) {
       if (question.id >= nextId) {
@@ -23,7 +23,7 @@
     questions = questions;
   }
 
-  function swapQuestion(aIndex, bIndex) {
+  function swapQuestion(aIndex: number, bIndex: number) {
     let a = questions[aIndex];
     let b = questions[bIndex];
 
@@ -32,7 +32,7 @@
     questions[bIndex] = a;
   }
 
-  function removeQuestion(index) {
+  function removeQuestion(index: number) {
     questions = questions.filter((_, valueIndex) => valueIndex != index);
   }
 </script>

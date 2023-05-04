@@ -92,10 +92,20 @@
    * load file input changes its value
    */
   async function onLoadQuiz() {
+    if (loadInput.files == null) {
+      console.error("Failed to load quiz, load input missing files");
+      return;
+    }
+
     console.debug("Loading quiz file");
 
-    // TODO: Check that there is actually a file first before loading
-    const file = loadInput.files.item(0);
+    const file: File | null = loadInput.files.item(0);
+
+    if (file == null) {
+      console.error("Failed to load quiz, file was null");
+      return;
+    }
+
     const loaded = await loadQuiz(file);
 
     console.debug("Loaded quiz file", loaded);

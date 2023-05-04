@@ -1,9 +1,4 @@
-import {
-  get,
-  writable,
-  type Subscriber,
-  type Unsubscriber
-} from "svelte/store";
+import { writable, type Unsubscriber } from "svelte/store";
 import { DEBUG } from "../constants";
 import {
   ServerMessage,
@@ -49,14 +44,20 @@ export const socketReady = writable<boolean>(false);
  * @returns The ready promise
  */
 export function getSocketReady(): Promise<void> {
-  let unsub: Unsubscriber = () => {};
-  return new Promise<void>((resolve, reject) => {
-    unsub = socketReady.subscribe((value) => {
-      if (value) {
-        resolve();
-      }
-    });
-  }).finally(unsub);
+  // Unsubscribe callback for cleaning up subscription
+  let unsub: Unsubscriber | undefined;
+
+  return (
+    new Promise<void>((resolve) => {
+      unsub = socketReady.subscribe((value) => {
+        if (value) {
+          resolve();
+        }
+      });
+    })
+      // Remove subscripotion
+      .finally(unsub)
+  );
 }
 
 /**
@@ -121,9 +122,9 @@ function queueReconnect() {
  * @returns The URL that the WebSocket should use
  */
 function getSocketURL(): URL {
-  const SOCKET_ENDPOINT: string = "/api/quiz/socket";
+  const SOCKET_ENDPOINT = "/api/quiz/socket";
 
-  let host = DEBUG
+  const host = DEBUG
     ? "ws://localhost"
     : window.location.origin.replace(/^https/, "wss").replace(/^http/, "ws");
 
@@ -137,6 +138,11 @@ function getSocketURL(): URL {
  * @param msg
  */
 export function sendMessage(msg: ClientMessage) {
+  if (socket == null) {
+    console.error("Attempted to send message to closed socket", msg);
+    throw new Error("Socket was closed");
+  }
+
   console.debug("Sending message to server", msg);
 
   const data = JSON.stringify(msg);

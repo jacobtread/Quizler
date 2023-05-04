@@ -6,7 +6,7 @@
 
 {#if question.ty == QuestionDataType.Single || question.ty == QuestionDataType.Multiple}
   <ul class="answers">
-    {#each question.answers as answer, index (answer.id)}
+    {#each question.answers as answer}
       <li class="answer" data-correct={answer.correct}>
         {answer.value}
       </li>
@@ -15,12 +15,6 @@
 {/if}
 
 <style>
-  .answers {
-  }
-
-  .answer {
-  }
-
   .answer[data-correct="true"] {
     background-color: #ff0000;
   }

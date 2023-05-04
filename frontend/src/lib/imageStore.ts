@@ -38,7 +38,7 @@ export const selectImageStore: Writable<UploadImageState> = writable({
 });
 
 export async function selectImage(): Promise<StoredImage> {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     selectImageStore.set({
       visible: true,
       callback: resolve
@@ -87,10 +87,13 @@ export function uploadFile(
 export function loadImagePreview(image: Blob, uuid: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = (event) => {
-      const previewUrl = event.target.result as string;
+    reader.onload = () => {
+      const previewUrl = reader.result as string;
       imageStore.update((store) => {
-        let image = store.find((value) => value.uuid == uuid);
+        // Find the matching image from the image stroe
+        const image: StoredImage | undefined = store.find(
+          (value) => value.uuid == uuid
+        );
 
         if (image) image.previewUrl = previewUrl;
         resolve();

@@ -4,7 +4,7 @@
   import {
     QuestionDataType,
     type Question,
-    type AnswerValue,
+    type AnswerValue
   } from "./socket/models";
   import { flip } from "svelte/animate";
   import { imageStore, selectImage } from "./imageStore";
@@ -36,12 +36,12 @@
       question = {
         ...oldQuestion,
         ty: newValue,
-        answers,
+        answers
       };
     } else if (newValue == QuestionDataType.Multiple) {
       let answers: AnswerValue[] = [];
-      let min: number = 1;
-      let max: number = 1;
+      let min = 1;
+      let max = 1;
 
       if (
         oldQuestion.ty == QuestionDataType.Single ||
@@ -60,7 +60,7 @@
         ty: newValue,
         answers,
         min,
-        max,
+        max
       };
     }
   }
@@ -74,7 +74,7 @@
   }
 
   function addAnswer() {
-    let nextId: number = 0;
+    let nextId = 0;
 
     for (const answer of question.answers) {
       if (answer.id >= nextId) {
@@ -85,12 +85,12 @@
     question.answers.push({
       id: nextId,
       value: "",
-      correct: false,
+      correct: false
     });
     question.answers = question.answers;
   }
 
-  function swapAnswer(aIndex, bIndex) {
+  function swapAnswer(aIndex: number, bIndex: number) {
     let a = question.answers[aIndex];
     let b = question.answers[bIndex];
 
@@ -119,12 +119,25 @@
     question.image = null;
     image = null;
   }
+
+  function onImageKeyPress(event: KeyboardEvent) {
+    console.log(event);
+    if (event.key === "Enter" || event.key === "NumpadEnter") {
+      pickImage();
+    }
+  }
 </script>
 
 <div class="editor">
   <button on:click={back}>Back</button>
 
-  <div class="question__img-wrapper" on:click={pickImage}>
+  <div
+    tabindex="0"
+    role="button"
+    class="question__img-wrapper"
+    on:click={pickImage}
+    on:keypress={onImageKeyPress}
+  >
     {#if image}
       <img class="question__img" src={image} alt="Uploaded Content" />
     {:else}
@@ -215,9 +228,6 @@
 </div>
 
 <style>
-  .question {
-  }
-
   .question__text {
     display: block;
     width: 100%;
