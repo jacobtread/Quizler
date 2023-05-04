@@ -2,7 +2,6 @@
   import {
     ClientMessageType,
     type CreatedResponse,
-    type GameConfig,
     type Question,
     type TimingConfig,
     type UploadConfig,
@@ -13,6 +12,7 @@
   import { getSocketReady, sendMessage, socketReady } from "./socket";
   import { get } from "svelte/store";
   import { imageStore } from "./imageStore";
+  import { loadQuizFile, saveQuiz } from "./format";
 
   let questions: Question[] = [defaultQuestion()];
   let editing: Question | null = null;
@@ -66,6 +66,25 @@
       uuid: json.uuid,
     });
   }
+
+  function save() {
+    saveQuiz({
+      basic: { name, text },
+      timing,
+      questions,
+    });
+  }
+
+  let loadInput: HTMLInputElement;
+
+  async function onLoadQuiz() {
+    const file = loadInput.files.item(0);
+    const cfg = await loadQuizFile(file);
+
+    questions = cfg.questions;
+    name = cfg.basic.name;
+    text = cfg.basic.text;
+  }
 </script>
 
 {#if editing}
@@ -73,10 +92,12 @@
 {:else}
   <button>Back</button>
 
+  <input hidden bind:this={loadInput} type="file" on:change={onLoadQuiz} />
+
   <h1>Create Quiz</h1>
   <div>
-    <button>Save</button>
-    <button>Load</button>
+    <button on:click={save}>Save</button>
+    <button on:click={() => loadInput.click()}>Load</button>
     <button on:click={startQuiz}>Play</button>
   </div>
 

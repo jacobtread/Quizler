@@ -79,20 +79,24 @@ export function uploadFile(file: File, onProgress: (progress: number) => void): 
         });
 
     return compressPromise
-        .then((compressed) => new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const previewUrl = event.target.result as string
-                imageStore.update((store) => {
-                    let image = store.find((value) => value.uuid == uuid);
+        .then((compressed) => loadImagePreview(compressed, uuid));
+}
 
-                    if (image) image.previewUrl = previewUrl;
-                    resolve();
-                    return store;
-                });
-            };
-            reader.onerror = reject;
-            reader.onabort = reject;
-            reader.readAsDataURL(compressed);
-        }));
+export function loadImagePreview(image: Blob, uuid: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const previewUrl = event.target.result as string
+            imageStore.update((store) => {
+                let image = store.find((value) => value.uuid == uuid);
+
+                if (image) image.previewUrl = previewUrl;
+                resolve();
+                return store;
+            });
+        };
+        reader.onerror = reject;
+        reader.onabort = reject;
+        reader.readAsDataURL(image);
+    })
 }
