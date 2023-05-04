@@ -127,7 +127,6 @@
   }
 
   function onImageKeyPress(event: KeyboardEvent) {
-    console.log(event);
     if (event.key === "Enter" || event.key === "NumpadEnter") {
       pickImage();
     }

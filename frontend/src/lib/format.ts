@@ -115,17 +115,19 @@ function saveObject<T>(name: string, ext: string, object: T) {
  * @returns The loaded quiz data
  */
 export async function loadQuiz(file: Blob): Promise<DeserializedQuiz> {
-  // Load the string contents of the file blob
-  const data: string = await new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const data = reader.result as string;
-      resolve(data);
-    };
+  const reader = new FileReader();
+
+  // Await the reading process
+  await new Promise((resolve, reject) => {
+    reader.onload = resolve;
     reader.onerror = reject;
     reader.onabort = reject;
+
+    // Load the file as a string
     reader.readAsText(file);
   });
+
+  const data = reader.result as string;
 
   // TODO: Actually validate that this input is correct
   const obj = JSON.parse(data) as SerializedQuiz;
@@ -138,7 +140,7 @@ export async function loadQuiz(file: Blob): Promise<DeserializedQuiz> {
     // Add the image to the image store
     imageStore.update((store) => {
       // Update the data store
-      store.push({ uuid, name, size, blob, previewUrl: null });
+      store.push({ uuid, name, size, blob });
 
       return store;
     });

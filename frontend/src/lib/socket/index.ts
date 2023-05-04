@@ -20,7 +20,7 @@ type MessageHandlers = {
 };
 
 // Reference to the socket
-let socket: WebSocket | null = createSocket();
+let socket: WebSocket = createSocket();
 
 // Map of the message types to their handlers
 const messageHandlers: MessageHandlers = {
@@ -55,7 +55,7 @@ export function getSocketReady(): Promise<void> {
         }
       });
     })
-      // Remove subscripotion
+      // Remove subscription
       .finally(unsub)
   );
 }
@@ -102,6 +102,10 @@ function createSocket(): WebSocket {
   return ws;
 }
 
+/**
+ * Handles clearing the socket ready state and setting
+ * a timeout for when to reconnect
+ */
 function queueReconnect() {
   console.debug("Socket connection lost (Reconnecting in 1000ms)");
 
@@ -138,11 +142,6 @@ function getSocketURL(): URL {
  * @param msg
  */
 export function sendMessage(msg: ClientMessage) {
-  if (socket == null) {
-    console.error("Attempted to send message to closed socket", msg);
-    throw new Error("Socket was closed");
-  }
-
   console.debug("Sending message to server", msg);
 
   const data = JSON.stringify(msg);

@@ -6,7 +6,7 @@
 import type { ImageRef } from "./socket/models";
 import { v4 as uuidv4 } from "uuid";
 import imageCompression from "browser-image-compression";
-import { get, writable, type Writable } from "svelte/store";
+import { writable, type Writable } from "svelte/store";
 
 export interface StoredImage {
   /// The file UUID
