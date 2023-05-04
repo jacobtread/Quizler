@@ -7,6 +7,7 @@
     type AnswerValue,
   } from "./socket/models";
   import { flip } from "svelte/animate";
+  import { imageStore, selectImage } from "./imageStore";
 
   // The question that is being created
   export let question: Question;
@@ -97,16 +98,33 @@
     question.answers[aIndex] = b;
     question.answers[bIndex] = a;
   }
+
+  let image: string | null = null;
+
+  $: {
+    let value = $imageStore.find((value) => value.uuid == question.image);
+    if (value) {
+      image = value.previewUrl;
+    } else {
+      image = null;
+    }
+  }
+
+  async function pickImage() {
+    let res = await selectImage();
+    image = res.previewUrl;
+    question.image = res.uuid;
+  }
 </script>
 
 <div class="editor">
   <button on:click={back}>Back</button>
 
   <div class="question__img">
-    {#if question.image != null}
-      <img src={question.image} alt="Uploaded Content" />
+    {#if image}
+      <img on:click={pickImage} src={image} alt="Uploaded Content" />
     {:else}
-      <button>Upload Image</button>
+      <button on:click={pickImage}>Pick Image</button>
     {/if}
   </div>
 

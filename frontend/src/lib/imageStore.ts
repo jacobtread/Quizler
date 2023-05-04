@@ -10,7 +10,7 @@ import imageCompression from "browser-image-compression"
 import { writable, type Writable } from "svelte/store";
 
 
-interface StoredImage {
+export interface StoredImage {
     /// The file UUID
     uuid: ImageRef;
 
@@ -30,6 +30,24 @@ interface StoredImage {
 export const imageStore: Writable<StoredImage[]> = writable([]);
 
 
+export interface UploadImageState {
+    visible: boolean;
+    callback: null | ((image: StoredImage) => void);
+}
+
+export const selectImageStore: Writable<UploadImageState> = writable({
+    visible: false,
+    callback: null
+});
+
+export async function selectImage(): Promise<StoredImage> {
+    return new Promise((resolve, reject) => {
+        selectImageStore.set({
+            visible: true,
+            callback: resolve
+        })
+    })
+}
 
 export function uploadFile(file: File, onProgress: (progress: number) => void): Promise<void> {
     const uuid: string = uuidv4();
