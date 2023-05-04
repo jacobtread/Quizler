@@ -13,6 +13,7 @@
   interface FileUpload {
     name: string;
     progress: number;
+    error: string | null;
   }
 
   async function onUpload() {
@@ -21,13 +22,23 @@
       uploading.push({
         name: file.name,
         progress: 0,
+        error: null,
       });
       uploading = uploading;
       uploadFile(file, (progress) => {
         onProgress(file.name, progress);
-      }).then(() => {
-        uploading = uploading.filter((value) => value.name !== file.name);
-      });
+      })
+        .then(() => {
+          uploading = uploading.filter((value) => value.name !== file.name);
+        })
+        .catch((error) => {
+          uploading = uploading.map((value) => {
+            if (value.name === file.name) {
+              value.error = error;
+            }
+            return value;
+          });
+        });
     }
   }
 
@@ -82,6 +93,9 @@
 
         {#each uploading as upload}
           <div class="file">
+            {#if upload.error}
+              <p class="error">{upload.error}</p>
+            {/if}
             <p>Progress: {upload.progress}</p>
             <p>{upload.name}</p>
           </div>
@@ -103,6 +117,10 @@
 {/if}
 
 <style>
+  .error {
+    color: #ff8989;
+  }
+
   .wrapper {
     position: fixed;
     z-index: 1;
