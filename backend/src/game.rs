@@ -614,7 +614,7 @@ impl Handler<RemovePlayerMessage> for Game {
 
     fn handle(&mut self, msg: RemovePlayerMessage, ctx: &mut Self::Context) -> Self::Result {
         // Handle messages that aren't from the game host
-        if self.host.id != msg.session_id {
+        if msg.target_id != msg.session_id && self.host.id != msg.session_id {
             return Err(ServerError::InvalidPermission);
         }
 
