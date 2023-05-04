@@ -112,21 +112,29 @@
 
   async function pickImage() {
     let res = await selectImage();
-    image = res.previewUrl;
     question.image = res.uuid;
+  }
+
+  function removeImage() {
+    question.image = null;
+    image = null;
   }
 </script>
 
 <div class="editor">
   <button on:click={back}>Back</button>
 
-  <div class="question__img">
+  <div class="question__img-wrapper" on:click={pickImage}>
     {#if image}
-      <img on:click={pickImage} src={image} alt="Uploaded Content" />
+      <img class="question__img" src={image} alt="Uploaded Content" />
     {:else}
-      <button on:click={pickImage}>Pick Image</button>
+      <p>Pick Image</p>
     {/if}
   </div>
+
+  {#if image}
+    <button on:click={removeImage}>Remove Image</button>
+  {/if}
 
   <textarea
     class="question__text"
@@ -240,5 +248,27 @@
 
   .answer__question {
     flex: auto;
+  }
+
+  .question__img-wrapper {
+    max-height: 50vh;
+    width: 100%;
+    height: 50vh;
+    overflow: hidden;
+    position: relative;
+    margin-bottom: 1rem;
+    display: grid;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .question__img {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    height: 100%;
+    aspect-ratio: auto;
+    z-index: -1;
   }
 </style>
