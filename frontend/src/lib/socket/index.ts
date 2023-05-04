@@ -60,8 +60,12 @@ export function getSocketReady(): Promise<void> {
  * the event handlers for the different events
  */
 function createSocket(): WebSocket {
+  const socketUrl = getSocketURL();
+
+  console.debug("Connecting to socket server " + socketUrl)
+
   // Create the socket
-  const ws = new WebSocket(getSocketURL());
+  const ws = new WebSocket(socketUrl);
 
   // Assign the message handler
   ws.onmessage = onMessage;
@@ -71,13 +75,15 @@ function createSocket(): WebSocket {
     // Handle the WebSocket connection becoming OPEN
     if (ws.readyState == WebSocket.OPEN) {
       socketReady.set(true);
+    } else {
+      console.log(ws.readyState);
     }
   };
 
   // Handle close events
   ws.onclose = (event: CloseEvent) => {
     // Handle the socket becoming unavailable
-    console.warn("WebSocket connetion closed", event);
+    console.error("WebSocket connetion closed", event);
 
     queueReconnect();
   };
@@ -86,14 +92,14 @@ function createSocket(): WebSocket {
   ws.onerror = (event: Event) => {
     // Handle the socket becoming unavailable
     console.error("WebSocket error", event);
-
-    queueReconnect();
   };
 
   return ws;
 }
 
 function queueReconnect() {
+  console.debug("Socket connection lost (Reconnecting in 1000ms)")
+
   socketReady.set(false);
 
   // Don't immediately try to reconnect
