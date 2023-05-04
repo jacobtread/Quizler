@@ -1,10 +1,12 @@
 <script lang="ts">
-  import { get } from "svelte/store";
   import {
     imageStore,
     selectImageStore,
     uploadFile,
-    type StoredImage
+    type StoredImage,
+    clearSelectImage,
+    consumeSelectImage,
+    imagePreviewStore
   } from "./imageStore";
 
   let input: HTMLInputElement;
@@ -16,7 +18,7 @@
     error: string | null;
   }
 
-  async function onUpload() {
+  function onUpload() {
     const files = input.files;
 
     if (files == null) {
@@ -36,6 +38,7 @@
         progress: 0,
         error: null
       });
+
       uploading = uploading;
       uploadFile(file, (progress) => {
         onProgress(file.name, progress);
@@ -63,42 +66,41 @@
     });
   }
 
-  function onClose() {
-    selectImageStore.set({ visible: false, callback: null });
-  }
-
-  function onSelect(image: StoredImage) {
-    let store = get(selectImageStore);
-    if (store.callback) {
-      store.callback(image);
-    }
-    onClose();
-  }
-
   function onDelete(image: StoredImage) {
+    // Remove the image from the image store
     imageStore.update((store) => {
       return store.filter((value) => value.uuid !== image.uuid);
+    });
+
+    // Remove the image preview
+    imagePreviewStore.update((store) => {
+      delete store[image.uuid];
+      return store;
     });
   }
 </script>
 
-{#if $selectImageStore.visible}
+{#if $selectImageStore}
   <div class="wrapper">
     <div class="dialog">
-      <button on:click={onClose}>Close</button>
+      <button on:click={clearSelectImage}>Close</button>
       <div class="images">
         {#each $imageStore as image}
           <div class="file">
             <div class="image-wrapper">
-              {#if image.previewUrl != null}
-                <img class="image" src={image.previewUrl} alt="Preview" />
+              {#if $imagePreviewStore[image.uuid] !== undefined}
+                <img
+                  class="image"
+                  src={$imagePreviewStore[image.uuid]}
+                  alt="Preview"
+                />
               {:else}
                 <span>Preview loading..</span>
               {/if}
             </div>
             <p>{image.name}</p>
             <p>{image.size} bytes</p>
-            <button on:click={() => onSelect(image)}>Select</button>
+            <button on:click={() => consumeSelectImage(image)}>Select</button>
             <button on:click={() => onDelete(image)}>Delete</button>
           </div>
         {/each}

@@ -7,7 +7,7 @@
     type AnswerValue
   } from "./socket/models";
   import { flip } from "svelte/animate";
-  import { imageStore, selectImage } from "./imageStore";
+  import { imagePreviewStore, selectImage } from "./imageStore";
 
   // The question that is being created
   export let question: Question;
@@ -102,16 +102,22 @@
   let image: string | null = null;
 
   $: {
-    let value = $imageStore.find((value) => value.uuid == question.image);
-    if (value) {
-      image = value.previewUrl;
-    } else {
-      image = null;
+    // Handle displaying image previews
+    if (question.image !== null) {
+      let imagePreview = $imagePreviewStore[question.image];
+      if (imagePreview) {
+        image = imagePreview;
+      } else {
+        image = null;
+      }
     }
   }
 
   async function pickImage() {
     let res = await selectImage();
+    // Handle canceling select image
+    if (res === null) return;
+
     question.image = res.uuid;
   }
 
