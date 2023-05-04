@@ -50,7 +50,7 @@ export const enum ServerMessage {
   Question = "Question",
   Scores = "Scores",
   Error = "Error",
-  Kicked = "Kicked",
+  Kicked = "Kicked"
 }
 
 // Transforms the provided ServerMessage variant into the associated
@@ -104,7 +104,7 @@ export const enum ClientMessageType {
   Ready = "Ready",
   HostAction = "HostAction",
   Answer = "Answer",
-  Kick = "Kick",
+  Kick = "Kick"
 }
 
 export type ClientMessage =
@@ -142,7 +142,7 @@ export const enum GameState {
   AwaitingReady = "AwaitingReady",
   AwaitingAnswers = "AwaitingAnswers",
   Marked = "Marked",
-  Finished = "Finished",
+  Finished = "Finished"
 }
 
 export const enum ServerError {
@@ -155,20 +155,20 @@ export const enum ServerError {
   InvalidPermission = "InvalidPermission",
   UnexpectedMessage = "UnexpectedMessage",
   AlreadyAnswered = "AlreadyAnswered",
-  InvalidAnswer = "InvalidAnswer",
+  InvalidAnswer = "InvalidAnswer"
 }
 
 export const enum HostAction {
   Start = "Start",
   Cancel = "Cancel",
-  Skip = "Skip",
+  Skip = "Skip"
 }
 
 export const enum RemoveReason {
   RemovedByHost = "RemovedByHost",
   HostDisconnect = "HostDisconnect",
   LostConnection = "LostConnection",
-  Disconnected = "Disconnected",
+  Disconnected = "Disconnected"
 }
 
 export type ImageRef = string;
@@ -190,10 +190,9 @@ export interface MultipleQuestionData {
   max: number;
 }
 
-
 export const enum QuestionDataType {
   Single = "Single",
-  Multiple = "Multiple",
+  Multiple = "Multiple"
 }
 
 export interface QuestionBase {
@@ -217,10 +216,9 @@ export interface Scoring {
   bonus_score: number;
 }
 
-
 export const enum AnswerType {
   Single = "Single",
-  Multiple = "Multiple",
+  Multiple = "Multiple"
 }
 
 interface SingleAnswer {
@@ -231,7 +229,6 @@ export interface MultipleAnswer {
   answers: QuestionIndex[];
 }
 
-
 export type Answer =
   | ({ ty: AnswerType.Single } & SingleAnswer)
-  | ({ ty: AnswerType.Multiple } & MultipleAnswer)
+  | ({ ty: AnswerType.Multiple } & MultipleAnswer);

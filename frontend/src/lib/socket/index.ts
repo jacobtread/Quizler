@@ -1,4 +1,9 @@
-import { get, writable, type Subscriber, type Unsubscriber } from "svelte/store";
+import {
+  get,
+  writable,
+  type Subscriber,
+  type Unsubscriber
+} from "svelte/store";
 import { DEBUG } from "../constants";
 import {
   ServerMessage,
@@ -11,7 +16,7 @@ import {
   type ErrorMessage,
   type KickedMessage,
   type ServerMessageBody,
-  type ClientMessage,
+  type ClientMessage
 } from "./models";
 
 type MessageHandler<T> = (msg: T) => void;
@@ -31,7 +36,7 @@ const messageHandlers: MessageHandlers = {
   [ServerMessage.Question]: onQuestion,
   [ServerMessage.Scores]: onScores,
   [ServerMessage.Error]: onError,
-  [ServerMessage.Kicked]: onKicked,
+  [ServerMessage.Kicked]: onKicked
 };
 
 // Socket readiness state
@@ -40,19 +45,18 @@ export const socketReady = writable<boolean>(false);
 /**
  * Creates a promise that subscribes to when
  * the socket connection is ready to be used
- * 
+ *
  * @returns The ready promise
  */
 export function getSocketReady(): Promise<void> {
-  let unsub: Unsubscriber = () => { };
+  let unsub: Unsubscriber = () => {};
   return new Promise<void>((resolve, reject) => {
     unsub = socketReady.subscribe((value) => {
       if (value) {
         resolve();
       }
-    })
-  })
-    .finally(unsub);
+    });
+  }).finally(unsub);
 }
 
 /**
@@ -62,7 +66,7 @@ export function getSocketReady(): Promise<void> {
 function createSocket(): WebSocket {
   const socketUrl = getSocketURL();
 
-  console.debug("Connecting to socket server " + socketUrl)
+  console.debug("Connecting to socket server " + socketUrl);
 
   // Create the socket
   const ws = new WebSocket(socketUrl);
@@ -98,7 +102,7 @@ function createSocket(): WebSocket {
 }
 
 function queueReconnect() {
-  console.debug("Socket connection lost (Reconnecting in 1000ms)")
+  console.debug("Socket connection lost (Reconnecting in 1000ms)");
 
   socketReady.set(false);
 
@@ -106,7 +110,7 @@ function queueReconnect() {
   setTimeout(() => {
     // Try reconnect the socket
     socket = createSocket();
-  }, 1000)
+  }, 1000);
 }
 
 /**

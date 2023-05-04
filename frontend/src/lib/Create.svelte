@@ -4,42 +4,53 @@
     type CreatedResponse,
     type Question,
     type TimingConfig,
-    type UploadConfig,
+    type UploadConfig
   } from "./socket/models";
   import QuestionEditor from "./QuestionEditor.svelte";
   import { DEBUG, defaultQuestion } from "./constants";
   import QuestionList from "./QuestionList.svelte";
-  import { getSocketReady, sendMessage, socketReady } from "./socket";
+  import { getSocketReady, sendMessage } from "./socket";
   import { get } from "svelte/store";
   import { imageStore } from "./imageStore";
-  import { loadQuizFile, saveQuiz } from "./format";
+  import { loadQuiz, saveQuiz } from "./format";
 
+  // Input used for loading quiz files
+  let loadInput: HTMLInputElement;
+
+  // Questions array
   let questions: Question[] = [defaultQuestion()];
+
+  // Active question being edited
   let editing: Question | null = null;
 
+  // Name of the quiz
   let name: string = "Example Quiz";
+
+  // Quiz description text
   let text: string = "Small description about your quiz";
 
+  // TODO: Implement fields for changing these timings and question timings
   let timing: TimingConfig = {
     bonus_score_time: 1000,
-    wait_time: 1000,
+    wait_time: 1000
   };
 
   async function startQuiz() {
     const config: UploadConfig = {
       basic: { name, text },
       timing,
-      questions,
+      questions
     };
 
     console.debug("Creating quiz");
 
-    let form = new FormData();
+    // Create the form
+    const form = new FormData();
+    // Append the config
     form.append("config", JSON.stringify(config));
-    // TODO: Append images
 
+    // Append the images to the form
     const images = get(imageStore);
-
     for (const image of images) {
       form.append(image.uuid, image.blob);
     }
@@ -63,27 +74,36 @@
 
     sendMessage({
       ty: ClientMessageType.Initialize,
-      uuid: json.uuid,
+      uuid: json.uuid
     });
   }
 
-  function save() {
-    saveQuiz({
-      basic: { name, text },
-      timing,
-      questions,
-    });
+  /**
+   * Handles saving the current quiz to a file
+   */
+  async function save() {
+    console.debug("Saving quiz to file", name);
+    await saveQuiz(name, text, timing, questions);
+    console.debug("Saved quiz to file");
   }
 
-  let loadInput: HTMLInputElement;
-
+  /**
+   * Handles loading a quiz file when the quiz
+   * load file input changes its value
+   */
   async function onLoadQuiz() {
-    const file = loadInput.files.item(0);
-    const cfg = await loadQuizFile(file);
+    console.debug("Loading quiz file");
 
-    questions = cfg.questions;
-    name = cfg.basic.name;
-    text = cfg.basic.text;
+    // TODO: Check that there is actually a file first before loading
+    const file = loadInput.files.item(0);
+    const loaded = await loadQuiz(file);
+
+    console.debug("Loaded quiz file", loaded);
+
+    questions = loaded.questions;
+    name = loaded.name;
+    text = loaded.text;
+    timing = loaded.timing;
   }
 </script>
 
