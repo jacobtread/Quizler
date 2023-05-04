@@ -6,7 +6,13 @@ use crate::{
 use actix::{Actor, Addr, AsyncContext, Context, Handler, Message, MessageResult};
 use rand_core::{OsRng, RngCore};
 use serde::Serialize;
-use std::{collections::HashMap, fmt::Display, str::FromStr, sync::Arc};
+use std::{
+    collections::HashMap,
+    fmt::Display,
+    str::FromStr,
+    sync::Arc,
+    time::{Duration, Instant},
+};
 use uuid::Uuid;
 
 /// Central store for storing all the references to the individual
@@ -16,11 +22,48 @@ pub struct Games {
     /// Map of the game tokens to the actual game itself
     games: HashMap<GameToken, Addr<Game>>,
     /// Map of UUID's to game configurations that are preparing to start
-    preparing: HashMap<Uuid, GameConfig>,
+    preparing: HashMap<Uuid, PreparingGame>,
+}
+
+pub struct PreparingGame {
+    /// The config being prepared
+    config: GameConfig,
+    /// Creation time of this prepared game
+    created: Instant,
 }
 
 impl Actor for Games {
     type Context = Context<Self>;
+
+    fn started(&mut self, ctx: &mut Self::Context) {
+        /// Interval to check for expired game prepares (5mins)
+        const PREPARE_CHECK_INTERVAL: Duration = Duration::from_secs(60 * 5);
+
+        /// The amount of time that must pass for a prepared game to be
+        /// considered expired (20mins)
+        const GAME_EXPIRY_TIME: Duration = Duration::from_secs(60 * 20);
+
+        ctx.run_interval(PREPARE_CHECK_INTERVAL, |act, _| {
+            // Collect the expired UUIDs
+            let expired: Vec<Uuid> = act
+                .preparing
+                .iter()
+                .filter_map(|(uuid, value)| {
+                    let elapsed = value.created.elapsed();
+                    if elapsed >= GAME_EXPIRY_TIME {
+                        Some(*uuid)
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+
+            // Remove the expired preparings
+            for uuid in expired {
+                act.preparing.remove(&uuid);
+            }
+        });
+    }
 }
 
 #[derive(Hash, PartialEq, Eq, Clone, Copy)]
@@ -119,7 +162,14 @@ impl Handler<PrepareGameMessage> for Games {
 
     fn handle(&mut self, msg: PrepareGameMessage, _ctx: &mut Self::Context) -> Self::Result {
         let id = Uuid::new_v4();
-        self.preparing.insert(id, msg.config);
+
+        self.preparing.insert(
+            id,
+            PreparingGame {
+                config: msg.config,
+                created: Instant::now(),
+            },
+        );
         MessageResult(id)
     }
 }
@@ -153,10 +203,12 @@ impl Handler<InitializeMessage> for Games {
 
     fn handle(&mut self, msg: InitializeMessage, ctx: &mut Self::Context) -> Self::Result {
         // Find the config data from the pre init list
-        let config = self
+        let prep = self
             .preparing
             .remove(&msg.uuid)
             .ok_or(ServerError::InvalidToken)?;
+
+        let config = prep.config;
 
         let config = Arc::new(config);
 
