@@ -8,6 +8,7 @@ use crate::{
     },
 };
 use actix::{Actor, ActorContext, Addr, AsyncContext, Context, Handler, Message};
+use log::debug;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
@@ -423,6 +424,12 @@ impl Game {
     }
 }
 
+impl Drop for Game {
+    fn drop(&mut self) {
+        debug!("Game dropped: {}", self.token);
+    }
+}
+
 impl Actor for Game {
     type Context = Context<Self>;
 
@@ -435,6 +442,8 @@ impl Actor for Game {
 
     /// Handle stopping of a game actor
     fn stopped(&mut self, _ctx: &mut Self::Context) {
+        debug!("Game stopped: {}", self.token);
+
         // Remove the game from the list of games
         self.games.do_send(RemoveGameMessage { token: self.token });
 

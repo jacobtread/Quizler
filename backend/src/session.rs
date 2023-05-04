@@ -12,7 +12,7 @@ use actix::{
     WrapFuture,
 };
 use actix_web_actors::ws;
-use log::{error, info};
+use log::{debug, error, info};
 use std::sync::Arc;
 
 /// Type alias for numbers that represent Session ID's
@@ -33,6 +33,7 @@ impl Actor for Session {
     /// Handle the session being stopped by removing the
     /// session from any games and cleaning up after it
     fn stopped(&mut self, _ctx: &mut Self::Context) {
+        debug!("Session stopped: {}", self.id);
         // Take the game to attempt removing if present
         if let Some(game) = self.game.take() {
             // Inform game to remove self
@@ -78,8 +79,13 @@ impl Session {
         match message {
             // Handle initializing new games
             ClientMessage::Initialize { uuid } => {
-                if self.game.is_some() {
-                    return Err(ServerError::UnexpectedMessage);
+                // If already in a game infrom the game that we've left
+                if let Some(game) = self.game.take() {
+                    game.do_send(RemovePlayerMessage {
+                        session_id: self.id,
+                        target_id: self.id,
+                        reason: RemoveReason::Disconnected,
+                    });
                 }
 
                 // Spawn the initialization task
