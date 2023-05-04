@@ -11,6 +11,18 @@ use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, sync::Arc};
 use uuid::Uuid;
 
+#[derive(Deserialize)]
+pub struct ClientRequest {
+    pub rid: u32,
+    pub msg: ClientMessage,
+}
+
+#[derive(Serialize)]
+pub struct ServerResponse {
+    pub rid: u32,
+    pub msg: ServerMessage,
+}
+
 /// Messages recieved from the client
 #[derive(Deserialize)]
 #[serde(tag = "ty")]
@@ -62,19 +74,31 @@ pub enum ServerMessage {
         /// Copy of the game configuration to send back
         config: Arc<GameConfig>,
     },
+    Ok,
     /// Message providing information about another player in
     /// the game
-    OtherPlayer { id: SessionId, name: String },
+    OtherPlayer {
+        id: SessionId,
+        name: String,
+    },
     /// Message indicating the current state of the game
-    GameState { state: GameState },
+    GameState {
+        state: GameState,
+    },
     /// Message for syncing the time between the game and clients
     TimeSync(TimeSync),
     /// Question data for the next question
-    Question { question: Arc<Question> },
+    Question {
+        question: Arc<Question>,
+    },
     /// Updates the player scores with the new scores
-    Scores { scores: HashMap<SessionId, u32> },
+    Scores {
+        scores: HashMap<SessionId, u32>,
+    },
     /// Server error
-    Error { error: ServerError },
+    Error {
+        error: ServerError,
+    },
     /// Player has been kicked from the game
     Kicked {
         /// The ID of the player that was kicked

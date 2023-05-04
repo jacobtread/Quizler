@@ -16,6 +16,8 @@ use std::{
 };
 use uuid::Uuid;
 
+static mut GAMES: Option<Addr<Games>> = None;
+
 /// Central store for storing all the references to the individual
 /// games that are currently running
 #[derive(Default)]
@@ -24,6 +26,20 @@ pub struct Games {
     games: HashMap<GameToken, Addr<Game>>,
     /// Map of UUID's to game configurations that are preparing to start
     preparing: HashMap<Uuid, PreparingGame>,
+}
+
+impl Games {
+    pub fn init() {
+        let value = Self::start_default();
+        unsafe { GAMES = Some(value) }
+    }
+
+    pub fn get() -> &'static Addr<Games> {
+        match unsafe { &GAMES } {
+            Some(value) => value,
+            None => panic!("Games not initialized"),
+        }
+    }
 }
 
 pub struct PreparingGame {
@@ -231,17 +247,22 @@ impl Handler<InitializeMessage> for Games {
 
 /// Message to request an addr to a game
 #[derive(Message)]
-#[rtype(result = "Option<Addr<Game>>")]
+#[rtype(result = "Result<Addr<Game>, ServerError>")]
 pub struct GetGameMessage {
     /// The raw string token
-    pub token: GameToken,
+    pub token: String,
 }
 
 impl Handler<GetGameMessage> for Games {
-    type Result = Option<Addr<Game>>;
+    type Result = Result<Addr<Game>, ServerError>;
 
     fn handle(&mut self, msg: GetGameMessage, _ctx: &mut Self::Context) -> Self::Result {
-        self.games.get(&msg.token).cloned()
+        // Parse the token ensuring it is valid
+        let token: GameToken = msg.token.parse()?;
+        match self.games.get(&token) {
+            Some(value) => Ok(value.clone()),
+            None => Err(ServerError::InvalidToken),
+        }
     }
 }
 

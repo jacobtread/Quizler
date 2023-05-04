@@ -1,7 +1,6 @@
 use crate::games::Games;
-use actix::Actor;
 use actix_cors::Cors;
-use actix_web::{web::Data, App, HttpServer};
+use actix_web::{App, HttpServer};
 use dotenvy::dotenv;
 use log::info;
 
@@ -21,8 +20,7 @@ async fn main() -> std::io::Result<()> {
     env_logger::init();
 
     // Create the games store
-    let games = Games::start_default();
-    let games = Data::new(games);
+    Games::init();
 
     let port: u16 = match std::env::var("QUIZLER_PORT") {
         Ok(value) => value
@@ -35,11 +33,7 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         let cors = Cors::permissive();
-        let games = games.clone();
-        App::new()
-            .app_data(games)
-            .wrap(cors)
-            .configure(http::configure)
+        App::new().wrap(cors).configure(http::configure)
     })
     .bind(("0.0.0.0", port))?
     .run()
