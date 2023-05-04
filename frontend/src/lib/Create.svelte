@@ -11,6 +11,8 @@
   import { DEBUG, defaultQuestion } from "./constants";
   import QuestionList from "./QuestionList.svelte";
   import { getSocketReady, sendMessage, socketReady } from "./socket";
+  import { get } from "svelte/store";
+  import { imageStore } from "./imageStore";
 
   let questions: Question[] = [defaultQuestion()];
   let editing: Question | null = null;
@@ -35,6 +37,12 @@
     let form = new FormData();
     form.append("config", JSON.stringify(config));
     // TODO: Append images
+
+    const images = get(imageStore);
+
+    for (const image of images) {
+      form.append(image.uuid, image.blob);
+    }
 
     const url = new URL(
       "/api/quiz",
