@@ -78,7 +78,6 @@ async fn create_quiz(
         // Read all the buffered content for the config message
         let mut buffer = BytesMut::new();
         loop {
-            debug!("Loading buffered data: {}", buffer.len());
             if buffer.len() >= MAX_BUFFER_SIZE_BYTES {
                 return Err(CreateError::TooLarge);
             }
@@ -105,6 +104,13 @@ async fn create_quiz(
             .content_type()
             .ok_or_else(|| CreateError::MissingImageType(uuid))?
             .clone();
+
+        debug!(
+            "Recieved uploaded file (UUID: {}, Mime: {}, Size: {})",
+            uuid,
+            mime,
+            buffer.len()
+        );
 
         images.insert(
             uuid,
@@ -134,6 +140,8 @@ async fn create_quiz(
         .send(PrepareGameMessage { config })
         .await
         .expect("Games service is not running");
+
+    debug!("Created new prepared game {}", uuid);
 
     Ok(HttpResponse::Created().json(QuizCreated { uuid }))
 }

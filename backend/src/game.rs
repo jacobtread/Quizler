@@ -424,12 +424,6 @@ impl Game {
     }
 }
 
-impl Drop for Game {
-    fn drop(&mut self) {
-        debug!("Game dropped: {}", self.token);
-    }
-}
-
 impl Actor for Game {
     type Context = Context<Self>;
 

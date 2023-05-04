@@ -4,6 +4,7 @@ use crate::{
     types::ServerError,
 };
 use actix::{Actor, Addr, AsyncContext, Context, Handler, Message, MessageResult};
+use log::debug;
 use rand_core::{OsRng, RngCore};
 use serde::Serialize;
 use std::{
@@ -44,6 +45,8 @@ impl Actor for Games {
         const GAME_EXPIRY_TIME: Duration = Duration::from_secs(60 * 20);
 
         ctx.run_interval(PREPARE_CHECK_INTERVAL, |act, _| {
+            debug!("Collecting expired game prepares");
+
             // Collect the expired UUIDs
             let expired: Vec<Uuid> = act
                 .preparing
