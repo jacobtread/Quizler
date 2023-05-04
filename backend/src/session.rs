@@ -282,7 +282,7 @@ impl Handler<Arc<ServerMessage>> for Session {
     type Result = ();
 
     fn handle(&mut self, msg: Arc<ServerMessage>, ctx: &mut Self::Context) -> Self::Result {
-        Self::write_message(ctx, &*msg);
+        Self::write_message(ctx, &msg);
     }
 }
 

@@ -164,11 +164,13 @@ impl Answer {
     /// Validation to ensure that a question answer is the
     /// right type of answer for the specified quesiton type
     pub fn is_valid(&self, qt: &QuestionData) -> bool {
-        match (self, qt) {
+        matches!(
+            (self, qt),
+            // Both type Single
             (Self::Single { .. }, QuestionData::Single { .. })
-            | (Self::Multiple { .. }, QuestionData::Multiple { .. }) => true,
-            _ => false,
-        }
+            // Both type Multiple
+                | (Self::Multiple { .. }, QuestionData::Multiple { .. })
+        )
     }
 }
 

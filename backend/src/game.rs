@@ -485,12 +485,7 @@ impl Handler<JoinMessage> for Game {
         }
 
         // Error if username is already taken
-        if self
-            .players
-            .iter()
-            .find(|player| player.name.eq(&msg.name))
-            .is_some()
-        {
+        if self.players.iter().any(|player| player.name.eq(&msg.name)) {
             return Err(ServerError::UsernameTaken);
         }
 
@@ -648,7 +643,7 @@ impl Handler<RemovePlayerMessage> for Game {
             .for_each(|player| player.addr.do_send(kick_msg.clone()));
 
         // Inform the host of the player removal
-        self.host.addr.do_send(kick_msg.clone());
+        self.host.addr.do_send(kick_msg);
 
         // Remove the player
         let target = self.players.remove(index);

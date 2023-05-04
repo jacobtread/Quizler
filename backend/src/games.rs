@@ -223,7 +223,7 @@ impl Handler<InitializeMessage> for Games {
 
         Ok(InitializedMessage {
             token,
-            config: config.clone(),
+            config,
             game,
         })
     }
