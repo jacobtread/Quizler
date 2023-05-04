@@ -1,6 +1,7 @@
 <script lang="ts">
   import {
     ClientMessageType,
+    ServerMessage,
     type CreatedResponse,
     type Question,
     type TimingConfig,
@@ -15,6 +16,7 @@
   import { loadQuiz, saveQuiz } from "./format";
   import { AppState, appState } from "./state";
   import ImageStorage from "./ImageStorage.svelte";
+  import { gameData } from "./game";
 
   // Input used for loading quiz files
   let loadInput: HTMLInputElement;
@@ -76,10 +78,19 @@
 
     gameHost.set(true);
 
-    sendMessage({
+    const resp = await sendMessage({
       ty: ClientMessageType.Initialize,
       uuid: json.uuid
     });
+
+    if (resp.ty === ServerMessage.Error) {
+      console.error("Error while initializing", resp.error);
+    } else {
+      const { id, token, config } = resp;
+
+      gameData.set({ id, token, config });
+      appState.set(AppState.Game);
+    }
   }
 
   /**

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { getSocketReady, sendMessage } from "./socket";
-  import { ClientMessageType } from "./socket/models";
+  import { ClientMessageType, ServerMessage } from "./socket/models";
   import { AppState, appState } from "./state";
 
   let token: string = "";
@@ -14,10 +14,16 @@
     // Await the socket being alive
     await getSocketReady();
 
-    sendMessage({
+    const resp = await sendMessage({
       ty: ClientMessageType.Connect,
       token
     });
+
+    if (resp.ty === ServerMessage.Error) {
+      console.error("Error while initializing", resp.error);
+    } else {
+      appState.set(AppState.Join);
+    }
   }
 </script>
 

@@ -11,14 +11,21 @@ import {
   type ErrorMessage,
   type KickedMessage,
   type ServerMessageBody,
-  type ClientMessage
+  type ClientMessageBody,
+  ClientMessageType,
+  type PairMessageType
 } from "./models";
 import { AppState, appState } from "../state";
 
 type MessageHandler<T> = (msg: T) => void;
 type MessageHandlers = {
-  [T in ServerMessage]: MessageHandler<ServerMessageBody<T>>;
+  [T in ServerMessage]: MessageHandler<ServerMessageBody<T>> | undefined;
 };
+type RequestHandle<T> = (msg: T) => void;
+
+// The next request ID to use
+let requestHandle: number = 0;
+let requestHandles: Record<number, RequestHandle<any> | undefined> = {};
 
 // Reference to the socket
 let socket: WebSocket = createSocket();
@@ -32,7 +39,8 @@ const messageHandlers: MessageHandlers = {
   [ServerMessage.Question]: onQuestion,
   [ServerMessage.Scores]: onScores,
   [ServerMessage.Error]: onError,
-  [ServerMessage.Kicked]: onKicked
+  [ServerMessage.Kicked]: onKicked,
+  [ServerMessage.Ok]: undefined
 };
 
 // Socket readiness state
@@ -69,6 +77,10 @@ export function getSocketReady(): Promise<void> {
  * the event handlers for the different events
  */
 function createSocket(): WebSocket {
+  // Reset request counter
+  requestHandle = 0;
+  requestHandles = {};
+
   const socketUrl = getSocketURL();
 
   console.debug("Connecting to socket server " + socketUrl);
@@ -139,21 +151,36 @@ function getSocketURL(): URL {
   return new URL(SOCKET_ENDPOINT, host);
 }
 
+type ResponseOrError<T> =
+  | ({ ty: T } & ServerMessageBody<T>)
+  | ({ ty: ServerMessage.Error } & ErrorMessage);
+
 /**
  * Sends the provided message to the server through
  * the socket
  *
  * @param msg
  */
-export function sendMessage(msg: ClientMessage) {
-  console.debug("Sending message to server", msg);
+export async function sendMessage<T extends ClientMessageType>(
+  msg: { ty: T; rid?: number } & ClientMessageBody<T>
+): Promise<ResponseOrError<PairMessageType<T>>> {
+  return new Promise((resolve, reject) => {
+    console.debug("Sending message to server", msg);
 
-  const data = JSON.stringify(msg);
-  try {
-    socket.send(data);
-  } catch (e) {
-    console.error("Failed to send message", e);
-  }
+    msg.rid = requestHandle;
+    requestHandle++;
+
+    requestHandles[msg.rid] = resolve;
+
+    const data = JSON.stringify(msg);
+    try {
+      socket.send(data);
+    } catch (e) {
+      console.error("Failed to send message", e);
+      requestHandles;
+      reject(e);
+    }
+  });
 }
 
 /**
@@ -164,11 +191,25 @@ export function sendMessage(msg: ClientMessage) {
  */
 function onMessage<T extends ServerMessage>({ data }: MessageEvent) {
   // Parse the message
-  const msg: { ty: T | undefined } & ServerMessageBody<T> = JSON.parse(data);
+  const msg: {
+    ty: T | undefined;
+    rid: number | undefined;
+  } & ServerMessageBody<T> = JSON.parse(data);
 
   // Ensure the message type is specified
   if (msg.ty === undefined) {
     console.error("Packet missing message type", data);
+    return;
+  }
+
+  const rid = msg.rid;
+  if (rid !== undefined) {
+    const handle = requestHandles[rid];
+    if (handle !== undefined) {
+      handle(msg);
+    } else {
+      console.error(`Missing return handle ${rid} for message`, msg);
+    }
     return;
   }
 
@@ -180,7 +221,7 @@ function onMessage<T extends ServerMessage>({ data }: MessageEvent) {
   }
 
   // Call the handler with the mesasge
-  handler.call(socket, msg);
+  handler(msg);
 }
 
 function onJoined(msg: JoinedMessage) {

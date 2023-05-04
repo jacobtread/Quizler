@@ -42,8 +42,14 @@ export interface KickedMessage {
   reason: RemoveReason;
 }
 
+export interface Message<T> {
+  rid: number;
+  msg: T;
+}
+
 export const enum ServerMessage {
   Joined = "Joined",
+  Ok = "Ok",
   OtherPlayer = "OtherPlayer",
   GameState = "GameState",
   TimeSync = "TimeSync",
@@ -71,7 +77,11 @@ export type ServerMessageBody<T> = T extends ServerMessage.Joined
   ? ErrorMessage
   : T extends ServerMessage.Kicked
   ? KickedMessage
+  : T extends ServerMessage.Ok
+  ? OkMessage
   : unknown;
+
+export type OkMessage = Record<string, never>;
 
 export interface InitializeMessage {
   uuid: string;
@@ -107,14 +117,35 @@ export const enum ClientMessageType {
   Kick = "Kick"
 }
 
-export type ClientMessage =
-  | ({ ty: ClientMessageType.Initialize } & InitializeMessage)
-  | ({ ty: ClientMessageType.Connect } & ConnectMessage)
-  | ({ ty: ClientMessageType.Join } & JoinMessage)
-  | { ty: ClientMessageType.Ready }
-  | ({ ty: ClientMessageType.HostAction } & HostActionMessage)
-  | ({ ty: ClientMessageType.Answer } & AnswerMessage)
-  | ({ ty: ClientMessageType.Kick } & KickMessage);
+export type ClientMessageBody<T extends ClientMessageType> =
+  T extends ClientMessageType.Initialize
+    ? InitializeMessage
+    : T extends ClientMessageType.Connect
+    ? ConnectMessage
+    : T extends ClientMessageType.Join
+    ? JoinMessage
+    : T extends ClientMessageType.Ready
+    ? Record<string, never>
+    : T extends ClientMessageType.HostAction
+    ? HostActionMessage
+    : T extends ClientMessageType.Answer
+    ? AnswerMessage
+    : T extends ClientMessageType.Kick
+    ? KickMessage
+    : unknown;
+
+export type PairMessageType<T> = T extends
+  | ClientMessageType.Initialize
+  | ClientMessageType.Join
+  ? ServerMessage.Joined
+  : T extends
+      | ClientMessageType.Connect
+      | ClientMessageType.Ready
+      | ClientMessageType.HostAction
+      | ClientMessageType.Answer
+      | ClientMessageType.Kick
+  ? ServerMessage.Ok
+  : unknown;
 
 export interface UploadConfig {
   basic: BasicConfig;

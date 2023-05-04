@@ -14,12 +14,14 @@ use uuid::Uuid;
 #[derive(Deserialize)]
 pub struct ClientRequest {
     pub rid: u32,
+    #[serde(flatten)]
     pub msg: ClientMessage,
 }
 
 #[derive(Serialize)]
 pub struct ServerResponse {
     pub rid: u32,
+    #[serde(flatten)]
     pub msg: ServerMessage,
 }
 
