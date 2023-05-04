@@ -9,10 +9,12 @@
   import QuestionEditor from "./QuestionEditor.svelte";
   import { DEBUG, defaultQuestion } from "./constants";
   import QuestionList from "./QuestionList.svelte";
-  import { getSocketReady, sendMessage } from "./socket";
+  import { gameHost, getSocketReady, sendMessage } from "./socket";
   import { get } from "svelte/store";
   import { imageStore } from "./imageStore";
   import { loadQuiz, saveQuiz } from "./format";
+  import { AppState, appState } from "./state";
+  import ImageStorage from "./ImageStorage.svelte";
 
   // Input used for loading quiz files
   let loadInput: HTMLInputElement;
@@ -72,6 +74,8 @@
 
     console.debug("Sending initialize message");
 
+    gameHost.set(true);
+
     sendMessage({
       ty: ClientMessageType.Initialize,
       uuid: json.uuid
@@ -120,7 +124,7 @@
 {#if editing}
   <QuestionEditor question={editing} back={() => (editing = null)} />
 {:else}
-  <button>Back</button>
+  <button on:click={() => ($appState = AppState.Home)}>Back</button>
 
   <input hidden bind:this={loadInput} type="file" on:change={onLoadQuiz} />
 
@@ -138,6 +142,8 @@
 
   <QuestionList {questions} bind:editing />
 {/if}
+
+<ImageStorage />
 
 <style>
 </style>

@@ -13,6 +13,7 @@ import {
   type ServerMessageBody,
   type ClientMessage
 } from "./models";
+import { AppState, appState } from "../state";
 
 type MessageHandler<T> = (msg: T) => void;
 type MessageHandlers = {
@@ -36,6 +37,9 @@ const messageHandlers: MessageHandlers = {
 
 // Socket readiness state
 export const socketReady = writable<boolean>(false);
+
+// State determining if we are the game host
+export const gameHost = writable<boolean>(false);
 
 /**
  * Creates a promise that subscribes to when
@@ -180,6 +184,8 @@ function onMessage<T extends ServerMessage>({ data }: MessageEvent) {
 }
 
 function onJoined(msg: JoinedMessage) {
+  appState.set(AppState.Game);
+
   console.debug("Joined message", msg);
 }
 
