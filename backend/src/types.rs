@@ -75,8 +75,6 @@ pub struct Question {
     /// flattened to the question level
     #[serde(flatten)]
     pub data: QuestionData,
-    /// The title of the question
-    pub title: String,
     /// The text of the question
     pub text: String,
     /// Optional UUID from created image

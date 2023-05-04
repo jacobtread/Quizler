@@ -188,7 +188,8 @@ export const enum QuestionDataType {
 }
 
 export interface QuestionBase {
-  title: string;
+  // Only present while created the question as a unique key
+  id: number;
   text: string;
   image: ImageRef | null;
   answer_time: number;

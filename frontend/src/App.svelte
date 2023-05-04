@@ -3,6 +3,9 @@
   import "./lib/socket";
 </script>
 
-<main>
+<main class="main">
   <Create />
 </main>
+
+<style>
+</style>
