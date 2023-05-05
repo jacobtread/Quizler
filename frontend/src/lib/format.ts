@@ -5,8 +5,8 @@ import {
   imageStore,
   loadImagePreview,
   type StoredImage
-} from "./image/imageStore";
-import type { Question, TimingConfig } from "./socket/models";
+} from "$stores/imageStore";
+import type { Question, TimingConfig } from "$lib/socket/models";
 
 interface SerializedQuiz {
   name: string;

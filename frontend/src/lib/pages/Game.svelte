@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { setMessageHandler } from "./socket";
+  import { setMessageHandler } from "$lib/socket";
   import {
     ServerMessage,
     type OtherPlayerMessage,
@@ -11,8 +11,8 @@
     type KickedMessage,
     type OtherPlayer,
     GameState
-  } from "./socket/models";
-  import type { GameData } from "./state";
+  } from "$lib/socket/models";
+  import type { GameData } from "$stores/state";
 
   export let gameData: GameData;
 

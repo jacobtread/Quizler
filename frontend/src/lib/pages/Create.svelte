@@ -6,16 +6,16 @@
     type Question,
     type TimingConfig,
     type UploadConfig
-  } from "./socket/models";
-  import QuestionEditor from "./QuestionEditor.svelte";
-  import { DEBUG, defaultQuestion } from "./constants";
-  import QuestionList from "./QuestionList.svelte";
-  import { getSocketReady, sendMessage } from "./socket";
+  } from "$lib/socket/models";
+  import { getSocketReady, sendMessage } from "$lib/socket";
+  import { DEBUG, defaultQuestion } from "$lib/constants";
+  import QuestionEditor from "$components/QuestionEditor.svelte";
+  import QuestionList from "$components/QuestionList.svelte";
+  import ImageStorage from "$components/ImageStorage.svelte";
   import { get } from "svelte/store";
-  import { imageStore } from "./image/imageStore";
-  import { loadQuiz, saveQuiz } from "./format";
-  import { setGame, setHome } from "./state";
-  import ImageStorage from "./image/ImageStorage.svelte";
+  import { imageStore } from "$stores/imageStore";
+  import { loadQuiz, saveQuiz } from "$lib/format";
+  import { setGame, setHome } from "$stores/state";
 
   // Input used for loading quiz files
   let loadInput: HTMLInputElement;

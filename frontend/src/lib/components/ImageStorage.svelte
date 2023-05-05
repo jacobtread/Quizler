@@ -7,7 +7,7 @@
     clearSelectImage,
     consumeSelectImage,
     imagePreviewStore
-  } from "./imageStore";
+  } from "../stores/imageStore";
 
   let input: HTMLInputElement;
   let uploading: FileUpload[] = [];

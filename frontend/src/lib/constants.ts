@@ -1,4 +1,4 @@
-import { QuestionDataType, type Question } from "./socket/models";
+import { QuestionDataType, type Question } from "$lib/socket/models";
 
 export const DEBUG: boolean = import.meta.env.DEV;
 

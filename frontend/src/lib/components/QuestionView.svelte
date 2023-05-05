@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { QuestionDataType, type Question } from "./socket/models";
+  import { QuestionDataType, type Question } from "$lib/socket/models";
 
   export let question: Question;
 </script>

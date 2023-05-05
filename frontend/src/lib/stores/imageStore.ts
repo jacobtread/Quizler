@@ -3,7 +3,7 @@
     UUID's and then handling adding them to a form for uploading
 */
 
-import type { ImageRef } from "./socket/models";
+import type { ImageRef } from "$lib/socket/models";
 import { v4 as uuidv4 } from "uuid";
 import imageCompression from "browser-image-compression";
 import { writable, type Writable } from "svelte/store";

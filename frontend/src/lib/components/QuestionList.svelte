@@ -1,7 +1,7 @@
 <script lang="ts">
-  import QuestionView from "./QuestionView.svelte";
-  import { defaultQuestion } from "./constants";
-  import type { Question } from "./socket/models";
+  import QuestionView from "$components/QuestionView.svelte";
+  import { defaultQuestion } from "$lib/constants";
+  import type { Question } from "$lib/socket/models";
   import { flip } from "svelte/animate";
 
   export let questions: Question[];

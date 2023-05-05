@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { getSocketReady, sendMessage } from "./socket";
-  import { ClientMessageType, ServerMessage } from "./socket/models";
-  import { setGame, setHome } from "./state";
+  import { getSocketReady, sendMessage } from "$lib/socket";
+  import { ClientMessageType, ServerMessage } from "$lib/socket/models";
+  import { setGame, setHome } from "$stores/state";
 
   let name = "";
 

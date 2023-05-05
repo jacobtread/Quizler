@@ -1,5 +1,5 @@
 import { writable, type Unsubscriber } from "svelte/store";
-import { DEBUG } from "../constants";
+import { DEBUG } from "$lib/constants";
 import {
   ServerMessage,
   type ErrorMessage,
@@ -8,7 +8,7 @@ import {
   type PairMessageType,
   type Message
 } from "./models";
-import { setHome } from "../state";
+import { setHome } from "$stores/state";
 import { onDestroy, onMount } from "svelte";
 
 type MessageHandler<T> = (msg: T) => void;

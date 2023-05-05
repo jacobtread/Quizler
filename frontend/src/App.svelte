@@ -1,10 +1,10 @@
 <script lang="ts">
-  import Create from "./lib/Create.svelte";
-  import Game from "./lib/Game.svelte";
-  import Join from "./lib/Connect.svelte";
-  import JoinName from "./lib/Join.svelte";
-  import { socketReady } from "./lib/socket";
-  import { AppStateType, appState, setConnect, setCreate } from "./lib/state";
+  import Create from "$pages/Create.svelte";
+  import Game from "$pages/Game.svelte";
+  import Join from "$pages/Connect.svelte";
+  import JoinName from "$pages/Join.svelte";
+  import { socketReady } from "$lib/socket";
+  import { AppStateType, appState, setConnect, setCreate } from "$stores/state";
 </script>
 
 <main class="main">

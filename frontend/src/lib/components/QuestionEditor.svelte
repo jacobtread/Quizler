@@ -5,9 +5,9 @@
     QuestionDataType,
     type Question,
     type AnswerValue
-  } from "./socket/models";
+  } from "$lib/socket/models";
   import { flip } from "svelte/animate";
-  import { imagePreviewStore, selectImage } from "./image/imageStore";
+  import { imagePreviewStore, selectImage } from "$stores/imageStore";
 
   // The question that is being created
   export let question: Question;
