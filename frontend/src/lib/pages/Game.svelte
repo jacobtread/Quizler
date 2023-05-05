@@ -1,5 +1,6 @@
 <script lang="ts">
   import LobbyView from "$lib/components/LobbyView.svelte";
+  import StartingView from "$lib/components/StartingView.svelte";
   import { setMessageHandler } from "$lib/socket";
   import {
     ServerMessage,
@@ -90,6 +91,8 @@
 
 {#if gameState === GameState.Lobby}
   <LobbyView {gameData} {players} />
+{:else if gameState === GameState.Starting}
+  <StartingView {gameData} />
 {/if}
 
 <style>
