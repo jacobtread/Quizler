@@ -16,9 +16,11 @@
     type Question,
     type Score,
     type ScoreMessage,
-    type SessionId
+    type SessionId,
+    type TimerState
   } from "$lib/socket/models";
   import { setHome, type GameData } from "$stores/state";
+  import { onDestroy, onMount } from "svelte";
 
   export let gameData: GameData;
 
@@ -40,6 +42,27 @@
 
   let answered: boolean;
 
+  let timer: TimerState = { total: 0, elapsed: 0 };
+  let lastUpdateTime: number = 0;
+
+  function updateTimer() {
+    // Don't update the timer if we have reached the time
+    if (timer.elapsed === timer.total) return;
+
+    const time = performance.now();
+    const elapsed = time - lastUpdateTime;
+
+    timer.elapsed += elapsed;
+    lastUpdateTime = time;
+
+    if (timer.elapsed > timer.total) {
+      timer.elapsed = timer.total;
+    } else {
+      // Request the next animation frame
+      requestAnimationFrame(updateTimer);
+    }
+  }
+
   function onOtherPlayer(msg: OtherPlayerMessage) {
     console.debug("Other player message", msg);
     // Add to the players list
@@ -55,6 +78,9 @@
 
   function onTimeSync(msg: TimeSyncMessage) {
     console.debug("Time sync message", msg);
+    lastUpdateTime = performance.now();
+    timer = { total: msg.total, elapsed: msg.elapsed };
+    updateTimer();
   }
 
   function onQuestion(msg: QuestionMessage) {
@@ -92,7 +118,7 @@
 {#if gameState === GameState.Lobby}
   <LobbyView {gameData} {players} />
 {:else if gameState === GameState.Starting}
-  <StartingView {gameData} />
+  <StartingView {gameData} {timer} />
 {/if}
 
 <style>

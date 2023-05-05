@@ -21,11 +21,9 @@ export interface OtherPlayer {
 export interface GameStateMessage {
   state: GameState;
 }
+export type TimerState = { total: number; elapsed: number };
 
-export interface TimeSyncMessage {
-  total: number;
-  elapsed: number;
-}
+export type TimeSyncMessage = TimerState;
 
 export interface QuestionMessage {
   question: Question;

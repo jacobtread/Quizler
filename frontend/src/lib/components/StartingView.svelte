@@ -4,11 +4,13 @@
   import {
     ClientMessageType,
     ServerMessage,
-    HostAction
+    HostAction,
+    type TimerState
   } from "$lib/socket/models";
   import type { GameData } from "$lib/stores/state";
 
   export let gameData: GameData;
+  export let timer: TimerState;
 
   async function doCancel() {
     let res = await sendMessage({
@@ -42,7 +44,7 @@
 <p>{gameData.config.basic.text}</p>
 
 <h1>Starting</h1>
-<p>Countdown: PLACEHOLDER</p>
+<p>Countdown: {timer.elapsed}</p>
 
 {#if gameData.host}
   <button on:click={doSkip}>Skip Countdown</button>
