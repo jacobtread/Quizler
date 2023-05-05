@@ -48,11 +48,6 @@ export interface KickedMessage {
   reason: RemoveReason;
 }
 
-export interface Message<T> {
-  rid: number;
-  msg: T;
-}
-
 export const enum ServerMessage {
   Joined = "Joined",
   Ok = "Ok",
@@ -65,6 +60,11 @@ export const enum ServerMessage {
   Error = "Error",
   Kicked = "Kicked"
 }
+
+export type Message<T> = {
+  ty: T;
+  rid?: number | undefined;
+} & ServerMessageBody<T>;
 
 // Transforms the provided ServerMessage variant into the associated
 // message content for that message

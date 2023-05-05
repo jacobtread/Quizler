@@ -5,7 +5,8 @@ import {
   type ErrorMessage,
   type ServerMessageBody,
   type ClientMessageBody,
-  type PairMessageType
+  type PairMessageType,
+  type Message
 } from "./models";
 import { setHome } from "../state";
 import { onDestroy, onMount } from "svelte";
@@ -20,6 +21,8 @@ type RequestHandle<T> = (msg: T) => void;
 let requestHandle: number = 0;
 // Handlers from requests awaiting responses
 let requestHandles: Record<number, RequestHandle<any> | undefined> = {};
+// Queue of messages that haven't yet been handled
+let messageQueue: Message<ServerMessage>[] = [];
 
 // Reference to the socket
 let socket: WebSocket = createSocket();
@@ -47,6 +50,16 @@ export function setMessageHandler<T extends ServerMessage>(
     // @ts-ignore
     messageHandlers[ty] = handler;
     console.log("Added handler for", ty);
+
+    messageQueue = messageQueue.filter((msg) => {
+      if (msg.ty === ty) {
+        // Handle messages that match the handler type
+        handler(msg as Message<T>);
+        return false;
+      } else {
+        return true;
+      }
+    });
   });
   onDestroy(() => {
     delete messageHandlers[ty];
@@ -76,6 +89,14 @@ export function getSocketReady(): Promise<void> {
   );
 }
 
+export function clearMessageQueue() {
+  for (const msg of messageQueue) {
+    console.warn("Message was not handled", msg);
+  }
+
+  messageQueue = [];
+}
+
 /**
  * Creates a new socket connection assigning
  * the event handlers for the different events
@@ -84,6 +105,7 @@ function createSocket(): WebSocket {
   // Reset request counter
   requestHandle = 0;
   requestHandles = {};
+  clearMessageQueue();
 
   const socketUrl = getSocketURL();
 
@@ -203,10 +225,7 @@ export function sendMessage<T>(
  */
 function onMessage<T extends ServerMessage>({ data }: MessageEvent) {
   // Parse the message
-  const msg: {
-    ty: T | undefined;
-    rid: number | undefined;
-  } & ServerMessageBody<T> = JSON.parse(data);
+  const msg: Message<T> = JSON.parse(data);
 
   // Ensure the message type is specified
   if (msg.ty === undefined) {
@@ -232,5 +251,7 @@ function onMessage<T extends ServerMessage>({ data }: MessageEvent) {
     handler(msg);
     return;
   }
-  console.error("Handler not defined for packet type", msg.ty);
+
+  // Push the message to the queue
+  messageQueue.push(msg);
 }
