@@ -3,6 +3,8 @@
   import { ClientMessageType, ServerMessage } from "$lib/socket/models";
   import { setGame, setHome } from "$stores/state";
 
+  export let token: string;
+
   let name = "";
 
   async function joinQuiz() {
@@ -32,6 +34,8 @@
 </script>
 
 <button on:click={setHome}>Back</button>
+<h2>{token}</h2>
+
 <p>Enter name to join as</p>
 
 <label for="">

@@ -4,20 +4,20 @@
   import Join from "$pages/Connect.svelte";
   import JoinName from "$pages/Join.svelte";
   import { socketReady } from "$lib/socket";
-  import { AppStateType, appState, setConnect, setCreate } from "$stores/state";
+  import { AppStateType, appState } from "$stores/state";
+  import Home from "$lib/pages/Home.svelte";
 </script>
 
 <main class="main">
   {#if $socketReady}
     {#if $appState.ty == AppStateType.Home}
-      <button on:click={setCreate}> Create </button>
-      <button on:click={setConnect}> Join </button>
+      <Home />
     {:else if $appState.ty === AppStateType.Create}
       <Create />
     {:else if $appState.ty === AppStateType.Connect}
       <Join />
     {:else if $appState.ty === AppStateType.Join}
-      <JoinName />
+      <JoinName token={$appState.token} />
     {:else if $appState.ty === AppStateType.Game}
       <Game gameData={$appState.gameData} />
     {/if}
