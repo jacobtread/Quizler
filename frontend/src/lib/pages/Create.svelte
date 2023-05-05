@@ -125,12 +125,22 @@
     text = loaded.text;
     timing = loaded.timing;
   }
+
+  function back() {
+    if (
+      confirm(
+        "Are you sure you want to go back? You will loose quiz content you've created"
+      )
+    ) {
+      setHome();
+    }
+  }
 </script>
 
 {#if editing}
   <QuestionEditor question={editing} back={() => (editing = null)} />
 {:else}
-  <button on:click={setHome}>Back</button>
+  <button on:click={back}>Back</button>
 
   <input hidden bind:this={loadInput} type="file" on:change={onLoadQuiz} />
 
