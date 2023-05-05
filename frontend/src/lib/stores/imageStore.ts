@@ -25,7 +25,7 @@ export interface StoredImage {
 type PreviewStore = Record<ImageRef, string | undefined>;
 
 // Store mapping image references to their loaded image preview
-export const imagePreviewStore: Writable<PreviewStore> = writable();
+export const imagePreviewStore: Writable<PreviewStore> = writable({});
 // Store for storing the loaded images
 export const imageStore: Writable<StoredImage[]> = writable([]);
 // Store for state to manage selecting an image
