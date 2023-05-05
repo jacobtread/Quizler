@@ -10,13 +10,13 @@
   import QuestionEditor from "./QuestionEditor.svelte";
   import { DEBUG, defaultQuestion } from "./constants";
   import QuestionList from "./QuestionList.svelte";
-  import { gameHost, getSocketReady, sendMessage } from "./socket";
+  import { getSocketReady, sendMessage } from "./socket";
   import { get } from "svelte/store";
   import { imageStore } from "./imageStore";
   import { loadQuiz, saveQuiz } from "./format";
   import { AppState, appState } from "./state";
   import ImageStorage from "./ImageStorage.svelte";
-  import { gameData } from "./game";
+  import { setJoinedGame } from "./game";
 
   // Input used for loading quiz files
   let loadInput: HTMLInputElement;
@@ -76,8 +76,6 @@
 
     console.debug("Sending initialize message");
 
-    gameHost.set(true);
-
     const resp = await sendMessage({
       ty: ClientMessageType.Initialize,
       uuid: json.uuid
@@ -87,9 +85,7 @@
       console.error("Error while initializing", resp.error);
     } else {
       const { id, token, config } = resp;
-
-      gameData.set({ id, token, config });
-      appState.set(AppState.Game);
+      setJoinedGame({ id, token, config }, true);
     }
   }
 

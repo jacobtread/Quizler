@@ -13,6 +13,8 @@ import {
   type ClientMessageBody,
   type PairMessageType
 } from "./models";
+import { clearGame, setOtherPlayer } from "../game";
+import { AppState, appState } from "../state";
 
 type MessageHandler<T> = (msg: T) => void;
 type MessageHandlers = {
@@ -91,6 +93,7 @@ function createSocket(): WebSocket {
   ws.onopen = () => {
     // Handle the WebSocket connection becoming OPEN
     if (ws.readyState == WebSocket.OPEN) {
+      console.debug("Connected to socket");
       socketReady.set(true);
     } else {
       console.log(ws.readyState);
@@ -102,6 +105,9 @@ function createSocket(): WebSocket {
     // Handle the socket becoming unavailable
     console.error("WebSocket connetion closed", event);
 
+    // Update lost connection states
+    onDisconnected();
+
     queueReconnect();
   };
 
@@ -112,6 +118,11 @@ function createSocket(): WebSocket {
   };
 
   return ws;
+}
+
+function onDisconnected() {
+  clearGame();
+  appState.set(AppState.Home);
 }
 
 /**
@@ -222,6 +233,7 @@ function onMessage<T extends ServerMessage>({ data }: MessageEvent) {
 
 function onOtherPlayer(msg: OtherPlayerMessage) {
   console.debug("Other player message", msg);
+  setOtherPlayer(msg.id, msg.name);
 }
 
 function onGameState(msg: GameStateMessage) {

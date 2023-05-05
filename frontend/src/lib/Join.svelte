@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { gameData } from "./game";
-  import { gameHost, getSocketReady, sendMessage } from "./socket";
+  import { setJoinedGame } from "./game";
+  import { getSocketReady, sendMessage } from "./socket";
   import { ClientMessageType, ServerMessage } from "./socket/models";
   import { AppState, appState } from "./state";
 
@@ -12,8 +12,6 @@
     // Await the socket being alive
     await getSocketReady();
 
-    gameHost.set(false);
-
     const resp = await sendMessage({
       ty: ClientMessageType.Join,
       name
@@ -23,9 +21,7 @@
       console.error("Error while initializing", resp.error);
     } else {
       const { id, token, config } = resp;
-
-      gameData.set({ id, token, config });
-      appState.set(AppState.Game);
+      setJoinedGame({ id, token, config }, false);
     }
   }
 </script>

@@ -179,6 +179,7 @@ async fn quiz_socket(
     stream: web::Payload,
 ) -> Result<impl Responder, actix_web::Error> {
     let session_id = SESSION_ID.fetch_add(1, Ordering::AcqRel);
+    debug!("Starting new socket {}", session_id);
     ws::start(
         Session {
             id: session_id,
