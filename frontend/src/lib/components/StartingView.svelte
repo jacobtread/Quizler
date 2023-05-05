@@ -8,6 +8,7 @@
     type TimerState
   } from "$lib/socket/models";
   import type { GameData } from "$lib/stores/state";
+  import { formatTime } from "$lib/utils";
 
   export let gameData: GameData;
   export let timer: TimerState;
@@ -44,7 +45,7 @@
 <p>{gameData.config.basic.text}</p>
 
 <h1>Starting</h1>
-<p>Countdown: {timer.elapsed}</p>
+<p>Countdown: {formatTime(timer)}</p>
 
 {#if gameData.host}
   <button on:click={doSkip}>Skip Countdown</button>
