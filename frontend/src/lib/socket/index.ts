@@ -2,19 +2,13 @@ import { writable, type Unsubscriber } from "svelte/store";
 import { DEBUG } from "../constants";
 import {
   ServerMessage,
-  type OtherPlayerMessage,
-  type GameStateMessage,
-  type TimeSyncMessage,
-  type QuestionMessage,
-  type ScoresMessage,
   type ErrorMessage,
-  type KickedMessage,
   type ServerMessageBody,
   type ClientMessageBody,
   type PairMessageType
 } from "./models";
-import { clearGame, setOtherPlayer } from "../game";
-import { AppState, appState } from "../state";
+import { setHome } from "../state";
+import { onDestroy, onMount } from "svelte";
 
 type MessageHandler<T> = (msg: T) => void;
 type MessageHandlers = {
@@ -30,22 +24,34 @@ let requestHandles: Record<number, RequestHandle<any> | undefined> = {};
 // Reference to the socket
 let socket: WebSocket = createSocket();
 
-// Global message handlers for packet notifications
-const messageHandlers: MessageHandlers = {
-  [ServerMessage.OtherPlayer]: onOtherPlayer,
-  [ServerMessage.GameState]: onGameState,
-  [ServerMessage.TimeSync]: onTimeSync,
-  [ServerMessage.Question]: onQuestion,
-  [ServerMessage.Scores]: onScores,
-  [ServerMessage.Error]: onError,
-  [ServerMessage.Kicked]: onKicked
-};
+// Currently set message handlers for handling messages
+export const messageHandlers: MessageHandlers = {};
 
 // Socket readiness state
 export const socketReady = writable<boolean>(false);
 
-// State determining if we are the game host
-export const gameHost = writable<boolean>(false);
+/**
+ * Subscribes to a specific type of message within a svelte
+ * component context.
+ *
+ * Handles removing the handler on the component destroy
+ *
+ * @param ty
+ * @param handler
+ */
+export function setMessageHandler<T extends ServerMessage>(
+  ty: T,
+  handler: MessageHandler<ServerMessageBody<T>>
+) {
+  onMount(() => {
+    // @ts-ignore
+    messageHandlers[ty] = handler;
+    console.log("Added handler for", ty);
+  });
+  onDestroy(() => {
+    delete messageHandlers[ty];
+  });
+}
 
 /**
  * Creates a promise that subscribes to when
@@ -121,8 +127,7 @@ function createSocket(): WebSocket {
 }
 
 function onDisconnected() {
-  clearGame();
-  appState.set(AppState.Home);
+  setHome();
 }
 
 /**
@@ -222,40 +227,10 @@ function onMessage<T extends ServerMessage>({ data }: MessageEvent) {
 
   // Find the handler for the message
   const handler = messageHandlers[msg.ty];
-  if (handler === undefined) {
-    console.error("Handler not defined for packet type", msg.ty);
+  if (handler !== undefined) {
+    // Call the handler with the mesasge
+    handler(msg);
     return;
   }
-
-  // Call the handler with the mesasge
-  handler(msg);
-}
-
-function onOtherPlayer(msg: OtherPlayerMessage) {
-  console.debug("Other player message", msg);
-  setOtherPlayer(msg.id, msg.name);
-}
-
-function onGameState(msg: GameStateMessage) {
-  console.debug("Game state message", msg);
-}
-
-function onTimeSync(msg: TimeSyncMessage) {
-  console.debug("Time sync message", msg);
-}
-
-function onQuestion(msg: QuestionMessage) {
-  console.debug("Question message", msg);
-}
-
-function onScores(msg: ScoresMessage) {
-  console.debug("Score message", msg);
-}
-
-function onError(msg: ErrorMessage) {
-  console.error("Server error", msg.error);
-}
-
-function onKicked(msg: KickedMessage) {
-  console.debug("Kick message", msg);
+  console.error("Handler not defined for packet type", msg.ty);
 }

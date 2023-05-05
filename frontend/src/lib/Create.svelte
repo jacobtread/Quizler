@@ -14,9 +14,8 @@
   import { get } from "svelte/store";
   import { imageStore } from "./imageStore";
   import { loadQuiz, saveQuiz } from "./format";
-  import { AppState, appState } from "./state";
+  import { setGame, setHome } from "./state";
   import ImageStorage from "./ImageStorage.svelte";
-  import { setJoinedGame } from "./game";
 
   // Input used for loading quiz files
   let loadInput: HTMLInputElement;
@@ -85,7 +84,7 @@
       console.error("Error while initializing", resp.error);
     } else {
       const { id, token, config } = resp;
-      setJoinedGame({ id, token, config }, true);
+      setGame({ id, token, config, host: true });
     }
   }
 
@@ -131,7 +130,7 @@
 {#if editing}
   <QuestionEditor question={editing} back={() => (editing = null)} />
 {:else}
-  <button on:click={() => ($appState = AppState.Home)}>Back</button>
+  <button on:click={setHome}>Back</button>
 
   <input hidden bind:this={loadInput} type="file" on:change={onLoadQuiz} />
 

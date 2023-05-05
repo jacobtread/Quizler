@@ -1,7 +1,7 @@
 <script lang="ts">
   import { getSocketReady, sendMessage } from "./socket";
   import { ClientMessageType, ServerMessage } from "./socket/models";
-  import { AppState, appState } from "./state";
+  import { setHome, setJoin } from "./state";
 
   let token: string = "";
 
@@ -22,12 +22,12 @@
     if (resp.ty === ServerMessage.Error) {
       console.error("Error while initializing", resp.error);
     } else {
-      appState.set(AppState.Join);
+      setJoin(token);
     }
   }
 </script>
 
-<button on:click={() => ($appState = AppState.Home)}>Back</button>
+<button on:click={setHome}>Back</button>
 <p>Join Game</p>
 <label for="">
   Code

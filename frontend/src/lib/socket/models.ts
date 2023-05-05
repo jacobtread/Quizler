@@ -11,7 +11,9 @@ export interface JoinedMessage {
   config: GameConfig;
 }
 
-export interface OtherPlayerMessage {
+export type OtherPlayerMessage = OtherPlayer;
+
+export interface OtherPlayer {
   id: SessionId;
   name: string;
 }
@@ -31,6 +33,10 @@ export interface QuestionMessage {
 
 export interface ScoresMessage {
   scores: Record<SessionId, number>;
+}
+
+export interface ScoreMessage {
+  score: Score;
 }
 
 export interface ErrorMessage {
@@ -55,6 +61,7 @@ export const enum ServerMessage {
   TimeSync = "TimeSync",
   Question = "Question",
   Scores = "Scores",
+  Score = "Score",
   Error = "Error",
   Kicked = "Kicked"
 }
@@ -73,6 +80,8 @@ export type ServerMessageBody<T> = T extends ServerMessage.Joined
   ? QuestionMessage
   : T extends ServerMessage.Scores
   ? ScoresMessage
+  : T extends ServerMessage.Score
+  ? ScoreMessage
   : T extends ServerMessage.Error
   ? ErrorMessage
   : T extends ServerMessage.Kicked
@@ -262,3 +271,14 @@ export interface MultipleAnswer {
 export type Answer =
   | ({ ty: AnswerType.Single } & SingleAnswer)
   | ({ ty: AnswerType.Multiple } & MultipleAnswer);
+
+export const enum ScoreType {
+  Correct = "Correct",
+  Incorrect = "Incorrect",
+  Partial = "Partial"
+}
+
+export type Score =
+  | { ty: ScoreType.Correct; value: number }
+  | { ty: ScoreType.Partial; value: number }
+  | { ty: ScoreType.Incorrect };

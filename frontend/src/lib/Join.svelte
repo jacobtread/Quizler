@@ -1,8 +1,7 @@
 <script lang="ts">
-  import { setJoinedGame } from "./game";
   import { getSocketReady, sendMessage } from "./socket";
   import { ClientMessageType, ServerMessage } from "./socket/models";
-  import { AppState, appState } from "./state";
+  import { setGame, setHome } from "./state";
 
   let name = "";
 
@@ -21,12 +20,18 @@
       console.error("Error while initializing", resp.error);
     } else {
       const { id, token, config } = resp;
-      setJoinedGame({ id, token, config }, false);
+
+      setGame({
+        id,
+        token,
+        config,
+        host: false
+      });
     }
   }
 </script>
 
-<button on:click={() => ($appState = AppState.Home)}>Back</button>
+<button on:click={setHome}>Back</button>
 <p>Enter name to join as</p>
 
 <label for="">

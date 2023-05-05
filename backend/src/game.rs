@@ -331,6 +331,7 @@ impl Game {
             // Increase the player score
             player.score += score.value();
             player.results.push(score);
+            player.addr.do_send(ServerMessage::Score { score });
 
             scores.insert(player.id, player.score);
         }
