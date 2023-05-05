@@ -1,4 +1,5 @@
 <script lang="ts">
+  import LobbyView from "$lib/components/LobbyView.svelte";
   import { setMessageHandler } from "$lib/socket";
   import {
     ServerMessage,
@@ -10,9 +11,13 @@
     type ErrorMessage,
     type KickedMessage,
     type OtherPlayer,
-    GameState
+    GameState,
+    type Question,
+    type Score,
+    type ScoreMessage,
+    type SessionId
   } from "$lib/socket/models";
-  import type { GameData } from "$stores/state";
+  import { setHome, type GameData } from "$stores/state";
 
   export let gameData: GameData;
 
@@ -22,11 +27,17 @@
   setMessageHandler(ServerMessage.TimeSync, onTimeSync);
   setMessageHandler(ServerMessage.Question, onQuestion);
   setMessageHandler(ServerMessage.Scores, onScores);
+  setMessageHandler(ServerMessage.Score, onScore);
   setMessageHandler(ServerMessage.Error, onError);
   setMessageHandler(ServerMessage.Kicked, onKicked);
 
   let players: OtherPlayer[] = [];
   let gameState: GameState = GameState.Lobby;
+  let question: Question | null = null;
+  let score: Score | null = null;
+  let scores: Record<SessionId, number> = {};
+
+  let answered: boolean;
 
   function onOtherPlayer(msg: OtherPlayerMessage) {
     console.debug("Other player message", msg);
@@ -47,10 +58,17 @@
 
   function onQuestion(msg: QuestionMessage) {
     console.debug("Question message", msg);
+    question = msg.question;
   }
 
   function onScores(msg: ScoresMessage) {
     console.debug("Score message", msg);
+    scores = msg.scores;
+  }
+
+  function onScore(msg: ScoreMessage) {
+    console.debug("Score message", msg);
+    score = msg.score;
   }
 
   function onError(msg: ErrorMessage) {
@@ -60,20 +78,19 @@
   function onKicked(msg: KickedMessage) {
     console.debug("Kick message", msg);
     // Remove from the players list
-    players = players.filter((player) => player.id === msg.session_id);
+    players = players.filter((player) => player.id !== msg.session_id);
+
+    // if the removed player was us
+    if (msg.session_id === gameData.id) {
+      // TODO: Display kicked message
+      setHome();
+    }
   }
 </script>
 
-<h1>Game</h1>
-<p>Host: {gameData.host}</p>
-<p>{gameState}</p>
-<p>{gameData.token}</p>
-
-<ul>
-  {#each players as player}
-    <li>{player.id}: {player.name}</li>
-  {/each}
-</ul>
+{#if gameState === GameState.Lobby}
+  <LobbyView {gameData} {players} />
+{/if}
 
 <style>
 </style>
