@@ -1,7 +1,11 @@
 // Reading and writing logic for the quizler file format
 
 import { get } from "svelte/store";
-import { imageStore, loadImagePreview, type StoredImage } from "./imageStore";
+import {
+  imageStore,
+  loadImagePreview,
+  type StoredImage
+} from "./image/imageStore";
 import type { Question, TimingConfig } from "./socket/models";
 
 interface SerializedQuiz {

@@ -12,10 +12,10 @@
   import QuestionList from "./QuestionList.svelte";
   import { getSocketReady, sendMessage } from "./socket";
   import { get } from "svelte/store";
-  import { imageStore } from "./imageStore";
+  import { imageStore } from "./image/imageStore";
   import { loadQuiz, saveQuiz } from "./format";
   import { setGame, setHome } from "./state";
-  import ImageStorage from "./ImageStorage.svelte";
+  import ImageStorage from "./image/ImageStorage.svelte";
 
   // Input used for loading quiz files
   let loadInput: HTMLInputElement;

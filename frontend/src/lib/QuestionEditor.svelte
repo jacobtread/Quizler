@@ -7,7 +7,7 @@
     type AnswerValue
   } from "./socket/models";
   import { flip } from "svelte/animate";
-  import { imagePreviewStore, selectImage } from "./imageStore";
+  import { imagePreviewStore, selectImage } from "./image/imageStore";
 
   // The question that is being created
   export let question: Question;
