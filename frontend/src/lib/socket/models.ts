@@ -117,22 +117,21 @@ export const enum ClientMessageType {
   Kick = "Kick"
 }
 
-export type ClientMessageBody<T extends ClientMessageType> =
-  T extends ClientMessageType.Initialize
-    ? InitializeMessage
-    : T extends ClientMessageType.Connect
-    ? ConnectMessage
-    : T extends ClientMessageType.Join
-    ? JoinMessage
-    : T extends ClientMessageType.Ready
-    ? Record<string, never>
-    : T extends ClientMessageType.HostAction
-    ? HostActionMessage
-    : T extends ClientMessageType.Answer
-    ? AnswerMessage
-    : T extends ClientMessageType.Kick
-    ? KickMessage
-    : unknown;
+export type ClientMessageBody<T> = T extends ClientMessageType.Initialize
+  ? InitializeMessage
+  : T extends ClientMessageType.Connect
+  ? ConnectMessage
+  : T extends ClientMessageType.Join
+  ? JoinMessage
+  : T extends ClientMessageType.Ready
+  ? Record<string, never>
+  : T extends ClientMessageType.HostAction
+  ? HostActionMessage
+  : T extends ClientMessageType.Answer
+  ? AnswerMessage
+  : T extends ClientMessageType.Kick
+  ? KickMessage
+  : unknown;
 
 export type PairMessageType<T> = T extends
   | ClientMessageType.Initialize

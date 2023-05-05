@@ -2,7 +2,6 @@ import { writable, type Unsubscriber } from "svelte/store";
 import { DEBUG } from "../constants";
 import {
   ServerMessage,
-  type JoinedMessage,
   type OtherPlayerMessage,
   type GameStateMessage,
   type TimeSyncMessage,
@@ -12,35 +11,32 @@ import {
   type KickedMessage,
   type ServerMessageBody,
   type ClientMessageBody,
-  ClientMessageType,
   type PairMessageType
 } from "./models";
-import { AppState, appState } from "../state";
 
 type MessageHandler<T> = (msg: T) => void;
 type MessageHandlers = {
-  [T in ServerMessage]: MessageHandler<ServerMessageBody<T>> | undefined;
+  [T in ServerMessage]?: MessageHandler<ServerMessageBody<T>>;
 };
 type RequestHandle<T> = (msg: T) => void;
 
 // The next request ID to use
 let requestHandle: number = 0;
+// Handlers from requests awaiting responses
 let requestHandles: Record<number, RequestHandle<any> | undefined> = {};
 
 // Reference to the socket
 let socket: WebSocket = createSocket();
 
-// Map of the message types to their handlers
+// Global message handlers for packet notifications
 const messageHandlers: MessageHandlers = {
-  [ServerMessage.Joined]: onJoined,
   [ServerMessage.OtherPlayer]: onOtherPlayer,
   [ServerMessage.GameState]: onGameState,
   [ServerMessage.TimeSync]: onTimeSync,
   [ServerMessage.Question]: onQuestion,
   [ServerMessage.Scores]: onScores,
   [ServerMessage.Error]: onError,
-  [ServerMessage.Kicked]: onKicked,
-  [ServerMessage.Ok]: undefined
+  [ServerMessage.Kicked]: onKicked
 };
 
 // Socket readiness state
@@ -161,7 +157,7 @@ type ResponseOrError<T> =
  *
  * @param msg
  */
-export async function sendMessage<T extends ClientMessageType>(
+export function sendMessage<T>(
   msg: { ty: T; rid?: number } & ClientMessageBody<T>
 ): Promise<ResponseOrError<PairMessageType<T>>> {
   return new Promise((resolve, reject) => {
@@ -177,7 +173,7 @@ export async function sendMessage<T extends ClientMessageType>(
       socket.send(data);
     } catch (e) {
       console.error("Failed to send message", e);
-      requestHandles;
+      delete requestHandles[msg.rid];
       reject(e);
     }
   });
@@ -222,12 +218,6 @@ function onMessage<T extends ServerMessage>({ data }: MessageEvent) {
 
   // Call the handler with the mesasge
   handler(msg);
-}
-
-function onJoined(msg: JoinedMessage) {
-  appState.set(AppState.Game);
-
-  console.debug("Joined message", msg);
 }
 
 function onOtherPlayer(msg: OtherPlayerMessage) {
