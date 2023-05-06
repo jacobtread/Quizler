@@ -1,10 +1,9 @@
-use actix::Addr;
 use actix_multipart::{Multipart, MultipartError};
 use actix_web::{
     get,
     http::StatusCode,
     post,
-    web::{self, Data, ServiceConfig},
+    web::{self, ServiceConfig},
     HttpRequest, HttpResponse, Responder, ResponseError,
 };
 use actix_web_actors::ws::{self};
