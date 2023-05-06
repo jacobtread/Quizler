@@ -392,14 +392,10 @@ impl Game {
                 A::Multiple {
                     answers: answer_indexes,
                 },
-                Q::Multiple { answers, .. },
+                Q::Multiple { answers, max, min },
             ) => {
-                let mut total = 0;
                 let mut correct = 0;
-
                 for answer in answer_indexes {
-                    total += 1;
-
                     if let Some(answer) = answers.get(*answer) {
                         if answer.correct {
                             correct += 1;
@@ -407,8 +403,12 @@ impl Game {
                     }
                 }
 
+                if correct < *min {
+                    return Score::Incorrect;
+                }
+
                 // % correct out of total answers
-                let percent = correct as f32 / total as f32;
+                let percent = correct as f32 / *max as f32;
 
                 if correct == answers.len() {
                     Score::Correct(base_score)
@@ -419,7 +419,7 @@ impl Game {
                     Score::Partial {
                         score,
                         count: correct as u32,
-                        total,
+                        total: *max as u32,
                     }
                 }
             }
