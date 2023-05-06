@@ -9,7 +9,8 @@
 
   const enum Unit {
     Seconds,
-    Milliseconds
+    Milliseconds,
+    Minutes
   }
 
   let unit = Unit.Seconds;
@@ -18,6 +19,8 @@
   function convertFrom(value: number) {
     if (unit == Unit.Seconds) {
       return value * 1000;
+    } else if (unit == Unit.Minutes) {
+      return value * 1000 * 60;
     } else {
       return value;
     }
@@ -26,6 +29,8 @@
   function convertTo(value: number) {
     if (unit == Unit.Seconds) {
       return value / 1000;
+    } else if (unit == Unit.Minutes) {
+      return value / 60 / 1000;
     } else {
       return value;
     }
@@ -35,11 +40,10 @@
     let converted = convertFrom(actualValue);
     if (converted > max) {
       converted = max;
-      actualValue = convertTo(max);
     } else if (converted < min) {
       converted = min;
-      actualValue = convertTo(min);
     }
+    actualValue = convertTo(converted);
     value = converted;
   }
 </script>
@@ -52,8 +56,10 @@
     bind:value={actualValue}
     on:change={onChange}
   />
-  <select bind:value={unit}>
+  <select bind:value={unit} on:change={onChange}>
+    <option value={Unit.Minutes}>Minutes</option>
     <option value={Unit.Seconds}>Seconds</option>
     <option value={Unit.Milliseconds}>Milliseconds</option>
   </select>
+  {value}
 </div>
