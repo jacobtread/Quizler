@@ -192,7 +192,6 @@ export const enum ServerError {
   Unexpected = "Unexpected",
   InvalidPermission = "InvalidPermission",
   UnexpectedMessage = "UnexpectedMessage",
-  AlreadyAnswered = "AlreadyAnswered",
   InvalidAnswer = "InvalidAnswer"
 }
 

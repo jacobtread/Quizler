@@ -692,11 +692,6 @@ impl Handler<PlayerAnswerMessage> for Game {
             .find(|player| player.id == msg.session_id)
             .ok_or(ServerError::UnknownPlayer)?;
 
-        // Ensure the player hasn't already answered
-        if player.answers.len() >= self.question_index {
-            return Err(ServerError::AlreadyAnswered);
-        }
-
         // Ensure the answer is the right type of answer
         if !msg.answer.is_valid(&question.data) {
             return Err(ServerError::InvalidAnswer);
