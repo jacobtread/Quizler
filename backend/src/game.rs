@@ -75,7 +75,7 @@ impl GameTimer {
     pub fn sync(&mut self) -> Option<TimeSync> {
         self.tick += 1;
 
-        if self.complete || self.tick != 5 {
+        if self.complete {
             return None;
         }
 
@@ -87,6 +87,12 @@ impl GameTimer {
         // Update the complete state
         if total_ms == elapsed_ms {
             self.complete = true;
+        }
+
+        // Only send a sync message if we are complete or we
+        // are on the 5th tick
+        if self.tick != 5 && !self.complete {
+            return None;
         }
 
         self.tick = 0;
