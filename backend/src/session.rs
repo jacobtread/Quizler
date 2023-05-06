@@ -319,6 +319,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Session {
             Ok(message) => message,
             Err(err) => {
                 error!("Got error while recieving websocket messages: {}", err);
+                ctx.stop();
                 return;
             }
         };
@@ -332,10 +333,23 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Session {
             }
             ws::Message::Close(reason) => {
                 info!("Session connection closed: {:?}", reason);
+                ctx.close(reason);
                 ctx.stop();
                 return;
             }
-            _ => return,
+            ws::Message::Binary(_) => {
+                error!("Unexpected binary message from socket");
+                return;
+            }
+            ws::Message::Continuation(_) => {
+                ctx.stop();
+                return;
+            }
+            ws::Message::Pong(_) => {
+                // TODO: Handle pong
+                return;
+            }
+            ws::Message::Nop => return,
         };
 
         // Decode the recieved client message
