@@ -26,6 +26,7 @@ const fileFormatSchema = z.object({
       uuid: z.string().uuid(),
       name: z.string(),
       size: z.number(),
+      type: z.string(),
       data: z.array(z.number())
     })
   )
@@ -49,6 +50,7 @@ async function serializeImage(image: StoredImage): Promise<SerializedImage> {
     uuid: image.uuid,
     name: image.name,
     size: image.size,
+    type: image.blob.type,
     data: Array.from(new Uint8Array(buffer)) as number[]
   };
 }
@@ -134,10 +136,10 @@ export async function loadQuiz(file: Blob): Promise<LoadedQuiz> {
   const parsed = JSON.parse(data);
   const obj: QuizFormat = fileFormatSchema.parse(parsed);
 
-  for (const { data, uuid, name, size } of obj.images) {
+  for (const { data, uuid, name, type, size } of obj.images) {
     // Convert the input data array into a blob
     const dataArray = new Uint8Array(data);
-    const blob = new Blob([dataArray.buffer]);
+    const blob = new Blob([dataArray.buffer], { type });
 
     // Add the image to the image store
     imageStore.update((store) => {
