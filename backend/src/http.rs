@@ -150,13 +150,10 @@ pub enum ImageError {
 }
 
 #[get("/api/quiz/{token}/{image}")]
-async fn quiz_image(
-    path: web::Path<(String, Uuid)>,
-    games: Data<Addr<Games>>,
-) -> Result<impl Responder, ImageError> {
+async fn quiz_image(path: web::Path<(String, Uuid)>) -> Result<impl Responder, ImageError> {
     let (token, uuid) = path.into_inner();
 
-    let game = games
+    let game = Games::get()
         .send(GetGameMessage { token })
         .await
         .expect("Games service is not running")
