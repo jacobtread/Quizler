@@ -17,23 +17,12 @@
     type SessionId,
     type TimerState,
     ClientMessage,
-    ScoreType,
-    type ServerMessageOf
+    ScoreType
   } from "$lib/socket/models";
   import { formatImageUrl } from "$lib/utils";
   import { setHome, type GameData } from "$stores/state";
 
   export let gameData: GameData;
-
-  // Hook the handlers for the different message types
-  socket.setHandler(ServerMessage.OtherPlayer, onOtherPlayer);
-  socket.setHandler(ServerMessage.GameState, onGameState);
-  socket.setHandler(ServerMessage.TimeSync, onTimeSync);
-  socket.setHandler(ServerMessage.Question, onQuestion);
-  socket.setHandler(ServerMessage.Scores, onScores);
-  socket.setHandler(ServerMessage.Score, onScore);
-  socket.setHandler(ServerMessage.Error, onError);
-  socket.setHandler(ServerMessage.Kicked, onKicked);
 
   let players: OtherPlayer[] = [];
   let gameState: GameState = GameState.Lobby;
@@ -66,27 +55,34 @@
     }
   }
 
-  function onOtherPlayer(msg: ServerMessageOf<ServerMessage.OtherPlayer>) {
+  async function setReady() {
+    let res = await socket.send({ ty: ClientMessage.Ready });
+    if (res.ty === ServerMessage.Error) {
+      console.error("Error while attempting to cancel", res.error);
+    }
+  }
+
+  // Hook the handlers for the different message types
+  socket.setHandler(ServerMessage.OtherPlayer, (msg) => {
     console.debug("Other player message", msg);
     // Add to the players list
     players.push(msg);
-
     players = players;
-  }
+  });
 
-  function onGameState(msg: ServerMessageOf<ServerMessage.GameState>) {
+  socket.setHandler(ServerMessage.GameState, (msg) => {
     console.debug("Game state message", msg);
     gameState = msg.state;
-  }
+  });
 
-  function onTimeSync(msg: ServerMessageOf<ServerMessage.TimeSync>) {
+  socket.setHandler(ServerMessage.TimeSync, (msg) => {
     console.debug("Time sync message", msg);
     lastUpdateTime = performance.now();
     timer = { total: msg.total, elapsed: msg.elapsed };
     updateTimer();
-  }
+  });
 
-  function onQuestion(msg: ServerMessageOf<ServerMessage.Question>) {
+  socket.setHandler(ServerMessage.Question, (msg) => {
     console.debug("Question message", msg);
     question = msg.question;
     score = { ty: ScoreType.Incorrect };
@@ -97,35 +93,28 @@
       img.src = formatImageUrl(gameData.token, msg.question.image);
       img.onload = () => {
         console.debug("Preloaded question image", img.src);
-        onReady();
+        setReady();
       };
     } else {
-      onReady();
+      setReady();
     }
-  }
+  });
 
-  async function onReady() {
-    let res = await socket.send({ ty: ClientMessage.Ready });
-    if (res.ty === ServerMessage.Error) {
-      console.error("Error while attempting to cancel", res.error);
-    }
-  }
-
-  function onScores(msg: ServerMessageOf<ServerMessage.Scores>) {
+  socket.setHandler(ServerMessage.Scores, (msg) => {
     console.debug("Score message", msg);
     scores = msg.scores;
-  }
+  });
 
-  function onScore(msg: ServerMessageOf<ServerMessage.Score>) {
+  socket.setHandler(ServerMessage.Score, (msg) => {
     console.debug("Score message", msg);
     score = msg.score;
-  }
+  });
 
-  function onError(msg: ServerMessageOf<ServerMessage.Error>) {
+  socket.setHandler(ServerMessage.Error, (msg) => {
     console.error("Server error", msg.error);
-  }
+  });
 
-  function onKicked(msg: ServerMessageOf<ServerMessage.Kicked>) {
+  socket.setHandler(ServerMessage.Kicked, (msg) => {
     console.debug("Kick message", msg);
     // Remove from the players list
     players = players.filter((player) => player.id !== msg.session_id);
@@ -135,7 +124,7 @@
       // TODO: Display kicked message
       setHome();
     }
-  }
+  });
 </script>
 
 {#if gameState === GameState.Lobby}
