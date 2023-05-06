@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import {
-    QuestionDataType,
+    QuestionType,
     type Question,
     type AnswerValue
   } from "$lib/socket/models";
@@ -28,14 +28,14 @@
     const target: HTMLSelectElement = event.target as HTMLSelectElement;
 
     const oldQuestion: Question = question;
-    const newValue = target.value as QuestionDataType;
+    const newValue = target.value as QuestionType;
 
-    if (newValue == QuestionDataType.Single) {
+    if (newValue == QuestionType.Single) {
       let answers: AnswerValue[] = [];
 
       if (
-        oldQuestion.ty == QuestionDataType.Single ||
-        oldQuestion.ty == QuestionDataType.Multiple
+        oldQuestion.ty == QuestionType.Single ||
+        oldQuestion.ty == QuestionType.Multiple
       ) {
         answers = oldQuestion.answers;
       }
@@ -45,18 +45,18 @@
         ty: newValue,
         answers
       };
-    } else if (newValue == QuestionDataType.Multiple) {
+    } else if (newValue == QuestionType.Multiple) {
       let answers: AnswerValue[] = [];
       let min = 1;
       let max = 1;
 
       if (
-        oldQuestion.ty == QuestionDataType.Single ||
-        oldQuestion.ty == QuestionDataType.Multiple
+        oldQuestion.ty == QuestionType.Single ||
+        oldQuestion.ty == QuestionType.Multiple
       ) {
         answers = oldQuestion.answers;
 
-        if (oldQuestion.ty == QuestionDataType.Multiple) {
+        if (oldQuestion.ty == QuestionType.Multiple) {
           min = oldQuestion.min;
           max = oldQuestion.max;
         }
@@ -73,7 +73,7 @@
   }
 
   function onChangeMin() {
-    if (question.ty === QuestionDataType.Multiple) {
+    if (question.ty === QuestionType.Multiple) {
       if (question.max < question.min) {
         question.max = question.min;
       }
@@ -175,13 +175,13 @@
   />
 
   <select on:change={onTypeChange}>
-    <option value={QuestionDataType.Single}>Single Choice</option>
-    <option value={QuestionDataType.Multiple}>Multiple Choice</option>
+    <option value={QuestionType.Single}>Single Choice</option>
+    <option value={QuestionType.Multiple}>Multiple Choice</option>
   </select>
 
-  {#if question.ty == QuestionDataType.Single || question.ty == QuestionDataType.Multiple}
+  {#if question.ty == QuestionType.Single || question.ty == QuestionType.Multiple}
     <!-- Min/max choice decision for multiple choice -->
-    {#if question.ty == QuestionDataType.Multiple}
+    {#if question.ty == QuestionType.Multiple}
       <div>
         <label>
           <span>Min Choices</span>

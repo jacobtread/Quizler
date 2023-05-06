@@ -1,7 +1,7 @@
 <script lang="ts">
   import * as socket from "$lib/socket";
   import {
-    QuestionDataType,
+    QuestionType,
     type Question,
     type TimerState,
     ServerMessage,
@@ -57,13 +57,13 @@
   {/if}
   <p>{question.text}</p>
   <div>
-    {#if question.ty === QuestionDataType.Single}
+    {#if question.ty === QuestionType.Single}
       {#each question.answers as answer, index}
         <button on:click={() => doAnswer(index)}>
           {answer.value}
         </button>
       {/each}
-    {:else if question.ty === QuestionDataType.Multiple}
+    {:else if question.ty === QuestionType.Multiple}
       {#each question.answers as answer, index}
         <label for="">
           <input type="checkbox" bind:value={index} bind:group={answers} />

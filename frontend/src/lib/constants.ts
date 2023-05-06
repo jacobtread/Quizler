@@ -1,4 +1,4 @@
-import { QuestionDataType, type Question } from "$lib/socket/models";
+import { QuestionType, type Question } from "$lib/socket/models";
 
 export const DEBUG: boolean = import.meta.env.DEV;
 
@@ -20,7 +20,7 @@ export const MAX_BONUS_TIME = 1000 * 60 * 30; /* 30mins */
 export function defaultQuestion(): Question {
   return {
     id: 0,
-    ty: QuestionDataType.Single,
+    ty: QuestionType.Single,
     text: "This is an example question, you should replace this with your first question",
     image: null,
     answer_time: DEFAULT_ANSWER_TIME_MS,

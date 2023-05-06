@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { QuestionDataType, type Question } from "$lib/socket/models";
+  import { QuestionType, type Question } from "$lib/socket/models";
 
   export let question: Question;
 </script>
 
-{#if question.ty == QuestionDataType.Single || question.ty == QuestionDataType.Multiple}
+{#if question.ty == QuestionType.Single || question.ty == QuestionType.Multiple}
   <ul class="answers">
     {#each question.answers as answer}
       <li class="answer" data-correct={answer.correct}>

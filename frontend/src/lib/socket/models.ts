@@ -214,17 +214,7 @@ export interface AnswerValue {
   correct: boolean;
 }
 
-interface SingleQuestionData {
-  answers: AnswerValue[];
-}
-
-export interface MultipleQuestionData {
-  answers: AnswerValue[];
-  min: number;
-  max: number;
-}
-
-export const enum QuestionDataType {
+export const enum QuestionType {
   Single = "Single",
   Multiple = "Multiple"
 }
@@ -241,8 +231,13 @@ export interface QuestionBase {
 
 export type Question = QuestionBase &
   (
-    | ({ ty: QuestionDataType.Single } & SingleQuestionData)
-    | ({ ty: QuestionDataType.Multiple } & MultipleQuestionData)
+    | { ty: QuestionType.Single; answers: AnswerValue[] }
+    | {
+        ty: QuestionType.Multiple;
+        answers: AnswerValue[];
+        min: number;
+        max: number;
+      }
   );
 
 export interface Scoring {
@@ -256,17 +251,10 @@ export const enum AnswerType {
   Multiple = "Multiple"
 }
 
-interface SingleAnswer {
-  answer: QuestionIndex;
-}
+type SingleAnswer = { ty: AnswerType.Single; answer: QuestionIndex };
+type MultipleAnswer = { ty: AnswerType.Multiple; answers: QuestionIndex[] };
 
-export interface MultipleAnswer {
-  answers: QuestionIndex[];
-}
-
-export type Answer =
-  | ({ ty: AnswerType.Single } & SingleAnswer)
-  | ({ ty: AnswerType.Multiple } & MultipleAnswer);
+export type Answer = SingleAnswer | MultipleAnswer;
 
 export const enum ScoreType {
   Correct = "Correct",
@@ -274,10 +262,11 @@ export const enum ScoreType {
   Partial = "Partial"
 }
 
-export type Score =
-  | { ty: ScoreType.Correct; value: number }
-  | {
-      ty: ScoreType.Partial;
-      value: { count: number; total: number; score: number };
-    }
-  | { ty: ScoreType.Incorrect };
+type CorrectScore = { ty: ScoreType.Correct; value: number };
+type PartialScore = {
+  ty: ScoreType.Partial;
+  value: { count: number; total: number; score: number };
+};
+type IncorrectScore = { ty: ScoreType.Incorrect };
+
+export type Score = CorrectScore | PartialScore | IncorrectScore;
