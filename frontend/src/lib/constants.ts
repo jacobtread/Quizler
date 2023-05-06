@@ -7,6 +7,9 @@ const DEFAULT_MIN_SCORE: number = 10;
 const DEFAULT_MAX_SCORE: number = 100;
 const DEFAULT_BONUS_SCORE: number = 150;
 
+export const MIN_ANSWER_TIME: number = 1000;
+export const MAX_ANSWER_TIME: number = 1000 * 1000 * 10; /* 10,000s */
+
 export function defaultQuestion(): Question {
   return {
     id: 0,

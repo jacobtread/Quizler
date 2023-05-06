@@ -8,6 +8,8 @@
   } from "$lib/socket/models";
   import { flip } from "svelte/animate";
   import { imagePreviewStore, selectImage } from "$stores/imageStore";
+  import TimeInput from "./TimeInput.svelte";
+  import { MAX_ANSWER_TIME, MIN_ANSWER_TIME } from "$lib/constants";
 
   // The question that is being created
   export let question: Question;
@@ -230,6 +232,15 @@
       <button on:click={addAnswer}>Add Answer</button>
     </div>
   {/if}
+
+  <label for="">
+    <span>Answer Time</span>
+    <TimeInput
+      bind:value={question.answer_time}
+      min={MIN_ANSWER_TIME}
+      max={MAX_ANSWER_TIME}
+    />
+  </label>
 </div>
 
 <style>

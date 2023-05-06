@@ -170,6 +170,3 @@
 {:else if gameState === GameState.Finished}
   <FinishedView />
 {/if}
-
-<style>
-</style>
