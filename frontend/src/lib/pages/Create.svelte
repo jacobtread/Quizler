@@ -22,6 +22,7 @@
   import { loadQuiz, saveQuiz } from "$lib/format";
   import { setGame, setHome } from "$stores/state";
   import TimeInput from "$components/TimeInput.svelte";
+  import { ZodError } from "zod";
 
   // Input used for loading quiz files
   let loadInput: HTMLInputElement;
@@ -120,14 +121,23 @@
       return;
     }
 
-    const loaded = await loadQuiz(file);
+    try {
+      const loaded = await loadQuiz(file);
 
-    console.debug("Loaded quiz file", loaded);
+      console.debug("Loaded quiz file", loaded);
 
-    questions = loaded.questions;
-    name = loaded.name;
-    text = loaded.text;
-    timing = loaded.timing;
+      questions = loaded.questions;
+      name = loaded.name;
+      text = loaded.text;
+      timing = loaded.timing;
+    } catch (e) {
+      if (e instanceof ZodError) {
+        // TODO: Display loading failed message
+        console.error("Failed to parse quiz file", e);
+      } else {
+        console.error("Error while loading quiz file", e);
+      }
+    }
   }
 
   function back() {
