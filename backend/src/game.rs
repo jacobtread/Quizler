@@ -395,7 +395,7 @@ impl Game {
                 Q::Multiple { answers, .. },
             ) => {
                 let mut total = 0;
-                let mut correct = 0usize;
+                let mut correct = 0;
 
                 for answer in answer_indexes {
                     total += 1;
@@ -416,7 +416,11 @@ impl Game {
                     Score::Incorrect
                 } else {
                     let score = ((base_score as f32) * percent).round() as u32;
-                    Score::Partial(score)
+                    Score::Partial {
+                        score,
+                        count: correct as u32,
+                        total,
+                    }
                 }
             }
 

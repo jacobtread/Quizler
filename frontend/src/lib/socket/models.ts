@@ -278,5 +278,8 @@ export const enum ScoreType {
 
 export type Score =
   | { ty: ScoreType.Correct; value: number }
-  | { ty: ScoreType.Partial; value: number }
+  | {
+      ty: ScoreType.Partial;
+      value: { count: number; total: number; score: number };
+    }
   | { ty: ScoreType.Incorrect };

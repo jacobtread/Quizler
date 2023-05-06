@@ -3,6 +3,7 @@
   import AwaitReadyView from "$lib/components/AwaitReadyView.svelte";
   import LobbyView from "$lib/components/LobbyView.svelte";
   import QuestionView from "$lib/components/QuestionView.svelte";
+  import ScoreView from "$lib/components/ScoreView.svelte";
   import StartingView from "$lib/components/StartingView.svelte";
   import { sendMessage, setMessageHandler } from "$lib/socket";
   import {
@@ -155,6 +156,15 @@
       <AnsweredView />
     {/if}
   {/if}
+{:else if gameState === GameState.Marked}
+  {#if gameData.host}
+    <!-- TODO: Player score list -->
+  {:else if score != null}
+    <ScoreView {score} {gameData} {scores} />
+  {/if}
+{:else if gameState === GameState.Finished}
+  <h1>Game Over</h1>
+  <!-- TODO: top players screen -->
 {/if}
 
 <style>

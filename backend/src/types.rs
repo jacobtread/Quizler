@@ -182,14 +182,15 @@ pub enum Score {
     // Answer was incorrect
     Incorrect,
     // Multiple choice has some asnwers right
-    Partial(u32),
+    Partial { count: u32, total: u32, score: u32 },
 }
 
 impl Score {
     /// Obtains the score value from the answer score
     pub fn value(&self) -> u32 {
         match self {
-            Self::Correct(value) | Self::Partial(value) => *value,
+            Self::Correct(value) => *value,
+            Self::Partial { score, .. } => *score,
             Self::Incorrect => 0,
         }
     }
