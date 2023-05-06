@@ -7,7 +7,7 @@
   import QuestionView from "$lib/components/game/QuestionView.svelte";
   import ScoreView from "$lib/components/game/ScoreView.svelte";
   import StartingView from "$lib/components/game/StartingView.svelte";
-  import { sendMessage, setMessageHandler } from "$lib/socket";
+  import * as socket from "$lib/socket";
   import {
     ServerMessage,
     type OtherPlayerMessage,
@@ -24,7 +24,7 @@
     type ScoreMessage,
     type SessionId,
     type TimerState,
-    ClientMessageType,
+    ClientMessage,
     ScoreType
   } from "$lib/socket/models";
   import { formatImageUrl } from "$lib/utils";
@@ -33,14 +33,14 @@
   export let gameData: GameData;
 
   // Hook the handlers for the different message types
-  setMessageHandler(ServerMessage.OtherPlayer, onOtherPlayer);
-  setMessageHandler(ServerMessage.GameState, onGameState);
-  setMessageHandler(ServerMessage.TimeSync, onTimeSync);
-  setMessageHandler(ServerMessage.Question, onQuestion);
-  setMessageHandler(ServerMessage.Scores, onScores);
-  setMessageHandler(ServerMessage.Score, onScore);
-  setMessageHandler(ServerMessage.Error, onError);
-  setMessageHandler(ServerMessage.Kicked, onKicked);
+  socket.setHandler(ServerMessage.OtherPlayer, onOtherPlayer);
+  socket.setHandler(ServerMessage.GameState, onGameState);
+  socket.setHandler(ServerMessage.TimeSync, onTimeSync);
+  socket.setHandler(ServerMessage.Question, onQuestion);
+  socket.setHandler(ServerMessage.Scores, onScores);
+  socket.setHandler(ServerMessage.Score, onScore);
+  socket.setHandler(ServerMessage.Error, onError);
+  socket.setHandler(ServerMessage.Kicked, onKicked);
 
   let players: OtherPlayer[] = [];
   let gameState: GameState = GameState.Lobby;
@@ -112,7 +112,7 @@
   }
 
   async function onReady() {
-    let res = await sendMessage(ClientMessageType.Ready, {});
+    let res = await socket.send(ClientMessage.Ready, {});
     if (res.ty === ServerMessage.Error) {
       console.error("Error while attempting to cancel", res.error);
     }

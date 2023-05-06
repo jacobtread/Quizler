@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { getSocketReady, sendMessage } from "$lib/socket";
-  import { ClientMessageType, ServerMessage } from "$lib/socket/models";
+  import * as socket from "$lib/socket";
+  import { ClientMessage, ServerMessage } from "$lib/socket/models";
   import { setHome, setJoin } from "$stores/state";
 
   let token: string = "";
@@ -12,9 +12,9 @@
     }
 
     // Await the socket being alive
-    await getSocketReady();
+    await socket.ready();
 
-    const resp = await sendMessage(ClientMessageType.Connect, {
+    const resp = await socket.send(ClientMessage.Connect, {
       token
     });
 

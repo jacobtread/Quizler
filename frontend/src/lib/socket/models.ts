@@ -4,6 +4,8 @@ export interface CreatedResponse {
 
 export type SessionId = number;
 export type GameToken = string;
+export type TimerState = { total: number; elapsed: number };
+export type Scores = Record<SessionId, number>;
 
 export interface JoinedMessage {
   id: SessionId;
@@ -21,7 +23,6 @@ export interface OtherPlayer {
 export interface GameStateMessage {
   state: GameState;
 }
-export type TimerState = { total: number; elapsed: number };
 
 export type TimeSyncMessage = TimerState;
 
@@ -30,7 +31,7 @@ export interface QuestionMessage {
 }
 
 export interface ScoresMessage {
-  scores: Record<SessionId, number>;
+  scores: Scores;
 }
 
 export interface ScoreMessage {
@@ -114,7 +115,7 @@ export interface KickMessage {
   id: SessionId;
 }
 
-export const enum ClientMessageType {
+export const enum ClientMessage {
   Initialize = "Initialize",
   Connect = "Connect",
   Join = "Join",
@@ -124,33 +125,33 @@ export const enum ClientMessageType {
   Kick = "Kick"
 }
 
-export type ClientMessageBody<T extends ClientMessageType> =
-  T extends ClientMessageType.Initialize
+export type ClientMessageBody<T extends ClientMessage> =
+  T extends ClientMessage.Initialize
     ? InitializeMessage
-    : T extends ClientMessageType.Connect
+    : T extends ClientMessage.Connect
     ? ConnectMessage
-    : T extends ClientMessageType.Join
+    : T extends ClientMessage.Join
     ? JoinMessage
-    : T extends ClientMessageType.Ready
+    : T extends ClientMessage.Ready
     ? Record<string, never>
-    : T extends ClientMessageType.HostAction
+    : T extends ClientMessage.HostAction
     ? HostActionMessage
-    : T extends ClientMessageType.Answer
+    : T extends ClientMessage.Answer
     ? AnswerMessage
-    : T extends ClientMessageType.Kick
+    : T extends ClientMessage.Kick
     ? KickMessage
     : unknown;
 
 export type PairMessageType<T> = T extends
-  | ClientMessageType.Initialize
-  | ClientMessageType.Join
+  | ClientMessage.Initialize
+  | ClientMessage.Join
   ? ServerMessage.Joined
   : T extends
-      | ClientMessageType.Connect
-      | ClientMessageType.Ready
-      | ClientMessageType.HostAction
-      | ClientMessageType.Answer
-      | ClientMessageType.Kick
+      | ClientMessage.Connect
+      | ClientMessage.Ready
+      | ClientMessage.HostAction
+      | ClientMessage.Answer
+      | ClientMessage.Kick
   ? ServerMessage.Ok
   : unknown;
 

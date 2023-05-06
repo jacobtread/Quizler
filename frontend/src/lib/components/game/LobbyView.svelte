@@ -1,8 +1,8 @@
 <!-- Game view when the state is in the "Lobby" -->
 <script lang="ts">
-  import { sendMessage } from "$lib/socket";
+  import * as socket from "$lib/socket";
   import {
-    ClientMessageType,
+    ClientMessage,
     ServerMessage,
     type OtherPlayer,
     HostAction
@@ -13,7 +13,7 @@
   export let players: OtherPlayer[];
 
   async function doKick(player: OtherPlayer) {
-    let res = await sendMessage(ClientMessageType.Kick, {
+    let res = await socket.send(ClientMessage.Kick, {
       id: player.id
     });
 
@@ -23,7 +23,7 @@
   }
 
   async function doStart() {
-    let res = await sendMessage(ClientMessageType.HostAction, {
+    let res = await socket.send(ClientMessage.HostAction, {
       action: HostAction.Start
     });
 

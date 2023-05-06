@@ -7,7 +7,7 @@ import {
   type ClientMessageBody,
   type PairMessageType,
   type Message,
-  ClientMessageType
+  ClientMessage
 } from "./models";
 import { setHome } from "$stores/state";
 import { onDestroy, onMount } from "svelte";
@@ -16,12 +16,11 @@ type MessageHandler<T> = (msg: T) => void;
 type MessageHandlers = {
   [T in ServerMessage]?: MessageHandler<ServerMessageBody<T>>;
 };
-type RequestHandle<T> = (msg: T) => void;
 
 // The next request ID to use
 let requestHandle: number = 0;
 // Handlers from requests awaiting responses
-let requestHandles: Record<number, RequestHandle<any> | undefined> = {};
+let requestHandles: Record<number, MessageHandler<unknown> | undefined> = {};
 // Queue of messages that haven't yet been handled
 let messageQueue: Message<ServerMessage>[] = [];
 
@@ -43,15 +42,17 @@ export const socketReady = writable<boolean>(false);
  * @param ty
  * @param handler
  */
-export function setMessageHandler<T extends ServerMessage>(
+export function setHandler<T extends ServerMessage>(
   ty: T,
   handler: MessageHandler<ServerMessageBody<T>>
 ) {
+  // Append the handler on mount
   onMount(() => {
     // @ts-ignore
     messageHandlers[ty] = handler;
     console.log("Added handler for", ty);
 
+    // Process matching queued messages
     messageQueue = messageQueue.filter((msg) => {
       if (msg.ty === ty) {
         // Handle messages that match the handler type
@@ -62,6 +63,8 @@ export function setMessageHandler<T extends ServerMessage>(
       }
     });
   });
+
+  // Remove the handler on unMount
   onDestroy(() => {
     delete messageHandlers[ty];
   });
@@ -73,7 +76,7 @@ export function setMessageHandler<T extends ServerMessage>(
  *
  * @returns The ready promise
  */
-export function getSocketReady(): Promise<void> {
+export function ready(): Promise<void> {
   // Unsubscribe callback for cleaning up subscription
   let unsub: Unsubscriber | undefined;
 
@@ -90,7 +93,7 @@ export function getSocketReady(): Promise<void> {
   );
 }
 
-export function clearMessageQueue() {
+function clearMessageQueue() {
   for (const msg of messageQueue) {
     console.warn("Message was not handled", msg);
   }
@@ -136,8 +139,6 @@ function createSocket(): WebSocket {
 
     // Update lost connection states
     onDisconnected();
-
-    queueReconnect();
   };
 
   // Handle error events
@@ -150,7 +151,11 @@ function createSocket(): WebSocket {
 }
 
 function onDisconnected() {
+  // Return to the home screen
   setHome();
+
+  // Attempt to reconnect
+  queueReconnect();
 }
 
 /**
@@ -196,7 +201,7 @@ type ResponseOrError<T> =
  *
  * @param msg
  */
-export function sendMessage<T extends ClientMessageType>(
+export function send<T extends ClientMessage>(
   ty: T,
   body: ClientMessageBody<T>
 ): Promise<ResponseOrError<PairMessageType<T>>> {
@@ -209,7 +214,7 @@ export function sendMessage<T extends ClientMessageType>(
       ...body
     };
     requestHandle++;
-    requestHandles[msg.rid] = resolve;
+    requestHandles[msg.rid] = resolve as MessageHandler<unknown>;
 
     const data = JSON.stringify(msg);
     try {

@@ -1,8 +1,8 @@
 <!-- Game view when the state is in the "Starting" -->
 <script lang="ts">
-  import { sendMessage } from "$lib/socket";
+  import * as socket from "$lib/socket";
   import {
-    ClientMessageType,
+    ClientMessage,
     ServerMessage,
     HostAction,
     type TimerState
@@ -14,7 +14,7 @@
   export let timer: TimerState;
 
   async function doCancel() {
-    let res = await sendMessage(ClientMessageType.HostAction, {
+    let res = await socket.send(ClientMessage.HostAction, {
       action: HostAction.Cancel
     });
 
@@ -24,7 +24,7 @@
   }
 
   async function doSkip() {
-    let res = await sendMessage(ClientMessageType.HostAction, {
+    let res = await socket.send(ClientMessage.HostAction, {
       action: HostAction.Skip
     });
 

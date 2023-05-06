@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { getSocketReady, sendMessage } from "$lib/socket";
-  import { ClientMessageType, ServerMessage } from "$lib/socket/models";
+  import * as socket from "$lib/socket";
+  import { ClientMessage, ServerMessage } from "$lib/socket/models";
   import { setGame, setHome } from "$stores/state";
 
   export let token: string;
@@ -11,9 +11,9 @@
     // TODO: name validation
 
     // Await the socket being alive
-    await getSocketReady();
+    await socket.ready();
 
-    const resp = await sendMessage(ClientMessageType.Join, {
+    const resp = await socket.send(ClientMessage.Join, {
       name
     });
 

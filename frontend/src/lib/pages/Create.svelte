@@ -1,13 +1,13 @@
 <script lang="ts">
   import {
-    ClientMessageType,
+    ClientMessage,
     ServerMessage,
     type CreatedResponse,
     type Question,
     type TimingConfig,
     type UploadConfig
   } from "$lib/socket/models";
-  import { getSocketReady, sendMessage } from "$lib/socket";
+  import * as socket from "$lib/socket";
   import {
     DEBUG,
     MAX_BONUS_TIME,
@@ -23,7 +23,7 @@
   import { imageStore } from "$stores/imageStore";
   import { loadQuiz, saveQuiz } from "$lib/format";
   import { setGame, setHome } from "$stores/state";
-  import TimeInput from "$lib/components/TimeInput.svelte";
+  import TimeInput from "$components/TimeInput.svelte";
 
   // Input used for loading quiz files
   let loadInput: HTMLInputElement;
@@ -79,11 +79,11 @@
     console.debug("Waiting for socket ready");
 
     // Await the socket being alive
-    await getSocketReady();
+    await socket.ready();
 
     console.debug("Sending initialize message");
 
-    const resp = await sendMessage(ClientMessageType.Initialize, {
+    const resp = await socket.send(ClientMessage.Initialize, {
       uuid: json.uuid
     });
 

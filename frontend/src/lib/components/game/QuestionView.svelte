@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { sendMessage } from "$lib/socket";
+  import * as socket from "$lib/socket";
   import {
     QuestionDataType,
     type Question,
     type TimerState,
     ServerMessage,
-    ClientMessageType,
+    ClientMessage,
     AnswerType
   } from "$lib/socket/models";
   import type { GameData } from "$lib/stores/state";
@@ -20,7 +20,7 @@
 
   async function doAnswer(index: number) {
     answered = true;
-    let res = await sendMessage(ClientMessageType.Answer, {
+    let res = await socket.send(ClientMessage.Answer, {
       answer: {
         ty: AnswerType.Single,
         answer: index
@@ -34,7 +34,7 @@
 
   async function doAnswers() {
     answered = true;
-    let res = await sendMessage(ClientMessageType.Answer, {
+    let res = await socket.send(ClientMessage.Answer, {
       answer: {
         ty: AnswerType.Multiple,
         answers
