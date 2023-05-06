@@ -703,6 +703,16 @@ impl Handler<PlayerAnswerMessage> for Game {
             elapsed,
         });
 
+        // If all the players have answered we can skip the timer
+        let all_answered = self
+            .players
+            .iter()
+            .all(|player| player.answers[self.question_index].is_some());
+
+        if all_answered {
+            self.skip_timer();
+        }
+
         Ok(())
     }
 }
