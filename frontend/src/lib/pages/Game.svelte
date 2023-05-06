@@ -1,10 +1,12 @@
 <script lang="ts">
-  import AnsweredView from "$lib/components/AnsweredView.svelte";
-  import AwaitReadyView from "$lib/components/AwaitReadyView.svelte";
-  import LobbyView from "$lib/components/LobbyView.svelte";
-  import QuestionView from "$lib/components/QuestionView.svelte";
-  import ScoreView from "$lib/components/ScoreView.svelte";
-  import StartingView from "$lib/components/StartingView.svelte";
+  import AnsweredView from "$lib/components/game/AnsweredView.svelte";
+  import AwaitReadyView from "$lib/components/game/AwaitReadyView.svelte";
+  import FinishedView from "$lib/components/game/FinishedView.svelte";
+  import LobbyScoreView from "$lib/components/game/LobbyScoreView.svelte";
+  import LobbyView from "$lib/components/game/LobbyView.svelte";
+  import QuestionView from "$lib/components/game/QuestionView.svelte";
+  import ScoreView from "$lib/components/game/ScoreView.svelte";
+  import StartingView from "$lib/components/game/StartingView.svelte";
   import { sendMessage, setMessageHandler } from "$lib/socket";
   import {
     ServerMessage,
@@ -147,9 +149,8 @@
   <AwaitReadyView />
 {:else if gameState === GameState.AwaitingAnswers}
   {#if gameData.host}
-    <!-- TODO: Host lobby view with scores -->
+    <LobbyScoreView {gameData} {players} {timer} {scores} />
   {:else if question !== null}
-    <!-- Players see the quesiton -->
     {#if !answered}
       <QuestionView {question} {gameData} {timer} bind:answered />
     {:else}
@@ -158,13 +159,12 @@
   {/if}
 {:else if gameState === GameState.Marked}
   {#if gameData.host}
-    <!-- TODO: Player score list -->
+    <LobbyScoreView {gameData} {players} {timer} {scores} />
   {:else if score != null}
     <ScoreView {score} {gameData} {scores} />
   {/if}
 {:else if gameState === GameState.Finished}
-  <h1>Game Over</h1>
-  <!-- TODO: top players screen -->
+  <FinishedView />
 {/if}
 
 <style>
