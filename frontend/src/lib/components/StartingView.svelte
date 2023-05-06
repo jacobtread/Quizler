@@ -14,8 +14,7 @@
   export let timer: TimerState;
 
   async function doCancel() {
-    let res = await sendMessage({
-      ty: ClientMessageType.HostAction,
+    let res = await sendMessage(ClientMessageType.HostAction, {
       action: HostAction.Cancel
     });
 
@@ -25,8 +24,7 @@
   }
 
   async function doSkip() {
-    let res = await sendMessage({
-      ty: ClientMessageType.HostAction,
+    let res = await sendMessage(ClientMessageType.HostAction, {
       action: HostAction.Skip
     });
 

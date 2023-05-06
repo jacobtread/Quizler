@@ -63,6 +63,8 @@ impl GameTimer {
     pub fn set(&mut self, want: Duration) {
         self.start = Instant::now();
         self.length = want;
+        self.complete = false;
+        self.tick = 0;
     }
 
     #[inline]

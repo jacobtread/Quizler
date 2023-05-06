@@ -1,5 +1,5 @@
 <script lang="ts">
-  import QuestionView from "$components/QuestionView.svelte";
+  import QuestionView from "$lib/components/QuestionListItem.svelte";
   import { defaultQuestion } from "$lib/constants";
   import type { Question } from "$lib/socket/models";
   import { flip } from "svelte/animate";

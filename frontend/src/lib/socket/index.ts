@@ -6,7 +6,8 @@ import {
   type ServerMessageBody,
   type ClientMessageBody,
   type PairMessageType,
-  type Message
+  type Message,
+  ClientMessageType
 } from "./models";
 import { setHome } from "$stores/state";
 import { onDestroy, onMount } from "svelte";
@@ -195,15 +196,19 @@ type ResponseOrError<T> =
  *
  * @param msg
  */
-export function sendMessage<T>(
-  msg: { ty: T; rid?: number } & ClientMessageBody<T>
+export function sendMessage<T extends ClientMessageType>(
+  ty: T,
+  body: ClientMessageBody<T>
 ): Promise<ResponseOrError<PairMessageType<T>>> {
   return new Promise((resolve, reject) => {
-    console.debug("Sending message to server", msg);
+    console.debug("Sending message to server", ty, body);
 
-    msg.rid = requestHandle;
+    const msg = {
+      rid: requestHandle,
+      ty,
+      ...body
+    };
     requestHandle++;
-
     requestHandles[msg.rid] = resolve;
 
     const data = JSON.stringify(msg);

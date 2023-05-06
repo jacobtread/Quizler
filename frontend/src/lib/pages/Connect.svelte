@@ -14,8 +14,7 @@
     // Await the socket being alive
     await getSocketReady();
 
-    const resp = await sendMessage({
-      ty: ClientMessageType.Connect,
+    const resp = await sendMessage(ClientMessageType.Connect, {
       token
     });
 

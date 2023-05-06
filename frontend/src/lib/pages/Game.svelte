@@ -1,7 +1,10 @@
 <script lang="ts">
+  import AnsweredView from "$lib/components/AnsweredView.svelte";
+  import AwaitReadyView from "$lib/components/AwaitReadyView.svelte";
   import LobbyView from "$lib/components/LobbyView.svelte";
+  import QuestionView from "$lib/components/QuestionView.svelte";
   import StartingView from "$lib/components/StartingView.svelte";
-  import { setMessageHandler } from "$lib/socket";
+  import { sendMessage, setMessageHandler } from "$lib/socket";
   import {
     ServerMessage,
     type OtherPlayerMessage,
@@ -17,10 +20,11 @@
     type Score,
     type ScoreMessage,
     type SessionId,
-    type TimerState
+    type TimerState,
+    ClientMessageType
   } from "$lib/socket/models";
+  import { formatImageUrl } from "$lib/utils";
   import { setHome, type GameData } from "$stores/state";
-  import { onDestroy, onMount } from "svelte";
 
   export let gameData: GameData;
 
@@ -86,6 +90,25 @@
   function onQuestion(msg: QuestionMessage) {
     console.debug("Question message", msg);
     question = msg.question;
+
+    if (msg.question.image !== null) {
+      // Preload the image and then send the ready state
+      const img = new Image();
+      img.src = formatImageUrl(gameData.token, msg.question.image).toString();
+      img.onload = () => {
+        console.debug("Preloaded question image", img.src);
+        onReady();
+      };
+    } else {
+      onReady();
+    }
+  }
+
+  async function onReady() {
+    let res = await sendMessage(ClientMessageType.Ready, {});
+    if (res.ty === ServerMessage.Error) {
+      console.error("Error while attempting to cancel", res.error);
+    }
   }
 
   function onScores(msg: ScoresMessage) {
@@ -119,6 +142,19 @@
   <LobbyView {gameData} {players} />
 {:else if gameState === GameState.Starting}
   <StartingView {gameData} {timer} />
+{:else if gameState === GameState.AwaitingReady}
+  <AwaitReadyView />
+{:else if gameState === GameState.AwaitingAnswers}
+  {#if gameData.host}
+    <!-- TODO: Host lobby view with scores -->
+  {:else if question !== null}
+    <!-- Players see the quesiton -->
+    {#if !answered}
+      <QuestionView {question} {gameData} {timer} bind:answered />
+    {:else}
+      <AnsweredView />
+    {/if}
+  {/if}
 {/if}
 
 <style>

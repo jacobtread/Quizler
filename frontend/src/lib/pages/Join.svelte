@@ -13,8 +13,7 @@
     // Await the socket being alive
     await getSocketReady();
 
-    const resp = await sendMessage({
-      ty: ClientMessageType.Join,
+    const resp = await sendMessage(ClientMessageType.Join, {
       name
     });
 

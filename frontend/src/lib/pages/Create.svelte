@@ -35,7 +35,7 @@
   // TODO: Implement fields for changing these timings and question timings
   let timing: TimingConfig = {
     bonus_score_time: 1000,
-    wait_time: 1000
+    wait_time: 1000 * 10
   };
 
   async function startQuiz() {
@@ -75,8 +75,7 @@
 
     console.debug("Sending initialize message");
 
-    const resp = await sendMessage({
-      ty: ClientMessageType.Initialize,
+    const resp = await sendMessage(ClientMessageType.Initialize, {
       uuid: json.uuid
     });
 
