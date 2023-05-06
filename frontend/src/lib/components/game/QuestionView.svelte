@@ -51,7 +51,7 @@
   <p>Remaining: {formatTime(timer)}</p>
   {#if question.image !== null}
     <img
-      src={formatImageUrl(gameData.token, question.image).toString()}
+      src={formatImageUrl(gameData.token, question.image)}
       alt={question.text}
     />
   {/if}

@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 export interface CreatedResponse {
   uuid: string;
 }
@@ -171,6 +173,10 @@ export interface TimingConfig {
   wait_time: number;
 }
 
+export const timingConfigSchema = z.object({
+  wait_time: z.number()
+});
+
 export const enum GameState {
   Lobby = "Lobby",
   Starting = "Starting",
@@ -208,53 +214,70 @@ export const enum RemoveReason {
 export type ImageRef = string;
 export type QuestionIndex = number;
 
-export interface AnswerValue {
-  id: number;
-  value: string;
-  correct: boolean;
-}
-
 export const enum QuestionType {
   Single = "Single",
   Multiple = "Multiple"
 }
 
-export interface QuestionBase {
-  // Only present while created the question as a unique key
-  id: number;
-  text: string;
-  image: ImageRef | null;
-  answer_time: number;
-  bonus_score_time: number;
-  scoring: Scoring;
-}
+const answerValueSchema = z.object({
+  id: z.number(),
+  value: z.string(),
+  correct: z.boolean()
+});
 
-export type Question = QuestionBase &
-  (
-    | { ty: QuestionType.Single; answers: AnswerValue[] }
-    | {
-        ty: QuestionType.Multiple;
-        answers: AnswerValue[];
-        min: number;
-        max: number;
-      }
+export type AnswerValue = z.infer<typeof answerValueSchema>;
+
+export const questionSchema = z
+  .object({
+    id: z.number(),
+    text: z.string(),
+    image: z.string().uuid().nullable(),
+    answer_time: z.number(),
+    bonus_score_time: z.number(),
+    scoring: z.object({
+      min_score: z.number(),
+      max_score: z.number(),
+      bonus_score: z.number()
+    })
+  })
+  .and(
+    z.discriminatedUnion("ty", [
+      // Single choice questions
+      z.object({
+        ty: z.literal(QuestionType.Single),
+        answers: z.array(answerValueSchema)
+      }),
+      // Multiple choice questions
+      z.object({
+        ty: z.literal(QuestionType.Multiple),
+        answers: z.array(answerValueSchema),
+        min: z.number(),
+        max: z.number()
+      })
+    ])
   );
 
-export interface Scoring {
-  min_score: number;
-  max_score: number;
-  bonus_score: number;
-}
+export type Question = z.infer<typeof questionSchema>;
 
 export const enum AnswerType {
   Single = "Single",
   Multiple = "Multiple"
 }
 
-type SingleAnswer = { ty: AnswerType.Single; answer: QuestionIndex };
-type MultipleAnswer = { ty: AnswerType.Multiple; answers: QuestionIndex[] };
+const answerSchema = z.discriminatedUnion("ty", [
+  // Single choice answer
+  z.object({
+    ty: z.literal(AnswerType.Single),
+    answers: z.number()
+  }),
+  // Single choice answer
+  z.object({
+    ty: z.literal(AnswerType.Multiple),
+    answers: z.array(z.number())
+  })
+]);
 
-export type Answer = SingleAnswer | MultipleAnswer;
+export type Answer = z.infer<typeof answerSchema>;
 
 export const enum ScoreType {
   Correct = "Correct",
@@ -262,11 +285,22 @@ export const enum ScoreType {
   Partial = "Partial"
 }
 
-type CorrectScore = { ty: ScoreType.Correct; value: number };
-type PartialScore = {
-  ty: ScoreType.Partial;
-  value: { count: number; total: number; score: number };
-};
-type IncorrectScore = { ty: ScoreType.Incorrect };
+const scoreSchema = z.discriminatedUnion("ty", [
+  z.object({
+    ty: z.literal(ScoreType.Correct),
+    value: z.number()
+  }),
+  z.object({
+    ty: z.literal(ScoreType.Partial),
+    value: z.object({
+      count: z.number(),
+      total: z.number(),
+      socre: z.number()
+    })
+  }),
+  z.object({
+    ty: z.literal(ScoreType.Incorrect)
+  })
+]);
 
-export type Score = CorrectScore | PartialScore | IncorrectScore;
+export type Score = z.infer<typeof scoreSchema>;

@@ -101,7 +101,7 @@
     if (msg.question.image !== null) {
       // Preload the image and then send the ready state
       const img = new Image();
-      img.src = formatImageUrl(gameData.token, msg.question.image).toString();
+      img.src = formatImageUrl(gameData.token, msg.question.image);
       img.onload = () => {
         console.debug("Preloaded question image", img.src);
         onReady();

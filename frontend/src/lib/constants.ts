@@ -17,6 +17,11 @@ export const MAX_WAIT_TIME = 1000 * 60 * 30; /* 30mins */
 export const MIN_BONUS_TIME = 1000; /* 1s */
 export const MAX_BONUS_TIME = 1000 * 60 * 30; /* 30mins */
 
+/**
+ * Creates a new default question object to use
+ *
+ * @returns The question
+ */
 export function defaultQuestion(): Question {
   return {
     id: 0,

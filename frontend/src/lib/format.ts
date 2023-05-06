@@ -1,4 +1,4 @@
-// Reading and writing logic for the quizler file format
+// Reading, writing and validation logic for the quizler file format
 
 import { get } from "svelte/store";
 import {
@@ -6,29 +6,33 @@ import {
   loadImagePreview,
   type StoredImage
 } from "$stores/imageStore";
-import type { Question, TimingConfig } from "$lib/socket/models";
+import {
+  timingConfigSchema,
+  type Question,
+  type TimingConfig,
+  questionSchema
+} from "$lib/socket/models";
+import { z } from "zod";
 
-interface SerializedQuiz {
-  name: string;
-  text: string;
-  timing: TimingConfig;
-  questions: Question[];
-  images: SerializedImage[];
-}
+/// Schema used for parsing and validating the file format
+const fileFormatSchema = z.object({
+  name: z.string(),
+  text: z.string(),
+  timing: timingConfigSchema,
+  questions: z.array(questionSchema).min(1),
+  images: z.array(
+    z.object({
+      uuid: z.string().uuid(),
+      name: z.string(),
+      size: z.number(),
+      data: z.array(z.number())
+    })
+  )
+});
 
-export interface DeserializedQuiz {
-  name: string;
-  text: string;
-  timing: TimingConfig;
-  questions: Question[];
-}
-
-interface SerializedImage {
-  uuid: string;
-  name: string;
-  size: number;
-  data: number[];
-}
+type QuizFormat = z.infer<typeof fileFormatSchema>;
+type SerializedImage = QuizFormat["images"][0];
+type LoadedQuiz = Omit<QuizFormat, "images">;
 
 /**
  * Converts the provided stored image into a JSON
@@ -69,7 +73,7 @@ export async function saveQuiz(
   );
 
   // Create the object to serialize as the quiz file
-  const output: SerializedQuiz = { name, text, timing, questions, images };
+  const output: QuizFormat = { name, text, timing, questions, images };
 
   // Save the quiz file
   saveObject(name, "quizler", output);
@@ -116,9 +120,10 @@ function saveObject<T>(name: string, ext: string, object: T) {
  * Loads a quiz from the provided file blob
  *
  * @param file The file to load the quiz from
+ * @throws {ZodError} If the validation failed
  * @returns The loaded quiz data
  */
-export async function loadQuiz(file: Blob): Promise<DeserializedQuiz> {
+export async function loadQuiz(file: Blob): Promise<LoadedQuiz> {
   const reader = new FileReader();
 
   // Await the reading process
@@ -133,8 +138,8 @@ export async function loadQuiz(file: Blob): Promise<DeserializedQuiz> {
 
   const data = reader.result as string;
 
-  // TODO: Actually validate that this input is correct
-  const obj = JSON.parse(data) as SerializedQuiz;
+  const parsed = JSON.parse(data);
+  const obj: QuizFormat = fileFormatSchema.parse(parsed);
 
   for (const { data, uuid, name, size } of obj.images) {
     // Convert the input data array into a blob
