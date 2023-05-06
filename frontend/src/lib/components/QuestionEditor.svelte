@@ -241,6 +241,34 @@
       max={MAX_ANSWER_TIME}
     />
   </label>
+
+  <label for="">
+    <span>Min Score</span>
+    <input
+      type="number"
+      min={0}
+      max={question.scoring.max_score}
+      bind:value={question.scoring.min_score}
+    />
+  </label>
+  <label for="">
+    <span>Max Score</span>
+    <input
+      type="number"
+      min={question.scoring.min_score}
+      max={1000}
+      bind:value={question.scoring.max_score}
+    />
+  </label>
+  <label for="">
+    <span>Bonus Score</span>
+    <input
+      type="number"
+      min={0}
+      max={1000}
+      bind:value={question.scoring.bonus_score}
+    />
+  </label>
 </div>
 
 <style>

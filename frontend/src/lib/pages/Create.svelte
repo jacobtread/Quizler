@@ -8,7 +8,14 @@
     type UploadConfig
   } from "$lib/socket/models";
   import { getSocketReady, sendMessage } from "$lib/socket";
-  import { DEBUG, defaultQuestion } from "$lib/constants";
+  import {
+    DEBUG,
+    MAX_BONUS_TIME,
+    MAX_WAIT_TIME,
+    MIN_BONUS_TIME,
+    MIN_WAIT_TIME,
+    defaultQuestion
+  } from "$lib/constants";
   import QuestionEditor from "$components/QuestionEditor.svelte";
   import QuestionList from "$components/QuestionList.svelte";
   import ImageStorage from "$components/ImageStorage.svelte";
@@ -16,6 +23,7 @@
   import { imageStore } from "$stores/imageStore";
   import { loadQuiz, saveQuiz } from "$lib/format";
   import { setGame, setHome } from "$stores/state";
+  import TimeInput from "$lib/components/TimeInput.svelte";
 
   // Input used for loading quiz files
   let loadInput: HTMLInputElement;
@@ -154,6 +162,24 @@
     <input type="text" bind:value={name} />
     <textarea name="" id="" cols="30" rows="10" bind:value={text} />
   </div>
+
+  <label for="">
+    <span>Wait Time</span>
+    <TimeInput
+      bind:value={timing.wait_time}
+      min={MIN_WAIT_TIME}
+      max={MAX_WAIT_TIME}
+    />
+  </label>
+
+  <label for="">
+    <span>Bonus Score Time</span>
+    <TimeInput
+      bind:value={timing.bonus_score_time}
+      min={MIN_BONUS_TIME}
+      max={MAX_BONUS_TIME}
+    />
+  </label>
 
   <QuestionList {questions} bind:editing />
 {/if}

@@ -10,6 +10,12 @@ const DEFAULT_BONUS_SCORE: number = 150;
 export const MIN_ANSWER_TIME: number = 1000;
 export const MAX_ANSWER_TIME: number = 1000 * 60 * 30; /* 30mins */
 
+export const MIN_WAIT_TIME = 1000;
+export const MAX_WAIT_TIME = 1000 * 60 * 30;
+
+export const MIN_BONUS_TIME = 1000;
+export const MAX_BONUS_TIME = 1000 * 60 * 30;
+
 export function defaultQuestion(): Question {
   return {
     id: 0,
