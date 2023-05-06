@@ -133,6 +133,12 @@
       pickImage();
     }
   }
+
+  function removeAnswer(index: number) {
+    question.answers = question.answers.filter(
+      (_, valueIndex) => valueIndex != index
+    );
+  }
 </script>
 
 <div class="editor">
@@ -216,7 +222,13 @@
               &darr;
             </button>
           </div>
-
+          <button
+            disabled={question.answers.length == 1}
+            class="answer__del"
+            on:click={() => removeAnswer(index)}
+          >
+            D
+          </button>
           <input
             class="answer__check"
             type="checkbox"
@@ -229,7 +241,9 @@
           />
         </div>
       {/each}
-      <button on:click={addAnswer}>Add Answer</button>
+      <button on:click={addAnswer} disabled={question.answers.length >= 8}
+        >Add Answer</button
+      >
     </div>
   {/if}
 

@@ -76,7 +76,7 @@
           {question.text}
         </h2>
 
-        <QuestionView {question} />
+        <QuestionView bind:question />
       </div>
     </li>
   {/each}
