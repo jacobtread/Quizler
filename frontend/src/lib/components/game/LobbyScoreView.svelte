@@ -1,10 +1,14 @@
 <!-- Game view for admin showing the player scores and timer -->
 <script lang="ts">
   import {
+    ClientMessage,
+    HostAction,
+    ServerMessage,
     type OtherPlayer,
     type SessionId,
     type TimerState
   } from "$lib/socket/models";
+  import * as socket from "$lib/socket";
   import type { GameData } from "$lib/stores/state";
   import { formatTime } from "$lib/utils";
 
@@ -12,6 +16,17 @@
   export let players: OtherPlayer[];
   export let timer: TimerState;
   export let scores: Record<SessionId, number>;
+
+  async function doSkip() {
+    let res = await socket.send({
+      ty: ClientMessage.HostAction,
+      action: HostAction.Skip
+    });
+
+    if (res.ty === ServerMessage.Error) {
+      console.error("Error while attempting to cancel", res.error);
+    }
+  }
 </script>
 
 <p class="token">
@@ -20,6 +35,7 @@
 <p>Remaining: {formatTime(timer)}</p>
 <h1>{gameData.config.name}</h1>
 <p>{gameData.config.text}</p>
+<button on:click={doSkip}>Skip Countdown</button>
 
 <ul>
   {#each players as player}
