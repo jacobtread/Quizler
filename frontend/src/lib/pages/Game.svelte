@@ -24,7 +24,8 @@
     type ScoreMessage,
     type SessionId,
     type TimerState,
-    ClientMessageType
+    ClientMessageType,
+    ScoreType
   } from "$lib/socket/models";
   import { formatImageUrl } from "$lib/utils";
   import { setHome, type GameData } from "$stores/state";
@@ -43,8 +44,10 @@
 
   let players: OtherPlayer[] = [];
   let gameState: GameState = GameState.Lobby;
+
   let question: Question | null = null;
-  let score: Score | null = null;
+
+  let score: Score = { ty: ScoreType.Incorrect };
   let scores: Record<SessionId, number> = {};
 
   let answered: boolean;
@@ -160,8 +163,8 @@
 {:else if gameState === GameState.Marked}
   {#if gameData.host}
     <LobbyScoreView {gameData} {players} {timer} {scores} />
-  {:else if score != null}
-    <ScoreView {score} {gameData} {scores} />
+  {:else}
+    <ScoreView {gameData} {scores} {score} />
   {/if}
 {:else if gameState === GameState.Finished}
   <FinishedView />
