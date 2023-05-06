@@ -327,8 +327,7 @@ impl Game {
 
         for player in &mut self.players {
             // Mark the player question
-            let score: Score =
-                Self::mark_answer(player, &question, self.question_index, &self.config.timing);
+            let score: Score = Self::mark_answer(player, &question, self.question_index);
 
             // Increase the player score
             player.score += score.value();
@@ -342,12 +341,7 @@ impl Game {
         self.send_all(ServerMessage::Scores { scores })
     }
 
-    fn mark_answer(
-        player: &PlayerSession,
-        question: &Question,
-        question_index: usize,
-        timing: &GameTiming,
-    ) -> Score {
+    fn mark_answer(player: &PlayerSession, question: &Question, question_index: usize) -> Score {
         let answer = match &player.answers[question_index] {
             // Player answered the question
             Some(value) => value,
@@ -356,7 +350,7 @@ impl Game {
         };
 
         let elapsed_ms = answer.elapsed.as_millis() as u32;
-        let is_bonus = elapsed_ms <= timing.bonus_score_time;
+        let is_bonus = elapsed_ms <= question.bonus_score_time;
 
         // Calculate the % amount between the min and max answer times
         let answer_time_percent = 1.0 - ((elapsed_ms as f32) / (question.answer_time as f32));
@@ -772,8 +766,10 @@ impl PlayerSession {
 /// Configuration data for a game
 #[derive(Serialize)]
 pub struct GameConfig {
-    /// Basic configuration such as name and subtext
-    pub basic: BasicConfig,
+    /// The name of the game
+    pub name: String,
+    /// Text displayed under the game name
+    pub text: String,
     /// Timing data for different game events
     #[serde(skip)]
     pub timing: GameTiming,
@@ -787,16 +783,7 @@ pub struct GameConfig {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct BasicConfig {
-    pub name: String,
-    pub text: String,
-}
-
-#[derive(Serialize, Deserialize)]
 pub struct GameTiming {
     /// The time to wait before displaying each question (ms)
     pub wait_time: u32,
-    /// The time that a bonus score will be granted within
-    /// bonus score is disabled if none (ms)
-    pub bonus_score_time: u32,
 }

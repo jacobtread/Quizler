@@ -22,7 +22,7 @@ use std::{
 use uuid::Uuid;
 
 use crate::{
-    game::{BasicConfig, GameConfig, GameTiming, GetImageMessage},
+    game::{GameConfig, GameTiming, GetImageMessage},
     games::{Games, GetGameMessage, PrepareGameMessage},
     session::Session,
     types::{Image, Question},
@@ -38,7 +38,8 @@ pub fn configure(cfg: &mut ServiceConfig) {
 
 #[derive(Deserialize)]
 pub struct GameConfigUpload {
-    pub basic: BasicConfig,
+    pub name: String,
+    pub text: String,
     pub timing: GameTiming,
     pub questions: Vec<Arc<Question>>,
 }
@@ -126,7 +127,8 @@ async fn create_quiz(mut payload: Multipart) -> Result<impl Responder, CreateErr
     }
 
     let config = GameConfig {
-        basic: config.basic,
+        name: config.name,
+        text: config.text,
         timing: config.timing,
         questions: config.questions,
         images,

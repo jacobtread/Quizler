@@ -35,12 +35,12 @@
 </script>
 
 <h1>
-  {gameData.config.basic.name}
+  {gameData.config.name}
   {#if gameData.host}
     <span class="host">Host</span>
   {/if}
 </h1>
-<p>{gameData.config.basic.text}</p>
+<p>{gameData.config.text}</p>
 
 <h1>Starting</h1>
 <p>Countdown: {formatTime(timer)}</p>

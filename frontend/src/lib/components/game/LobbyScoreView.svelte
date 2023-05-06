@@ -18,8 +18,8 @@
   {gameData.token}
 </p>
 <p>Remaining: {formatTime(timer)}</p>
-<h1>{gameData.config.basic.name}</h1>
-<p>{gameData.config.basic.text}</p>
+<h1>{gameData.config.name}</h1>
+<p>{gameData.config.text}</p>
 
 <ul>
   {#each players as player}

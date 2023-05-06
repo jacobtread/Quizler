@@ -156,23 +156,19 @@ export type PairMessageType<T> = T extends
   : unknown;
 
 export interface UploadConfig {
-  basic: BasicConfig;
+  name: string;
+  text: string;
   timing: TimingConfig;
   questions: Question[];
 }
 
 export interface GameConfig {
-  basic: BasicConfig;
-}
-
-export interface BasicConfig {
   name: string;
   text: string;
 }
 
 export interface TimingConfig {
   wait_time: number;
-  bonus_score_time: number;
 }
 
 export const enum GameState {
@@ -239,6 +235,7 @@ export interface QuestionBase {
   text: string;
   image: ImageRef | null;
   answer_time: number;
+  bonus_score_time: number;
   scoring: Scoring;
 }
 

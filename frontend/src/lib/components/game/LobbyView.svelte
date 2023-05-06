@@ -39,12 +39,12 @@
   </p>
 {/if}
 <h1>
-  {gameData.config.basic.name}
+  {gameData.config.name}
   {#if gameData.host}
     <span class="host">Host</span>
   {/if}
 </h1>
-<p>{gameData.config.basic.text}</p>
+<p>{gameData.config.text}</p>
 
 <!-- Start button if theres players in the game -->
 {#if players.length > 0}

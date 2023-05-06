@@ -2,19 +2,20 @@ import { QuestionDataType, type Question } from "$lib/socket/models";
 
 export const DEBUG: boolean = import.meta.env.DEV;
 
-const DEFAULT_ANSWER_TIME_MS: number = 1000 * 10; /* 10s */
+const DEFAULT_ANSWER_TIME_MS: number = 1000 * 15; /* 15s */
+const DEFAULT_BONUS_TIME_MS: number = 1000 * 3; /* 3s */
 const DEFAULT_MIN_SCORE: number = 10;
 const DEFAULT_MAX_SCORE: number = 100;
 const DEFAULT_BONUS_SCORE: number = 150;
 
-export const MIN_ANSWER_TIME: number = 1000;
+export const MIN_ANSWER_TIME: number = 1000; /* 1s */
 export const MAX_ANSWER_TIME: number = 1000 * 60 * 30; /* 30mins */
 
-export const MIN_WAIT_TIME = 1000;
-export const MAX_WAIT_TIME = 1000 * 60 * 30;
+export const MIN_WAIT_TIME = 1000; /* 1s */
+export const MAX_WAIT_TIME = 1000 * 60 * 30; /* 30mins */
 
-export const MIN_BONUS_TIME = 1000;
-export const MAX_BONUS_TIME = 1000 * 60 * 30;
+export const MIN_BONUS_TIME = 1000; /* 1s */
+export const MAX_BONUS_TIME = 1000 * 60 * 30; /* 30mins */
 
 export function defaultQuestion(): Question {
   return {
@@ -23,6 +24,7 @@ export function defaultQuestion(): Question {
     text: "This is an example question, you should replace this with your first question",
     image: null,
     answer_time: DEFAULT_ANSWER_TIME_MS,
+    bonus_score_time: DEFAULT_BONUS_TIME_MS,
     scoring: {
       min_score: DEFAULT_MIN_SCORE,
       max_score: DEFAULT_MAX_SCORE,

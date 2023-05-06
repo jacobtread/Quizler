@@ -10,9 +10,7 @@
   import * as socket from "$lib/socket";
   import {
     DEBUG,
-    MAX_BONUS_TIME,
     MAX_WAIT_TIME,
-    MIN_BONUS_TIME,
     MIN_WAIT_TIME,
     defaultQuestion
   } from "$lib/constants";
@@ -40,15 +38,14 @@
   // Quiz description text
   let text: string = "Small description about your quiz";
 
-  // TODO: Implement fields for changing these timings and question timings
   let timing: TimingConfig = {
-    bonus_score_time: 1000,
     wait_time: 1000 * 10
   };
 
   async function startQuiz() {
     const config: UploadConfig = {
-      basic: { name, text },
+      name,
+      text,
       timing,
       questions
     };
@@ -165,19 +162,11 @@
 
   <label for="">
     <span>Wait Time</span>
+    <p>Time to wait between each question</p>
     <TimeInput
       bind:value={timing.wait_time}
       min={MIN_WAIT_TIME}
       max={MAX_WAIT_TIME}
-    />
-  </label>
-
-  <label for="">
-    <span>Bonus Score Time</span>
-    <TimeInput
-      bind:value={timing.bonus_score_time}
-      min={MIN_BONUS_TIME}
-      max={MAX_BONUS_TIME}
     />
   </label>
 

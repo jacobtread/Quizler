@@ -79,6 +79,9 @@ pub struct Question {
     pub image: Option<ImageRef>,
     /// The time given to answer the question
     pub answer_time: u64,
+    /// The time that a bonus score will be granted within
+    /// bonus score is disabled if none (ms)
+    pub bonus_score_time: u32,
     /// The point scoring for the question
     pub scoring: Scoring,
 }

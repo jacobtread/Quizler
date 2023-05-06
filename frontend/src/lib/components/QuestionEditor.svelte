@@ -9,7 +9,12 @@
   import { flip } from "svelte/animate";
   import { imagePreviewStore, selectImage } from "$stores/imageStore";
   import TimeInput from "./TimeInput.svelte";
-  import { MAX_ANSWER_TIME, MIN_ANSWER_TIME } from "$lib/constants";
+  import {
+    MAX_ANSWER_TIME,
+    MAX_BONUS_TIME,
+    MIN_ANSWER_TIME,
+    MIN_BONUS_TIME
+  } from "$lib/constants";
 
   // The question that is being created
   export let question: Question;
@@ -249,6 +254,7 @@
 
   <label for="">
     <span>Answer Time</span>
+    <p>Time the players have to answer the question</p>
     <TimeInput
       bind:value={question.answer_time}
       min={MIN_ANSWER_TIME}
@@ -257,7 +263,18 @@
   </label>
 
   <label for="">
+    <span>Bonus Score Time</span>
+    <p>Time the players must answer within for bonus scores</p>
+    <TimeInput
+      bind:value={question.bonus_score_time}
+      min={MIN_BONUS_TIME}
+      max={MAX_BONUS_TIME}
+    />
+  </label>
+
+  <label for="">
     <span>Min Score</span>
+    <p>The minimum amount of score to award for this question</p>
     <input
       type="number"
       min={0}
@@ -267,6 +284,7 @@
   </label>
   <label for="">
     <span>Max Score</span>
+    <p>The maximum amount of score to award for this question</p>
     <input
       type="number"
       min={question.scoring.min_score}
@@ -276,6 +294,7 @@
   </label>
   <label for="">
     <span>Bonus Score</span>
+    <p>The amount of score to add for being within the bonus time</p>
     <input
       type="number"
       min={0}
