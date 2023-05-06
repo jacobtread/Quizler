@@ -94,15 +94,7 @@ function saveObject<T>(name: string, ext: string, object: T) {
   const blob = new Blob([json], { type: "application/json" });
 
   const URL = window.webkitURL ?? window.URL;
-  const ID = "tmpDownload";
-
-  let element: HTMLAnchorElement | null = document.getElementById(
-    ID
-  ) as HTMLAnchorElement | null;
-  if (element == null) {
-    element = document.createElement("a");
-    element.id = ID;
-  }
+  const element: HTMLAnchorElement = document.createElement("a");
 
   element.download = safeName + "." + ext;
   element.href = URL.createObjectURL(blob);
@@ -112,9 +104,9 @@ function saveObject<T>(name: string, ext: string, object: T) {
     element.href
   ].join(":");
   element.style.display = "none";
+  document.body.appendChild(element);
   element.click();
-
-  document.removeChild(element);
+  document.body.removeChild(element);
 }
 
 /**
