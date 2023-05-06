@@ -96,6 +96,7 @@
   function onQuestion(msg: QuestionMessage) {
     console.debug("Question message", msg);
     question = msg.question;
+    score = { ty: ScoreType.Incorrect };
 
     if (msg.question.image !== null) {
       // Preload the image and then send the ready state
