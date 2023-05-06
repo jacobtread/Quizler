@@ -10,22 +10,15 @@
   import * as socket from "$lib/socket";
   import {
     ServerMessage,
-    type OtherPlayerMessage,
-    type GameStateMessage,
-    type TimeSyncMessage,
-    type QuestionMessage,
-    type ScoresMessage,
-    type ErrorMessage,
-    type KickedMessage,
     type OtherPlayer,
     GameState,
     type Question,
     type Score,
-    type ScoreMessage,
     type SessionId,
     type TimerState,
     ClientMessage,
-    ScoreType
+    ScoreType,
+    type ServerMessageOf
   } from "$lib/socket/models";
   import { formatImageUrl } from "$lib/utils";
   import { setHome, type GameData } from "$stores/state";
@@ -73,7 +66,7 @@
     }
   }
 
-  function onOtherPlayer(msg: OtherPlayerMessage) {
+  function onOtherPlayer(msg: ServerMessageOf<ServerMessage.OtherPlayer>) {
     console.debug("Other player message", msg);
     // Add to the players list
     players.push(msg);
@@ -81,19 +74,19 @@
     players = players;
   }
 
-  function onGameState(msg: GameStateMessage) {
+  function onGameState(msg: ServerMessageOf<ServerMessage.GameState>) {
     console.debug("Game state message", msg);
     gameState = msg.state;
   }
 
-  function onTimeSync(msg: TimeSyncMessage) {
+  function onTimeSync(msg: ServerMessageOf<ServerMessage.TimeSync>) {
     console.debug("Time sync message", msg);
     lastUpdateTime = performance.now();
     timer = { total: msg.total, elapsed: msg.elapsed };
     updateTimer();
   }
 
-  function onQuestion(msg: QuestionMessage) {
+  function onQuestion(msg: ServerMessageOf<ServerMessage.Question>) {
     console.debug("Question message", msg);
     question = msg.question;
     score = { ty: ScoreType.Incorrect };
@@ -112,27 +105,27 @@
   }
 
   async function onReady() {
-    let res = await socket.send(ClientMessage.Ready, {});
+    let res = await socket.send({ ty: ClientMessage.Ready });
     if (res.ty === ServerMessage.Error) {
       console.error("Error while attempting to cancel", res.error);
     }
   }
 
-  function onScores(msg: ScoresMessage) {
+  function onScores(msg: ServerMessageOf<ServerMessage.Scores>) {
     console.debug("Score message", msg);
     scores = msg.scores;
   }
 
-  function onScore(msg: ScoreMessage) {
+  function onScore(msg: ServerMessageOf<ServerMessage.Score>) {
     console.debug("Score message", msg);
     score = msg.score;
   }
 
-  function onError(msg: ErrorMessage) {
+  function onError(msg: ServerMessageOf<ServerMessage.Error>) {
     console.error("Server error", msg.error);
   }
 
-  function onKicked(msg: KickedMessage) {
+  function onKicked(msg: ServerMessageOf<ServerMessage.Kicked>) {
     console.debug("Kick message", msg);
     // Remove from the players list
     players = players.filter((player) => player.id !== msg.session_id);

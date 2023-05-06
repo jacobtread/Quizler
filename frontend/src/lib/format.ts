@@ -7,7 +7,6 @@ import {
   type StoredImage
 } from "$stores/imageStore";
 import {
-  timingConfigSchema,
   type Question,
   type TimingConfig,
   questionSchema
@@ -18,7 +17,9 @@ import { z } from "zod";
 const fileFormatSchema = z.object({
   name: z.string(),
   text: z.string(),
-  timing: timingConfigSchema,
+  timing: z.object({
+    wait_time: z.number()
+  }),
   questions: z.array(questionSchema).min(1),
   images: z.array(
     z.object({

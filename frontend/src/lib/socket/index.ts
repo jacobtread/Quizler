@@ -2,19 +2,17 @@ import { writable, type Unsubscriber } from "svelte/store";
 import { DEBUG } from "$lib/constants";
 import {
   ServerMessage,
-  type ErrorMessage,
-  type ServerMessageBody,
-  type ClientMessageBody,
+  type ServerMessageOf as ServerMessageOf,
   type PairMessageType,
-  type Message,
-  ClientMessage
+  type ServerMessageSchema,
+  type ClientMessageOf
 } from "./models";
 import { setHome } from "$stores/state";
 import { onDestroy, onMount } from "svelte";
 
-type MessageHandler<T> = (msg: T) => void;
+type MessageHandler<T> = (msg: ServerMessageOf<T>) => void;
 type MessageHandlers = {
-  [T in ServerMessage]?: MessageHandler<ServerMessageBody<T>>;
+  [T in ServerMessage]?: MessageHandler<T>;
 };
 
 // The next request ID to use
@@ -22,13 +20,13 @@ let requestHandle: number = 0;
 // Handlers from requests awaiting responses
 let requestHandles: Record<number, MessageHandler<unknown> | undefined> = {};
 // Queue of messages that haven't yet been handled
-let messageQueue: Message<ServerMessage>[] = [];
+let messageQueue: ServerMessageSchema[] = [];
 
 // Reference to the socket
 let socket: WebSocket = createSocket();
 
 // Currently set message handlers for handling messages
-export const messageHandlers: MessageHandlers = {};
+const messageHandlers: MessageHandlers = {};
 
 // Socket readiness state
 export const socketReady = writable<boolean>(false);
@@ -44,7 +42,7 @@ export const socketReady = writable<boolean>(false);
  */
 export function setHandler<T extends ServerMessage>(
   ty: T,
-  handler: MessageHandler<ServerMessageBody<T>>
+  handler: MessageHandler<T>
 ) {
   // Append the handler on mount
   onMount(() => {
@@ -56,7 +54,7 @@ export function setHandler<T extends ServerMessage>(
     messageQueue = messageQueue.filter((msg) => {
       if (msg.ty === ty) {
         // Handle messages that match the handler type
-        handler(msg as Message<T>);
+        handler(msg as ServerMessageOf<T>);
         return false;
       } else {
         return true;
@@ -192,8 +190,8 @@ function getSocketURL(): URL {
 }
 
 type ResponseOrError<T> =
-  | ({ ty: T } & ServerMessageBody<T>)
-  | ({ ty: ServerMessage.Error } & ErrorMessage);
+  | ServerMessageOf<T>
+  | ServerMessageOf<ServerMessage.Error>;
 
 /**
  * Sends the provided message to the server through
@@ -201,18 +199,14 @@ type ResponseOrError<T> =
  *
  * @param msg
  */
-export function send<T extends ClientMessage>(
-  ty: T,
-  body: ClientMessageBody<T>
+export function send<T>(
+  msg: ClientMessageOf<T>
 ): Promise<ResponseOrError<PairMessageType<T>>> {
   return new Promise((resolve, reject) => {
-    console.debug("Sending message to server", ty, body);
+    console.debug("Sending message to server", msg);
 
-    const msg = {
-      rid: requestHandle,
-      ty,
-      ...body
-    };
+    msg.rid = requestHandle;
+
     requestHandle++;
     requestHandles[msg.rid] = resolve as MessageHandler<unknown>;
 
@@ -233,9 +227,9 @@ export function send<T extends ClientMessage>(
  *
  * @param data The message data from the event
  */
-function onMessage<T extends ServerMessage>({ data }: MessageEvent) {
+function onMessage({ data }: MessageEvent) {
   // Parse the message
-  const msg: Message<T> = JSON.parse(data);
+  const msg: ServerMessageSchema = JSON.parse(data);
 
   // Ensure the message type is specified
   if (msg.ty === undefined) {
@@ -255,7 +249,9 @@ function onMessage<T extends ServerMessage>({ data }: MessageEvent) {
   }
 
   // Find the handler for the message
-  const handler = messageHandlers[msg.ty];
+  const handler = messageHandlers[msg.ty] as
+    | MessageHandler<typeof msg.ty>
+    | undefined;
   if (handler !== undefined) {
     // Call the handler with the mesasge
     handler(msg);

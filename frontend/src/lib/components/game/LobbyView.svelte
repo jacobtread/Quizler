@@ -13,7 +13,8 @@
   export let players: OtherPlayer[];
 
   async function doKick(player: OtherPlayer) {
-    let res = await socket.send(ClientMessage.Kick, {
+    let res = await socket.send({
+      ty: ClientMessage.Kick,
       id: player.id
     });
 
@@ -23,7 +24,8 @@
   }
 
   async function doStart() {
-    let res = await socket.send(ClientMessage.HostAction, {
+    let res = await socket.send({
+      ty: ClientMessage.HostAction,
       action: HostAction.Start
     });
 

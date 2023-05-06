@@ -5,7 +5,7 @@
     type CreatedResponse,
     type Question,
     type TimingConfig,
-    type UploadConfig
+    type CreateRequest
   } from "$lib/socket/models";
   import * as socket from "$lib/socket";
   import {
@@ -44,7 +44,7 @@
   };
 
   async function startQuiz() {
-    const config: UploadConfig = {
+    const config: CreateRequest = {
       name,
       text,
       timing,
@@ -81,7 +81,8 @@
 
     console.debug("Sending initialize message");
 
-    const resp = await socket.send(ClientMessage.Initialize, {
+    const resp = await socket.send({
+      ty: ClientMessage.Initialize,
       uuid: json.uuid
     });
 

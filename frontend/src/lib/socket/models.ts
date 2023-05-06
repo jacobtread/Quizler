@@ -1,167 +1,29 @@
 import { z } from "zod";
 
-export interface CreatedResponse {
-  uuid: string;
-}
-
 export type SessionId = number;
 export type GameToken = string;
 export type TimerState = { total: number; elapsed: number };
 export type Scores = Record<SessionId, number>;
+export type ImageRef = string;
+export type QuestionIndex = number;
 
-export interface JoinedMessage {
-  id: SessionId;
-  token: GameToken;
-  config: GameConfig;
-}
-
-export type OtherPlayerMessage = OtherPlayer;
-
-export interface OtherPlayer {
-  id: SessionId;
-  name: string;
-}
-
-export interface GameStateMessage {
-  state: GameState;
-}
-
-export type TimeSyncMessage = TimerState;
-
-export interface QuestionMessage {
-  question: Question;
-}
-
-export interface ScoresMessage {
-  scores: Scores;
-}
-
-export interface ScoreMessage {
-  score: Score;
-}
-
-export interface ErrorMessage {
-  error: ServerError;
-}
-
-export interface KickedMessage {
-  session_id: SessionId;
-  reason: RemoveReason;
-}
-
-export const enum ServerMessage {
-  Joined = "Joined",
-  Ok = "Ok",
-  OtherPlayer = "OtherPlayer",
-  GameState = "GameState",
-  TimeSync = "TimeSync",
-  Question = "Question",
-  Scores = "Scores",
-  Score = "Score",
-  Error = "Error",
-  Kicked = "Kicked"
-}
-
-export type Message<T> = {
-  ty: T;
-  rid?: number | undefined;
-} & ServerMessageBody<T>;
-
-// Transforms the provided ServerMessage variant into the associated
-// message content for that message
-export type ServerMessageBody<T> = T extends ServerMessage.Joined
-  ? JoinedMessage
-  : T extends ServerMessage.OtherPlayer
-  ? OtherPlayerMessage
-  : T extends ServerMessage.GameState
-  ? GameStateMessage
-  : T extends ServerMessage.TimeSync
-  ? TimeSyncMessage
-  : T extends ServerMessage.Question
-  ? QuestionMessage
-  : T extends ServerMessage.Scores
-  ? ScoresMessage
-  : T extends ServerMessage.Score
-  ? ScoreMessage
-  : T extends ServerMessage.Error
-  ? ErrorMessage
-  : T extends ServerMessage.Kicked
-  ? KickedMessage
-  : T extends ServerMessage.Ok
-  ? OkMessage
-  : unknown;
-
-export type OkMessage = Record<string, never>;
-
-export interface InitializeMessage {
-  uuid: string;
-}
-
-export interface ConnectMessage {
-  token: GameToken;
-}
-
-export interface JoinMessage {
-  name: string;
-}
-
-export interface HostActionMessage {
-  action: HostAction;
-}
-
-export interface AnswerMessage {
-  answer: Answer;
-}
-
-export interface KickMessage {
-  id: SessionId;
-}
-
-export const enum ClientMessage {
-  Initialize = "Initialize",
-  Connect = "Connect",
-  Join = "Join",
-  Ready = "Ready",
-  HostAction = "HostAction",
-  Answer = "Answer",
-  Kick = "Kick"
-}
-
-export type ClientMessageBody<T extends ClientMessage> =
-  T extends ClientMessage.Initialize
-    ? InitializeMessage
-    : T extends ClientMessage.Connect
-    ? ConnectMessage
-    : T extends ClientMessage.Join
-    ? JoinMessage
-    : T extends ClientMessage.Ready
-    ? Record<string, never>
-    : T extends ClientMessage.HostAction
-    ? HostActionMessage
-    : T extends ClientMessage.Answer
-    ? AnswerMessage
-    : T extends ClientMessage.Kick
-    ? KickMessage
-    : unknown;
-
-export type PairMessageType<T> = T extends
-  | ClientMessage.Initialize
-  | ClientMessage.Join
-  ? ServerMessage.Joined
-  : T extends
-      | ClientMessage.Connect
-      | ClientMessage.Ready
-      | ClientMessage.HostAction
-      | ClientMessage.Answer
-      | ClientMessage.Kick
-  ? ServerMessage.Ok
-  : unknown;
-
-export interface UploadConfig {
+// Request structure used for creating a quiz
+export interface CreateRequest {
   name: string;
   text: string;
   timing: TimingConfig;
   questions: Question[];
+}
+
+// Response structure for a created quiz
+export interface CreatedResponse {
+  // UUID of the prepared game
+  uuid: string;
+}
+
+export interface OtherPlayer {
+  id: SessionId;
+  name: string;
 }
 
 export interface GameConfig {
@@ -171,19 +33,6 @@ export interface GameConfig {
 
 export interface TimingConfig {
   wait_time: number;
-}
-
-export const timingConfigSchema = z.object({
-  wait_time: z.number()
-});
-
-export const enum GameState {
-  Lobby = "Lobby",
-  Starting = "Starting",
-  AwaitingReady = "AwaitingReady",
-  AwaitingAnswers = "AwaitingAnswers",
-  Marked = "Marked",
-  Finished = "Finished"
 }
 
 export const enum ServerError {
@@ -198,6 +47,15 @@ export const enum ServerError {
   InvalidAnswer = "InvalidAnswer"
 }
 
+export const enum GameState {
+  Lobby = "Lobby",
+  Starting = "Starting",
+  AwaitingReady = "AwaitingReady",
+  AwaitingAnswers = "AwaitingAnswers",
+  Marked = "Marked",
+  Finished = "Finished"
+}
+
 export const enum HostAction {
   Start = "Start",
   Cancel = "Cancel",
@@ -210,9 +68,6 @@ export const enum RemoveReason {
   LostConnection = "LostConnection",
   Disconnected = "Disconnected"
 }
-
-export type ImageRef = string;
-export type QuestionIndex = number;
 
 export const enum QuestionType {
   Single = "Single",
@@ -263,21 +118,9 @@ export const enum AnswerType {
   Single = "Single",
   Multiple = "Multiple"
 }
-
-const answerSchema = z.discriminatedUnion("ty", [
-  // Single choice answer
-  z.object({
-    ty: z.literal(AnswerType.Single),
-    answers: z.number()
-  }),
-  // Single choice answer
-  z.object({
-    ty: z.literal(AnswerType.Multiple),
-    answers: z.array(z.number())
-  })
-]);
-
-export type Answer = z.infer<typeof answerSchema>;
+export type Answer =
+  | { ty: AnswerType.Single; answer: number }
+  | { ty: AnswerType.Multiple; answers: number[] };
 
 export const enum ScoreType {
   Correct = "Correct",
@@ -285,22 +128,90 @@ export const enum ScoreType {
   Partial = "Partial"
 }
 
-const scoreSchema = z.discriminatedUnion("ty", [
-  z.object({
-    ty: z.literal(ScoreType.Correct),
-    value: z.number()
-  }),
-  z.object({
-    ty: z.literal(ScoreType.Partial),
-    value: z.object({
-      count: z.number(),
-      total: z.number(),
-      socre: z.number()
-    })
-  }),
-  z.object({
-    ty: z.literal(ScoreType.Incorrect)
-  })
-]);
+export type Score =
+  | { ty: ScoreType.Correct; value: number }
+  | {
+      ty: ScoreType.Partial;
+      value: {
+        count: number;
+        total: number;
+        score: number;
+      };
+    }
+  | { ty: ScoreType.Incorrect };
 
-export type Score = z.infer<typeof scoreSchema>;
+/* 
+  CLIENT MESSAGES
+*/
+
+export const enum ClientMessage {
+  Initialize = "Initialize",
+  Connect = "Connect",
+  Join = "Join",
+  Ready = "Ready",
+  HostAction = "HostAction",
+  Answer = "Answer",
+  Kick = "Kick"
+}
+
+export type ClientMessageSchema = {
+  rid?: number;
+} & (
+  | { ty: ClientMessage.Initialize; uuid: string }
+  | { ty: ClientMessage.Connect; token: GameToken }
+  | { ty: ClientMessage.Join; name: string }
+  | { ty: ClientMessage.Ready }
+  | { ty: ClientMessage.HostAction; action: HostAction }
+  | { ty: ClientMessage.Answer; answer: Answer }
+  | { ty: ClientMessage.Kick; id: SessionId }
+);
+
+export type ClientMessageOf<T> = Extract<ClientMessageSchema, { ty: T }>;
+
+/* 
+  SERVER MESSAGES
+*/
+
+export const enum ServerMessage {
+  Joined = "Joined",
+  Ok = "Ok",
+  OtherPlayer = "OtherPlayer",
+  GameState = "GameState",
+  TimeSync = "TimeSync",
+  Question = "Question",
+  Scores = "Scores",
+  Score = "Score",
+  Error = "Error",
+  Kicked = "Kicked"
+}
+
+export type ServerMessageSchema = {
+  rid?: number;
+} & (
+  | { ty: ServerMessage.Joined; id: number; token: string; config: GameConfig }
+  | { ty: ServerMessage.OtherPlayer; id: number; name: string }
+  | { ty: ServerMessage.GameState; state: GameState }
+  | { ty: ServerMessage.TimeSync; total: number; elapsed: number }
+  | { ty: ServerMessage.Question; question: Question }
+  | { ty: ServerMessage.Scores; scores: Scores }
+  | { ty: ServerMessage.Score; score: Score }
+  | { ty: ServerMessage.Error; error: ServerError }
+  | { ty: ServerMessage.Kicked; session_id: number; reason: RemoveReason }
+  | { ty: ServerMessage.Ok }
+);
+
+export type ServerMessageOf<T> = Extract<ServerMessageSchema, { ty: T }>;
+
+// Converts from client message to server message type
+export type PairMessageType<T> = T extends
+  | ClientMessage.Initialize
+  | ClientMessage.Join
+  ? ServerMessage.Joined
+  : T extends
+      | ClientMessage.Connect
+      | ClientMessage.Ready
+      | ClientMessage.HostAction
+      | ClientMessage.Answer
+      | ClientMessage.Kick
+  ? ServerMessage.Ok
+  : unknown;

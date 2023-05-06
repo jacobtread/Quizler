@@ -20,7 +20,8 @@
 
   async function doAnswer(index: number) {
     answered = true;
-    let res = await socket.send(ClientMessage.Answer, {
+    let res = await socket.send({
+      ty: ClientMessage.Answer,
       answer: {
         ty: AnswerType.Single,
         answer: index
@@ -34,7 +35,8 @@
 
   async function doAnswers() {
     answered = true;
-    let res = await socket.send(ClientMessage.Answer, {
+    let res = await socket.send({
+      ty: ClientMessage.Answer,
       answer: {
         ty: AnswerType.Multiple,
         answers

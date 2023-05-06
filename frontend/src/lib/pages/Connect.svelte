@@ -37,7 +37,8 @@
     // Await the socket being alive
     await socket.ready();
 
-    const resp = await socket.send(ClientMessage.Connect, {
+    const resp = await socket.send({
+      ty: ClientMessage.Connect,
       token
     });
 
