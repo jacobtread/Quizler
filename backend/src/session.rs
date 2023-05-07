@@ -8,13 +8,13 @@ use crate::{
     types::{Answer, HostAction, RemoveReason, ServerError},
 };
 use actix::{
-    Actor, ActorContext, ActorFuture, ActorFutureExt, Addr, AsyncContext, Handler, Message,
-    StreamHandler, WrapFuture,
+    fut::LocalBoxActorFuture, Actor, ActorContext, ActorFutureExt, Addr, AsyncContext, Handler,
+    Message, StreamHandler, WrapFuture,
 };
 use actix_web_actors::ws;
 use log::{debug, error, info};
 use serde::Serialize;
-use std::{pin::Pin, sync::Arc};
+use std::sync::Arc;
 use uuid::Uuid;
 
 /// Type alias for numbers that represent Session ID's
@@ -46,7 +46,7 @@ impl Actor for Session {
     }
 }
 
-type RespFut = Pin<Box<dyn ActorFuture<Session, Output = Result<ServerMessage, ServerError>>>>;
+type RespFut = LocalBoxActorFuture<Session, Result<ServerMessage, ServerError>>;
 
 impl Session {
     /// Writes a server message by encoding it to json and then sending it
@@ -68,10 +68,6 @@ impl Session {
         ctx.text(value);
     }
 
-    fn write_error(ctx: &mut <Self as Actor>::Context, error: ServerError) {
-        Self::write_message(ctx, &ServerMessage::Error { error })
-    }
-
     fn initialize(&mut self, ctx: &mut <Self as Actor>::Context, uuid: Uuid) -> RespFut {
         // If already in a game infrom the game that we've left
         if let Some(game) = self.game.take() {
@@ -88,25 +84,24 @@ impl Session {
             addr: ctx.address(),
         };
 
-        Box::pin(
-            async move {
-                Games::get()
-                    .send(msg)
-                    .await
-                    .expect("Games service was not running")
-            }
-            .into_actor(self)
-            .map(|result, act, _| {
-                result.map(|msg| {
-                    act.game = Some(msg.game);
-                    ServerMessage::Joined {
-                        id: act.id,
-                        config: msg.config,
-                        token: msg.token,
-                    }
-                })
-            }),
-        )
+        async move {
+            Games::get()
+                .send(msg)
+                .await
+                .expect("Games service was not running")
+        }
+        .into_actor(self)
+        .map(|result, act, _| {
+            result.map(|msg| {
+                act.game = Some(msg.game);
+                ServerMessage::Joined {
+                    id: act.id,
+                    config: msg.config,
+                    token: msg.token,
+                }
+            })
+        })
+        .boxed_local()
     }
 
     fn connect(&mut self, token: String) -> RespFut {
@@ -119,21 +114,20 @@ impl Session {
             });
         }
 
-        Box::pin(
-            async move {
-                Games::get()
-                    .send(GetGameMessage { token })
-                    .await
-                    .expect("Games service was not running")
-            }
-            .into_actor(self)
-            .map(|result, act, _| {
-                result.map(|game| {
-                    act.game = Some(game);
-                    ServerMessage::Ok
-                })
-            }),
-        )
+        async move {
+            Games::get()
+                .send(GetGameMessage { token })
+                .await
+                .expect("Games service was not running")
+        }
+        .into_actor(self)
+        .map(|result, act, _| {
+            result.map(|game| {
+                act.game = Some(game);
+                ServerMessage::Ok
+            })
+        })
+        .boxed_local()
     }
 
     fn join(&mut self, ctx: &mut <Self as Actor>::Context, name: String) -> RespFut {
@@ -145,28 +139,27 @@ impl Session {
             name,
         };
 
-        Box::pin(
-            async move {
-                let game = game.ok_or(ServerError::Unexpected)?;
+        async move {
+            let game = game.ok_or(ServerError::Unexpected)?;
 
-                game.send(join_msg)
-                    .await
-                    .map_err(|_| ServerError::NotJoinable)
-            }
-            .into_actor(self)
-            .map(|result, act, _| {
-                result
-                    .map_err(|err| {
-                        act.game = None;
-                        err
-                    })?
-                    .map(|msg| ServerMessage::Joined {
-                        id: act.id,
-                        token: msg.token,
-                        config: msg.config,
-                    })
-            }),
-        )
+            game.send(join_msg)
+                .await
+                .map_err(|_| ServerError::NotJoinable)
+        }
+        .into_actor(self)
+        .map(|result, act, _| {
+            result
+                .map_err(|err| {
+                    act.game = None;
+                    err
+                })?
+                .map(|msg| ServerMessage::Joined {
+                    id: act.id,
+                    token: msg.token,
+                    config: msg.config,
+                })
+        })
+        .boxed_local()
     }
 
     fn host_action(&mut self, action: HostAction) -> RespFut {
@@ -177,17 +170,16 @@ impl Session {
             action,
         };
 
-        Box::pin(
-            async move {
-                let game = game.ok_or(ServerError::Unexpected)?;
+        async move {
+            let game = game.ok_or(ServerError::Unexpected)?;
 
-                game.send(action_msg)
-                    .await
-                    .map_err(|_| ServerError::Unexpected)?
-                    .map(|_| ServerMessage::Ok)
-            }
-            .into_actor(self),
-        )
+            game.send(action_msg)
+                .await
+                .map_err(|_| ServerError::Unexpected)?
+                .map(|_| ServerMessage::Ok)
+        }
+        .into_actor(self)
+        .boxed_local()
     }
 
     fn answer(&mut self, answer: Answer) -> RespFut {
@@ -198,17 +190,16 @@ impl Session {
             answer,
         };
 
-        Box::pin(
-            async move {
-                let game = game.ok_or(ServerError::Unexpected)?;
+        async move {
+            let game = game.ok_or(ServerError::Unexpected)?;
 
-                game.send(answer_msg)
-                    .await
-                    .map_err(|_| ServerError::Unexpected)?
-                    .map(|_| ServerMessage::Ok)
-            }
-            .into_actor(self),
-        )
+            game.send(answer_msg)
+                .await
+                .map_err(|_| ServerError::Unexpected)?
+                .map(|_| ServerMessage::Ok)
+        }
+        .into_actor(self)
+        .boxed_local()
     }
 
     fn kick(&mut self, id: SessionId) -> RespFut {
@@ -220,17 +211,16 @@ impl Session {
             reason: RemoveReason::RemovedByHost,
         };
 
-        Box::pin(
-            async move {
-                let game = game.ok_or(ServerError::Unexpected)?;
+        async move {
+            let game = game.ok_or(ServerError::Unexpected)?;
 
-                game.send(remove_msg)
-                    .await
-                    .map_err(|_| ServerError::Unexpected)?
-                    .map(|_| ServerMessage::Ok)
-            }
-            .into_actor(self),
-        )
+            game.send(remove_msg)
+                .await
+                .map_err(|_| ServerError::Unexpected)?
+                .map(|_| ServerMessage::Ok)
+        }
+        .into_actor(self)
+        .boxed_local()
     }
 
     fn ready(&mut self) -> RespFut {
@@ -240,17 +230,16 @@ impl Session {
             session_id: self.id,
         };
 
-        Box::pin(
-            async move {
-                let game = game.ok_or(ServerError::Unexpected)?;
+        async move {
+            let game = game.ok_or(ServerError::Unexpected)?;
 
-                game.send(ready_msg)
-                    .await
-                    .map_err(|_| ServerError::Unexpected)
-                    .map(|_| ServerMessage::Ok)
-            }
-            .into_actor(self),
-        )
+            game.send(ready_msg)
+                .await
+                .map_err(|_| ServerError::Unexpected)
+                .map(|_| ServerMessage::Ok)
+        }
+        .into_actor(self)
+        .boxed_local()
     }
 
     /// Handles a recieved client message
@@ -357,7 +346,14 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Session {
             Ok(value) => value,
             Err(err) => {
                 error!("Unable to decode client message: {}", err);
-                Self::write_error(ctx, ServerError::MalformedMessage);
+
+                Self::write_message(
+                    ctx,
+                    &ServerMessage::Error {
+                        error: ServerError::MalformedMessage,
+                    },
+                );
+
                 return;
             }
         };
