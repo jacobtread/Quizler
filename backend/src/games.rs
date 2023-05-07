@@ -63,24 +63,10 @@ impl Actor for Games {
         ctx.run_interval(PREPARE_CHECK_INTERVAL, |act, _| {
             debug!("Collecting expired game prepares");
 
-            // Collect the expired UUIDs
-            let expired: Vec<Uuid> = act
-                .preparing
-                .iter()
-                .filter_map(|(uuid, value)| {
-                    let elapsed = value.created.elapsed();
-                    if elapsed >= GAME_EXPIRY_TIME {
-                        Some(*uuid)
-                    } else {
-                        None
-                    }
-                })
-                .collect();
-
-            // Remove the expired preparings
-            for uuid in expired {
-                act.preparing.remove(&uuid);
-            }
+            act.preparing.retain(|_, value| {
+                let elapsed = value.created.elapsed();
+                elapsed < GAME_EXPIRY_TIME
+            });
         });
     }
 }
