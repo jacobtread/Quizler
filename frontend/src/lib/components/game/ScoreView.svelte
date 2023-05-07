@@ -15,8 +15,8 @@
   <p>Correct!</p>
   <p>+{score.value}</p>
 {:else if score.ty === ScoreType.Partial}
-  <p>Almost correct! ({score.value.count} / {score.value.total})</p>
-  <p>+{score.value.score}</p>
+  <p>Almost correct! ({score.count} / {score.total})</p>
+  <p>+{score.value}</p>
 {:else}
   <p>Incorrect</p>
 {/if}

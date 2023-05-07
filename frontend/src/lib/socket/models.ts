@@ -132,11 +132,9 @@ export type Score =
   | { ty: ScoreType.Correct; value: number }
   | {
       ty: ScoreType.Partial;
-      value: {
-        count: number;
-        total: number;
-        score: number;
-      };
+      count: number;
+      total: number;
+      value: number;
     }
   | { ty: ScoreType.Incorrect };
 

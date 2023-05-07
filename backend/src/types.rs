@@ -178,22 +178,22 @@ impl Answer {
 /// Represents the different scores that can be
 /// gained from an answer
 #[derive(Serialize, Clone, Copy)]
-#[serde(tag = "ty", content = "value")]
+#[serde(tag = "ty")]
 pub enum Score {
     // Answer was 100% correct
-    Correct(u32),
+    Correct { value: u32 },
     // Answer was incorrect
     Incorrect,
     // Multiple choice has some asnwers right
-    Partial { count: u32, total: u32, score: u32 },
+    Partial { value: u32, count: u32, total: u32 },
 }
 
 impl Score {
     /// Obtains the score value from the answer score
     pub fn value(&self) -> u32 {
         match self {
-            Self::Correct(value) => *value,
-            Self::Partial { score, .. } => *score,
+            Self::Correct { value } => *value,
+            Self::Partial { value, .. } => *value,
             Self::Incorrect => 0,
         }
     }

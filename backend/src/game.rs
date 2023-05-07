@@ -383,7 +383,7 @@ impl Game {
                     .unwrap_or(false);
 
                 if is_valid {
-                    Score::Correct(base_score)
+                    Score::Correct { value: base_score }
                 } else {
                     Score::Incorrect
                 }
@@ -411,13 +411,13 @@ impl Game {
                 let percent = correct as f32 / *max as f32;
 
                 if correct == answers.len() {
-                    Score::Correct(base_score)
+                    Score::Correct { value: base_score }
                 } else if correct == 0 {
                     Score::Incorrect
                 } else {
                     let score = ((base_score as f32) * percent).round() as u32;
                     Score::Partial {
-                        score,
+                        value: score,
                         count: correct as u32,
                         total: *max as u32,
                     }
