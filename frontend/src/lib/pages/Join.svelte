@@ -2,13 +2,30 @@
   import * as socket from "$lib/socket";
   import { ClientMessage, ServerMessage } from "$lib/socket/models";
   import { setGame, setHome } from "$stores/state";
+  import { z } from "zod";
 
   export let token: string;
 
   let name = "";
 
+  const nameSchema = z
+    .string()
+    .min(1, "Name cannot be empty")
+    .max(30, "Name cannot be more than 30 characters long");
+  let disabled: boolean = true;
+
+  function onNameInput() {
+    // Change the disabled state
+    disabled = !nameSchema.safeParse(name).success;
+  }
+
   async function joinQuiz() {
-    // TODO: name validation
+    const parse = nameSchema.safeParse(name);
+
+    if (!parse.success) {
+      console.error("Failed to parse name", parse.error);
+      return;
+    }
 
     // Await the socket being alive
     await socket.ready();
@@ -40,10 +57,10 @@
 
 <label for="">
   Name
-  <input type="text" bind:value={name} />
+  <input type="text" bind:value={name} on:input={onNameInput} />
 </label>
 
-<button on:click={joinQuiz}>Join</button>
+<button on:click={joinQuiz} {disabled}>Join</button>
 
 <style>
 </style>

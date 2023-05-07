@@ -11,8 +11,8 @@
   const tokenSchema = z
     .string()
     .toUpperCase()
-    .length(TOKEN_LENGTH)
-    .regex(/[A-Z0-9]/);
+    .length(TOKEN_LENGTH, "Invalid token length")
+    .regex(/^[A-Z0-9]+$/, "Token didn't match token charset");
 
   function onTokenInput() {
     userToken = userToken
@@ -29,6 +29,7 @@
     const parse = tokenSchema.safeParse(userToken);
 
     if (!parse.success) {
+      console.error("Failed to parse token", parse.error);
       return;
     }
 
