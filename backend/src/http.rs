@@ -1,3 +1,9 @@
+use crate::{
+    game::{GameConfig, GameTiming, GetImageMessage},
+    games::{Games, GetGameMessage, PrepareGameMessage},
+    session::Session,
+    types::{Image, Question},
+};
 use actix_multipart::{Multipart, MultipartError};
 use actix_web::{
     get,
@@ -20,13 +26,6 @@ use std::{
     },
 };
 use uuid::Uuid;
-
-use crate::{
-    game::{GameConfig, GameTiming, GetImageMessage},
-    games::{Games, GetGameMessage, PrepareGameMessage},
-    session::Session,
-    types::{Image, Question},
-};
 
 /// Configuration function for configuring
 /// all the routes
