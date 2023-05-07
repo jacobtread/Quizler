@@ -534,9 +534,8 @@ impl Handler<JoinMessage> for Game {
 #[derive(Message)]
 #[rtype(result = "Result<(), ServerError>")]
 pub struct HostActionMessage {
-    /// The session reference who is attempting
-    /// the action (Validated against the host)
-    pub session_id: SessionId,
+    /// The ID of the session sending the action
+    pub id: SessionId,
     /// The action
     pub action: HostAction,
 }
@@ -546,7 +545,7 @@ impl Handler<HostActionMessage> for Game {
 
     fn handle(&mut self, msg: HostActionMessage, _ctx: &mut Self::Context) -> Self::Result {
         // Handle messages that aren't from the game host
-        if self.host.id != msg.session_id {
+        if self.host.id != msg.id {
             return Err(ServerError::InvalidPermission);
         }
 
@@ -564,7 +563,7 @@ impl Handler<HostActionMessage> for Game {
 #[derive(Message)]
 #[rtype(result = "()")]
 pub struct ReadyMessage {
-    pub session_id: SessionId,
+    pub id: SessionId,
 }
 
 impl Handler<ReadyMessage> for Game {
@@ -575,7 +574,7 @@ impl Handler<ReadyMessage> for Game {
         let mut all_ready = true;
 
         for player in &mut self.players {
-            if player.id == msg.session_id {
+            if player.id == msg.id {
                 player.ready = true;
             } else if !player.ready {
                 all_ready = false;
@@ -609,7 +608,7 @@ impl Handler<GetImageMessage> for Game {
 pub struct RemovePlayerMessage {
     /// Reference of who is attempting to remove the player
     /// (Unless the server is removing)
-    pub session_id: SessionId,
+    pub id: SessionId,
     /// The ID of the player to remove
     pub target_id: SessionId,
     /// Reason for the player removal (Sent to clients)
@@ -621,7 +620,7 @@ impl Handler<RemovePlayerMessage> for Game {
 
     fn handle(&mut self, msg: RemovePlayerMessage, ctx: &mut Self::Context) -> Self::Result {
         // Handle messages that aren't from the game host
-        if msg.target_id != msg.session_id && self.host.id != msg.session_id {
+        if msg.target_id != msg.id && self.host.id != msg.id {
             return Err(ServerError::InvalidPermission);
         }
 
@@ -665,8 +664,8 @@ impl Handler<RemovePlayerMessage> for Game {
 #[derive(Message)]
 #[rtype(result = "Result<(), ServerError>")]
 pub struct PlayerAnswerMessage {
-    /// Reference of the session that is answering
-    pub session_id: SessionId,
+    /// The ID of the session who answered
+    pub id: SessionId,
     /// Answer to the question
     pub answer: Answer,
 }
@@ -693,7 +692,7 @@ impl Handler<PlayerAnswerMessage> for Game {
         let player = self
             .players
             .iter_mut()
-            .find(|player| player.id == msg.session_id)
+            .find(|player| player.id == msg.id)
             .ok_or(ServerError::UnknownPlayer)?;
 
         // Ensure the answer is the right type of answer

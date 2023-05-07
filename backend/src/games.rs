@@ -245,10 +245,11 @@ impl Handler<GetGameMessage> for Games {
     fn handle(&mut self, msg: GetGameMessage, _ctx: &mut Self::Context) -> Self::Result {
         // Parse the token ensuring it is valid
         let token: GameToken = msg.token.parse()?;
-        match self.games.get(&token) {
-            Some(value) => Ok(value.clone()),
-            None => Err(ServerError::InvalidToken),
-        }
+
+        self.games
+            .get(&token)
+            .cloned()
+            .ok_or(ServerError::InvalidToken)
     }
 }
 

@@ -38,7 +38,7 @@ impl Actor for Session {
         if let Some(game) = self.game.take() {
             // Inform game to remove self
             game.do_send(RemovePlayerMessage {
-                session_id: self.id,
+                id: self.id,
                 target_id: self.id,
                 reason: RemoveReason::LostConnection,
             });
@@ -68,25 +68,26 @@ impl Session {
         ctx.text(value);
     }
 
-    fn initialize(&mut self, ctx: &mut <Self as Actor>::Context, uuid: Uuid) -> RespFut {
+    fn disconnect(&mut self) {
         // If already in a game infrom the game that we've left
         if let Some(game) = self.game.take() {
             game.do_send(RemovePlayerMessage {
-                session_id: self.id,
+                id: self.id,
                 target_id: self.id,
                 reason: RemoveReason::Disconnected,
             });
         }
+    }
 
-        let msg = InitializeMessage {
-            uuid,
-            id: self.id,
-            addr: ctx.address(),
-        };
+    fn initialize(&mut self, ctx: &mut <Self as Actor>::Context, uuid: Uuid) -> RespFut {
+        self.disconnect();
+
+        let id = self.id;
+        let addr = ctx.address();
 
         async move {
             Games::get()
-                .send(msg)
+                .send(InitializeMessage { uuid, id, addr })
                 .await
                 .expect("Games service was not running")
         }
@@ -105,14 +106,7 @@ impl Session {
     }
 
     fn connect(&mut self, token: String) -> RespFut {
-        // If already in a game infrom the game that we've left
-        if let Some(game) = self.game.take() {
-            game.do_send(RemovePlayerMessage {
-                session_id: self.id,
-                target_id: self.id,
-                reason: RemoveReason::Disconnected,
-            });
-        }
+        self.disconnect();
 
         async move {
             Games::get()
@@ -132,17 +126,13 @@ impl Session {
 
     fn join(&mut self, ctx: &mut <Self as Actor>::Context, name: String) -> RespFut {
         let game = self.game.clone();
-
-        let join_msg = JoinMessage {
-            id: self.id,
-            addr: ctx.address(),
-            name,
-        };
+        let id = self.id;
+        let addr = ctx.address();
 
         async move {
             let game = game.ok_or(ServerError::Unexpected)?;
 
-            game.send(join_msg)
+            game.send(JoinMessage { id, addr, name })
                 .await
                 .map_err(|_| ServerError::NotJoinable)
         }
@@ -164,16 +154,12 @@ impl Session {
 
     fn host_action(&mut self, action: HostAction) -> RespFut {
         let game = self.game.clone();
-
-        let action_msg = HostActionMessage {
-            session_id: self.id,
-            action,
-        };
+        let id = self.id;
 
         async move {
             let game = game.ok_or(ServerError::Unexpected)?;
 
-            game.send(action_msg)
+            game.send(HostActionMessage { id, action })
                 .await
                 .map_err(|_| ServerError::Unexpected)?
                 .map(|_| ServerMessage::Ok)
@@ -184,16 +170,12 @@ impl Session {
 
     fn answer(&mut self, answer: Answer) -> RespFut {
         let game = self.game.clone();
-
-        let answer_msg = PlayerAnswerMessage {
-            session_id: self.id,
-            answer,
-        };
+        let id = self.id;
 
         async move {
             let game = game.ok_or(ServerError::Unexpected)?;
 
-            game.send(answer_msg)
+            game.send(PlayerAnswerMessage { id, answer })
                 .await
                 .map_err(|_| ServerError::Unexpected)?
                 .map(|_| ServerMessage::Ok)
@@ -202,22 +184,21 @@ impl Session {
         .boxed_local()
     }
 
-    fn kick(&mut self, id: SessionId) -> RespFut {
+    fn kick(&mut self, target_id: SessionId) -> RespFut {
         let game = self.game.clone();
-
-        let remove_msg = RemovePlayerMessage {
-            session_id: self.id,
-            target_id: id,
-            reason: RemoveReason::RemovedByHost,
-        };
+        let id = self.id;
 
         async move {
             let game = game.ok_or(ServerError::Unexpected)?;
 
-            game.send(remove_msg)
-                .await
-                .map_err(|_| ServerError::Unexpected)?
-                .map(|_| ServerMessage::Ok)
+            game.send(RemovePlayerMessage {
+                id,
+                target_id,
+                reason: RemoveReason::RemovedByHost,
+            })
+            .await
+            .map_err(|_| ServerError::Unexpected)?
+            .map(|_| ServerMessage::Ok)
         }
         .into_actor(self)
         .boxed_local()
@@ -225,15 +206,12 @@ impl Session {
 
     fn ready(&mut self) -> RespFut {
         let game = self.game.clone();
-
-        let ready_msg = ReadyMessage {
-            session_id: self.id,
-        };
+        let id = self.id;
 
         async move {
             let game = game.ok_or(ServerError::Unexpected)?;
 
-            game.send(ready_msg)
+            game.send(ReadyMessage { id })
                 .await
                 .map_err(|_| ServerError::Unexpected)
                 .map(|_| ServerMessage::Ok)
