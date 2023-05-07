@@ -2,6 +2,7 @@
   import QuestionView from "$lib/components/QuestionListItem.svelte";
   import { defaultQuestion } from "$lib/constants";
   import type { Question } from "$lib/socket/models";
+  import { randomRange } from "$lib/utils";
   import { flip } from "svelte/animate";
 
   export let questions: Question[];
@@ -23,6 +24,19 @@
     questions = questions;
   }
 
+  function shuffleQuestions() {
+    const shuffleCount = randomRange(1, questions.length);
+    let changes = 0;
+    while (changes < shuffleCount) {
+      const first = randomRange(0, questions.length - 1);
+      const second = randomRange(0, questions.length - 1);
+      if (first !== second) {
+        swapQuestion(first, second);
+        changes++;
+      }
+    }
+  }
+
   function swapQuestion(aIndex: number, bIndex: number) {
     let a = questions[aIndex];
     let b = questions[bIndex];
@@ -37,7 +51,13 @@
   }
 </script>
 
-<button on:click={addQuestion}>Add Question</button>
+<button on:click={addQuestion} disabled={questions.length >= 50}>
+  Add Question
+</button>
+
+<button on:click={shuffleQuestions} disabled={questions.length <= 1}>
+  Shuffle
+</button>
 
 <ol class="questions">
   {#each questions as question, index (question.id)}

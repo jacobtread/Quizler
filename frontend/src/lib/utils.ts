@@ -27,3 +27,10 @@ export function formatImageUrl(token: string, uuid: string): string {
     DEBUG ? "http://localhost" : window.location.origin
   ).toString();
 }
+
+export function randomRange(min: number, max: number): number {
+  const value = Math.round(Math.random() * (max - min) + min);
+  if (value > max) return max;
+  if (value < min) return min;
+  return value;
+}

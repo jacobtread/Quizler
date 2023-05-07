@@ -15,6 +15,7 @@
     MIN_ANSWER_TIME,
     MIN_BONUS_TIME
   } from "$lib/constants";
+  import { randomRange } from "$lib/utils";
 
   // The question that is being created
   export let question: Question;
@@ -144,6 +145,19 @@
       (_, valueIndex) => valueIndex != index
     );
   }
+
+  function shuffleAnswers() {
+    const shuffleCount = randomRange(1, question.answers.length);
+    let changes = 0;
+    while (changes < shuffleCount) {
+      const first = randomRange(0, question.answers.length - 1);
+      const second = randomRange(0, question.answers.length - 1);
+      if (first !== second) {
+        swapAnswer(first, second);
+        changes++;
+      }
+    }
+  }
 </script>
 
 <div class="editor">
@@ -246,9 +260,12 @@
           />
         </div>
       {/each}
-      <button on:click={addAnswer} disabled={question.answers.length >= 8}
-        >Add Answer</button
-      >
+      <button on:click={addAnswer} disabled={question.answers.length >= 8}>
+        Add Answer
+      </button>
+      <button on:click={shuffleAnswers} disabled={question.answers.length <= 1}>
+        Shuffle
+      </button>
     </div>
   {/if}
 
