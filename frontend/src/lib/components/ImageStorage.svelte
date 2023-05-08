@@ -19,7 +19,7 @@
   }
 
   async function doUpload() {
-    const files: FileList | null = await acceptUploadMany();
+    const files: FileList | null = await acceptUploadMany("image/*");
 
     // No files were uploaded
     if (files === null) return;

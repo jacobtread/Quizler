@@ -23,10 +23,9 @@
   import ImageStorage from "$components/ImageStorage.svelte";
   import { get } from "svelte/store";
   import { imageStore } from "$stores/imageStore";
-  import { parseQuizBlob, createQuizBlob } from "$lib/format";
+  import { loadQuizBlob, createQuizBlob } from "$lib/format";
   import { setGame, setHome } from "$stores/state";
   import TimeInput from "$components/TimeInput.svelte";
-  import { ZodError } from "zod";
   import { confirmDialog, errorDialog } from "$lib/stores/dialogStore";
   import { acceptUpload, startDownload } from "$lib/file";
 
@@ -125,13 +124,13 @@
   }
 
   async function doImport() {
-    const file: File | null = await acceptUpload();
+    const file: File | null = await acceptUpload(".quizler");
 
     // No file was uploaded
     if (file === null) return;
 
     try {
-      const imported = await parseQuizBlob(file);
+      const imported = await loadQuizBlob(file);
       questions = imported.questions;
       name = imported.name;
       text = imported.text;
@@ -139,17 +138,9 @@
 
       console.debug("Imported quiz file", imported);
     } catch (e) {
-      let msg: string;
-      if (e instanceof ZodError) {
-        // TODO: Display loading failed message
-        console.error("Failed to parse quiz file", e);
-        msg = e.message;
-      } else {
-        console.error("Error while importing quiz file", e);
-        msg = "Failed to load quiz file";
-      }
+      console.error("Error while importing quiz file", e);
 
-      errorDialog("Failed to import", msg);
+      errorDialog("Failed to import", "Quiz file invalid or corrupted");
     }
   }
 </script>

@@ -91,7 +91,7 @@ export async function createQuizBlob(
  * @throws {ZodError} If the validation failed
  * @returns The loaded quiz data
  */
-export async function parseQuizBlob(file: Blob): Promise<LoadedQuiz> {
+export async function loadQuizBlob(file: Blob): Promise<LoadedQuiz> {
   const reader = new FileReader();
 
   // Await the reading process
@@ -107,6 +107,7 @@ export async function parseQuizBlob(file: Blob): Promise<LoadedQuiz> {
   const data = reader.result as string;
 
   const parsed = JSON.parse(data);
+
   const obj: QuizFormat = fileFormatSchema.parse(parsed);
 
   for (const { data, uuid, name, type, size } of obj.images) {
@@ -119,7 +120,8 @@ export async function parseQuizBlob(file: Blob): Promise<LoadedQuiz> {
       // Update the data store
       store.push({ uuid, name, size, blob });
 
-      return store;
+      // Remove duplicates from loading the file again
+      return store.filter((value) => value.uuid === uuid);
     });
 
     // Trigger the image preview loading
