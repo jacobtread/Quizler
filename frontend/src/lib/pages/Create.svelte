@@ -152,37 +152,39 @@
   }
 </script>
 
-{#if editing}
-  <QuestionEditor question={editing} back={() => (editing = null)} />
-{:else}
-  <button on:click={back}>Back</button>
+<main>
+  {#if editing}
+    <QuestionEditor question={editing} back={() => (editing = null)} />
+  {:else}
+    <button on:click={back}>Back</button>
 
-  <input hidden bind:this={loadInput} type="file" on:change={onLoadQuiz} />
+    <input hidden bind:this={loadInput} type="file" on:change={onLoadQuiz} />
 
-  <h1>Create Quiz</h1>
-  <div>
-    <button on:click={save}>Save</button>
-    <button on:click={() => loadInput.click()}>Load</button>
-    <button on:click={startQuiz}>Play</button>
-  </div>
+    <h1>Create Quiz</h1>
+    <div>
+      <button on:click={save}>Save</button>
+      <button on:click={() => loadInput.click()}>Load</button>
+      <button on:click={startQuiz}>Play</button>
+    </div>
 
-  <div>
-    <input type="text" bind:value={name} />
-    <textarea name="" id="" cols="30" rows="10" bind:value={text} />
-  </div>
+    <div>
+      <input type="text" bind:value={name} />
+      <textarea name="" id="" cols="30" rows="10" bind:value={text} />
+    </div>
 
-  <label for="">
-    <span>Wait Time</span>
-    <p>Time to wait between each question</p>
-    <TimeInput
-      bind:value={timing.wait_time}
-      min={MIN_WAIT_TIME}
-      max={MAX_WAIT_TIME}
-    />
-  </label>
+    <label for="">
+      <span>Wait Time</span>
+      <p>Time to wait between each question</p>
+      <TimeInput
+        bind:value={timing.wait_time}
+        min={MIN_WAIT_TIME}
+        max={MAX_WAIT_TIME}
+      />
+    </label>
 
-  <QuestionList {questions} bind:editing />
-{/if}
+    <QuestionList {questions} bind:editing />
+  {/if}
+</main>
 
 <ImageStorage />
 
