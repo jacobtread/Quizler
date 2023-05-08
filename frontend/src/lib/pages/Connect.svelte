@@ -1,7 +1,7 @@
 <script lang="ts">
   import { TOKEN_LENGTH } from "$lib/constants";
   import * as socket from "$lib/socket";
-  import { ClientMessage, ServerMessage, errorText } from "$lib/socket/models";
+  import { ClientMessage, ServerError, errorText } from "$lib/socket/models";
   import { setHome, setJoin } from "$stores/state";
   import { z } from "zod";
   import Play from "$lib/assets/icons/play.svg";
@@ -42,16 +42,17 @@
     // Await the socket being alive
     await socket.ready();
 
-    const resp = await socket.send({
-      ty: ClientMessage.Connect,
-      token
-    });
+    try {
+      await socket.send({
+        ty: ClientMessage.Connect,
+        token
+      });
 
-    if (resp.ty === ServerMessage.Error) {
-      console.error("Error while connecting", resp.error);
-      errorDialog("Failed to connect", errorText[resp.error]);
-    } else {
       setJoin(token);
+    } catch (e) {
+      const error = e as ServerError;
+      console.error("Failed to connect", error);
+      errorDialog("Failed to connect", errorText[error]);
     }
   }
 </script>

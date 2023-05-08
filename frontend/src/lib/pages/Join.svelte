@@ -1,6 +1,6 @@
 <script lang="ts">
   import * as socket from "$lib/socket";
-  import { ClientMessage, ServerMessage, errorText } from "$lib/socket/models";
+  import { ClientMessage, ServerError, errorText } from "$lib/socket/models";
   import { errorDialog } from "$lib/stores/dialogStore";
   import { setConnect, setGame } from "$stores/state";
   import { z } from "zod";
@@ -32,23 +32,17 @@
     // Await the socket being alive
     await socket.ready();
 
-    const resp = await socket.send({
-      ty: ClientMessage.Join,
-      name
-    });
-
-    if (resp.ty === ServerMessage.Error) {
-      console.error("Error while joining", resp.error);
-      errorDialog("Failed to join", errorText[resp.error]);
-    } else {
-      const { id, token, config } = resp;
-
-      setGame({
-        id,
-        token,
-        config,
-        host: false
+    try {
+      const { id, token, config } = await socket.send({
+        ty: ClientMessage.Join,
+        name
       });
+
+      setGame({ id, token, config, host: false });
+    } catch (e) {
+      const error = e as ServerError;
+      console.error("Failed to join", error);
+      errorDialog("Failed to join", errorText[error]);
     }
   }
 </script>

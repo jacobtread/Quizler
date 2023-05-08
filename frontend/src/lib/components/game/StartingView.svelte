@@ -3,9 +3,9 @@
   import * as socket from "$lib/socket";
   import {
     ClientMessage,
-    ServerMessage,
     HostAction,
-    type TimerState
+    type TimerState,
+    ServerError
   } from "$lib/socket/models";
   import type { GameData } from "$lib/stores/state";
   import { formatTime } from "$lib/utils";
@@ -14,24 +14,26 @@
   export let timer: TimerState;
 
   async function doCancel() {
-    let res = await socket.send({
-      ty: ClientMessage.HostAction,
-      action: HostAction.Cancel
-    });
-
-    if (res.ty === ServerMessage.Error) {
-      console.error("Error while attempting to cancel", res.error);
+    try {
+      await socket.send({
+        ty: ClientMessage.HostAction,
+        action: HostAction.Cancel
+      });
+    } catch (e) {
+      const error = e as ServerError;
+      console.error("Error while attempting to cancel", error);
     }
   }
 
   async function doSkip() {
-    let res = await socket.send({
-      ty: ClientMessage.HostAction,
-      action: HostAction.Skip
-    });
-
-    if (res.ty === ServerMessage.Error) {
-      console.error("Error while attempting to cancel", res.error);
+    try {
+      await socket.send({
+        ty: ClientMessage.HostAction,
+        action: HostAction.Skip
+      });
+    } catch (e) {
+      const error = e as ServerError;
+      console.error("Error while attempting to skip", error);
     }
   }
 </script>

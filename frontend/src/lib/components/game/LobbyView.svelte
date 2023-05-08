@@ -3,9 +3,9 @@
   import * as socket from "$lib/socket";
   import {
     ClientMessage,
-    ServerMessage,
     type OtherPlayer,
-    HostAction
+    HostAction,
+    ServerError
   } from "$lib/socket/models";
   import type { GameData } from "$lib/stores/state";
 
@@ -13,24 +13,26 @@
   export let players: OtherPlayer[];
 
   async function doKick(player: OtherPlayer) {
-    let res = await socket.send({
-      ty: ClientMessage.Kick,
-      id: player.id
-    });
-
-    if (res.ty === ServerMessage.Error) {
-      console.error("Error while attempting to kick", res.error);
+    try {
+      await socket.send({
+        ty: ClientMessage.Kick,
+        id: player.id
+      });
+    } catch (e) {
+      const error = e as ServerError;
+      console.error("Error while attempting to kick", error);
     }
   }
 
   async function doStart() {
-    let res = await socket.send({
-      ty: ClientMessage.HostAction,
-      action: HostAction.Start
-    });
-
-    if (res.ty === ServerMessage.Error) {
-      console.error("Error while attempting to start", res.error);
+    try {
+      await socket.send({
+        ty: ClientMessage.HostAction,
+        action: HostAction.Start
+      });
+    } catch (e) {
+      const error = e as ServerError;
+      console.error("Error while attempting to start", error);
     }
   }
 </script>

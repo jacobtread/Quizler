@@ -17,7 +17,8 @@
     type SessionId,
     type TimerState,
     ClientMessage,
-    ScoreType
+    ScoreType,
+    ServerError
   } from "$lib/socket/models";
   import { formatImageUrl } from "$lib/utils";
   import { setHome, type GameData } from "$stores/state";
@@ -56,9 +57,11 @@
   }
 
   async function setReady() {
-    let res = await socket.send({ ty: ClientMessage.Ready });
-    if (res.ty === ServerMessage.Error) {
-      console.error("Error while attempting to cancel", res.error);
+    try {
+      await socket.send({ ty: ClientMessage.Ready });
+    } catch (e) {
+      const error = e as ServerError;
+      console.error("Error while attempting to ready", error);
     }
   }
 

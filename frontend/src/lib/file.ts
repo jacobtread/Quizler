@@ -15,10 +15,9 @@ export function acceptUpload(
   const element: HTMLInputElement = document.createElement("input");
   element.type = "file";
   element.hidden = true;
-
   if (accept !== undefined) element.accept = accept;
-
   document.body.appendChild(element);
+
   return new Promise((resolve, reject) => {
     // Handle file upload
     element.onchange = () => {

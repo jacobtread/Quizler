@@ -4,9 +4,9 @@
     QuestionType,
     type Question,
     type TimerState,
-    ServerMessage,
     ClientMessage,
-    AnswerType
+    AnswerType,
+    ServerError
   } from "$lib/socket/models";
   import type { GameData } from "$lib/stores/state";
   import { formatImageUrl, formatTime } from "$lib/utils";
@@ -20,31 +20,34 @@
 
   async function doAnswer(index: number) {
     answered = true;
-    let res = await socket.send({
-      ty: ClientMessage.Answer,
-      answer: {
-        ty: AnswerType.Single,
-        answer: index
-      }
-    });
 
-    if (res.ty === ServerMessage.Error) {
-      console.error("Error while attempting to answer", res.error);
+    try {
+      await socket.send({
+        ty: ClientMessage.Answer,
+        answer: {
+          ty: AnswerType.Single,
+          answer: index
+        }
+      });
+    } catch (e) {
+      const error = e as ServerError;
+      console.error("Error while attempting to answer", error);
     }
   }
 
   async function doAnswers() {
     answered = true;
-    let res = await socket.send({
-      ty: ClientMessage.Answer,
-      answer: {
-        ty: AnswerType.Multiple,
-        answers
-      }
-    });
-
-    if (res.ty === ServerMessage.Error) {
-      console.error("Error while attempting to answer", res.error);
+    try {
+      await socket.send({
+        ty: ClientMessage.Answer,
+        answer: {
+          ty: AnswerType.Multiple,
+          answers
+        }
+      });
+    } catch (e) {
+      const error = e as ServerError;
+      console.error("Error while attempting to answer", error);
     }
   }
 </script>

@@ -5,7 +5,8 @@ import {
   type ServerMessageOf as ServerMessageOf,
   type PairMessageType,
   type ServerMessageSchema,
-  type ClientMessageOf
+  type ClientMessageOf,
+  ServerError
 } from "./models";
 import { setHome } from "$stores/state";
 import { onDestroy, onMount } from "svelte";
@@ -15,10 +16,15 @@ type MessageHandlers = {
   [T in ServerMessage]?: MessageHandler<T>;
 };
 
+type RequestHandler<T> = {
+  resolve: (msg: ServerMessageOf<T>) => void;
+  reject: (err: ServerError) => void;
+};
+
 // The next request ID to use
 let requestHandle: number = 0;
 // Handlers from requests awaiting responses
-let requestHandles: Record<number, MessageHandler<unknown> | undefined> = {};
+let requestHandles: Record<number, RequestHandler<unknown> | undefined> = {};
 // Queue of messages that haven't yet been handled
 let messageQueue: ServerMessageSchema[] = [];
 
@@ -189,26 +195,26 @@ function getSocketURL(): URL {
   return new URL(SOCKET_ENDPOINT, host);
 }
 
-type ResponseOrError<T> =
-  | ServerMessageOf<T>
-  | ServerMessageOf<ServerMessage.Error>;
-
 /**
  * Sends the provided message to the server through
  * the socket
  *
+ * @throws The server error or socket error
  * @param msg
  */
 export function send<T>(
   msg: ClientMessageOf<T>
-): Promise<ResponseOrError<PairMessageType<T>>> {
+): Promise<ServerMessageOf<PairMessageType<T>>> {
   return new Promise((resolve, reject) => {
     console.debug("Sending message to server", msg);
 
     msg.rid = requestHandle;
 
     requestHandle++;
-    requestHandles[msg.rid] = resolve as MessageHandler<unknown>;
+    requestHandles[msg.rid] = {
+      resolve: resolve as MessageHandler<unknown>,
+      reject
+    };
 
     const data = JSON.stringify(msg);
     try {
@@ -216,7 +222,10 @@ export function send<T>(
     } catch (e) {
       console.error("Failed to send message", e);
       delete requestHandles[msg.rid];
-      reject(e);
+      reject({
+        ty: ServerMessage.Error,
+        error: ServerError.Unexpected
+      });
     }
   });
 }
@@ -240,12 +249,19 @@ function onMessage({ data }: MessageEvent) {
   const rid = msg.rid;
   if (rid !== undefined) {
     const handle = requestHandles[rid];
-    if (handle !== undefined) {
-      handle(msg);
-    } else {
+    if (handle === undefined) {
       console.error(`Missing return handle ${rid} for message`, msg);
+      return;
     }
-    return;
+
+    // Compare the message type
+    if (msg.ty === ServerMessage.Error) {
+      // If the types didn't match it must've been an error
+      handle.reject(msg.error);
+    } else {
+      // Reoslve with the correct result
+      handle.resolve(msg);
+    }
   }
 
   // Find the handler for the message

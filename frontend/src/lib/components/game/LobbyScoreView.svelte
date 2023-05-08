@@ -3,10 +3,10 @@
   import {
     ClientMessage,
     HostAction,
-    ServerMessage,
     type OtherPlayer,
     type SessionId,
-    type TimerState
+    type TimerState,
+    ServerError
   } from "$lib/socket/models";
   import * as socket from "$lib/socket";
   import type { GameData } from "$lib/stores/state";
@@ -18,13 +18,14 @@
   export let scores: Record<SessionId, number>;
 
   async function doSkip() {
-    let res = await socket.send({
-      ty: ClientMessage.HostAction,
-      action: HostAction.Skip
-    });
-
-    if (res.ty === ServerMessage.Error) {
-      console.error("Error while attempting to cancel", res.error);
+    try {
+      await socket.send({
+        ty: ClientMessage.HostAction,
+        action: HostAction.Skip
+      });
+    } catch (e) {
+      const error = e as ServerError;
+      console.error("Error while attempting to cancel", error);
     }
   }
 </script>
