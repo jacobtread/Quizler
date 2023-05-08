@@ -121,7 +121,7 @@ export async function loadQuizBlob(file: Blob): Promise<LoadedQuiz> {
       store.push({ uuid, name, size, blob });
 
       // Remove duplicates from loading the file again
-      return store.filter((value) => value.uuid === uuid);
+      return store.filter((value) => value.uuid !== uuid);
     });
 
     // Trigger the image preview loading
