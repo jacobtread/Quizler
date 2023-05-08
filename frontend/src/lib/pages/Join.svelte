@@ -1,6 +1,7 @@
 <script lang="ts">
   import * as socket from "$lib/socket";
-  import { ClientMessage, ServerMessage } from "$lib/socket/models";
+  import { ClientMessage, ServerMessage, errorText } from "$lib/socket/models";
+  import { errorDialog } from "$lib/stores/dialogStore";
   import { setGame, setHome } from "$stores/state";
   import { z } from "zod";
 
@@ -36,7 +37,8 @@
     });
 
     if (resp.ty === ServerMessage.Error) {
-      console.error("Error while initializing", resp.error);
+      console.error("Error while joining", resp.error);
+      errorDialog("Failed to join", errorText[resp.error]);
     } else {
       const { id, token, config } = resp;
 
