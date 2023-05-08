@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { acceptUploadMany } from "$lib/file";
   import {
     imageStore,
     selectImageStore,
@@ -9,7 +10,6 @@
     imagePreviewStore
   } from "$stores/imageStore";
 
-  let input: HTMLInputElement;
   let uploading: FileUpload[] = [];
 
   interface FileUpload {
@@ -18,21 +18,13 @@
     error: string | null;
   }
 
-  function onUpload() {
-    const files = input.files;
+  async function doUpload() {
+    const files: FileList | null = await acceptUploadMany();
 
-    if (files == null) {
-      console.error("Failed to upload images, files was null");
-      return;
-    }
+    // No files were uploaded
+    if (files === null) return;
 
-    for (let i = 0; i < files.length; i++) {
-      const file: File | null = files.item(i);
-      if (file == null) {
-        console.error("Failed to upload image file was null");
-        continue;
-      }
-
+    for (const file of files) {
       uploading.push({
         name: file.name,
         progress: 0,
@@ -115,17 +107,8 @@
           </div>
         {/each}
       </div>
-      <input
-        hidden
-        type="file"
-        multiple
-        name=""
-        id=""
-        bind:this={input}
-        on:change={onUpload}
-      />
 
-      <button on:click={() => input.click()}>Upload Images</button>
+      <button on:click={doUpload}>Upload Images</button>
     </div>
   </div>
 {/if}

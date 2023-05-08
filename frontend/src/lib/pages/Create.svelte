@@ -28,9 +28,7 @@
   import TimeInput from "$components/TimeInput.svelte";
   import { ZodError } from "zod";
   import { confirmDialog } from "$lib/stores/dialogStore";
-
-  // Input used for loading quiz files
-  let loadInput: HTMLInputElement;
+  import { acceptUpload } from "$lib/file";
 
   // Questions array
   let questions: Question[] = [defaultQuestion()];
@@ -108,24 +106,22 @@
     console.debug("Saved quiz to file");
   }
 
-  /**
-   * Handles loading a quiz file when the quiz
-   * load file input changes its value
-   */
-  async function onLoadQuiz() {
-    if (loadInput.files == null) {
-      console.error("Failed to load quiz, load input missing files");
-      return;
+  async function back() {
+    const result = await confirmDialog(
+      "Confirm Back",
+      "Are you sure you want to go back? You will loose any unsave progress"
+    );
+
+    if (result) {
+      setHome();
     }
+  }
 
-    console.debug("Loading quiz file");
+  async function doLoad() {
+    const file: File | null = await acceptUpload();
 
-    const file: File | null = loadInput.files.item(0);
-
-    if (file == null) {
-      console.error("Failed to load quiz, file was null");
-      return;
-    }
+    // No file was uploaded
+    if (file === null) return;
 
     try {
       const loaded = await loadQuiz(file);
@@ -145,32 +141,18 @@
       }
     }
   }
-
-  async function back() {
-    const result = await confirmDialog(
-      "Confirm Back",
-      "Are you sure you want to go back? You will loose any unsave progress"
-    );
-
-    if (result) {
-      setHome();
-    }
-  }
 </script>
 
 <main class="main">
   {#if editing}
     <QuestionEditor question={editing} back={() => (editing = null)} />
   {:else}
-    <!-- File input for uploading quiz -->
-    <input hidden bind:this={loadInput} type="file" on:change={onLoadQuiz} />
-
     <header class="header">
       <button on:click={back} class="icon-button">
         <img src={Back} alt="Back" class="icon-button__img" />
         <span class="icon-button__text">Back</span>
       </button>
-      <button on:click={() => loadInput.click()} class="icon-button">
+      <button on:click={doLoad} class="icon-button">
         <img src={Import} alt="Import" class="icon-button__img" />
         <span class="icon-button__text">Import</span>
       </button>
