@@ -23,12 +23,12 @@
   import ImageStorage from "$components/ImageStorage.svelte";
   import { get } from "svelte/store";
   import { imageStore } from "$stores/imageStore";
-  import { loadQuiz, saveQuiz } from "$lib/format";
+  import { parseQuizBlob, createQuizBlob } from "$lib/format";
   import { setGame, setHome } from "$stores/state";
   import TimeInput from "$components/TimeInput.svelte";
   import { ZodError } from "zod";
-  import { confirmDialog } from "$lib/stores/dialogStore";
-  import { acceptUpload } from "$lib/file";
+  import { confirmDialog, errorDialog } from "$lib/stores/dialogStore";
+  import { acceptUpload, startDownload } from "$lib/file";
 
   // Questions array
   let questions: Question[] = [defaultQuestion()];
@@ -102,7 +102,14 @@
    */
   async function save() {
     console.debug("Saving quiz to file", name);
-    await saveQuiz(name, text, timing, questions);
+
+    // Create a blob from the quiz contents
+    const blob = await createQuizBlob(name, text, timing, questions);
+
+    // Start the file download
+    const fileName = name + ".quizler";
+    startDownload(fileName, blob);
+
     console.debug("Saved quiz to file");
   }
 
@@ -117,28 +124,32 @@
     }
   }
 
-  async function doLoad() {
+  async function doImport() {
     const file: File | null = await acceptUpload();
 
     // No file was uploaded
     if (file === null) return;
 
     try {
-      const loaded = await loadQuiz(file);
+      const imported = await parseQuizBlob(file);
+      questions = imported.questions;
+      name = imported.name;
+      text = imported.text;
+      timing = imported.timing;
 
-      console.debug("Loaded quiz file", loaded);
-
-      questions = loaded.questions;
-      name = loaded.name;
-      text = loaded.text;
-      timing = loaded.timing;
+      console.debug("Imported quiz file", imported);
     } catch (e) {
+      let msg: string;
       if (e instanceof ZodError) {
         // TODO: Display loading failed message
         console.error("Failed to parse quiz file", e);
+        msg = e.message;
       } else {
-        console.error("Error while loading quiz file", e);
+        console.error("Error while importing quiz file", e);
+        msg = "Failed to load quiz file";
       }
+
+      errorDialog("Failed to import", msg);
     }
   }
 </script>
@@ -152,7 +163,7 @@
         <img src={Back} alt="Back" class="icon-button__img" />
         <span class="icon-button__text">Back</span>
       </button>
-      <button on:click={doLoad} class="icon-button">
+      <button on:click={doImport} class="icon-button">
         <img src={Import} alt="Import" class="icon-button__img" />
         <span class="icon-button__text">Import</span>
       </button>

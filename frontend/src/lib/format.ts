@@ -56,20 +56,20 @@ async function serializeImage(image: StoredImage): Promise<SerializedImage> {
 }
 
 /**
- * Serializes the provided quiz contents and starts a
- * download for the file
+ * Serializes the provided quiz contents into a blob
  *
  * @param name      The quiz name (Also the file name)
  * @param text      The quiz text
  * @param timing    The quiz timing
  * @param questions The quiz questions
+ * @returns Promise to the encoded quiz blob
  */
-export async function saveQuiz(
+export async function createQuizBlob(
   name: string,
   text: string,
   timing: TimingConfig,
   questions: Question[]
-) {
+): Promise<Blob> {
   // Convert the stored images into a serializable form
   const images: SerializedImage[] = await Promise.all(
     get(imageStore).map(serializeImage)
@@ -78,37 +78,10 @@ export async function saveQuiz(
   // Create the object to serialize as the quiz file
   const output: QuizFormat = { name, text, timing, questions, images };
 
-  // Save the quiz file
-  saveObject(name, "quizler", output);
-}
+  const json = JSON.stringify(output);
 
-/**
- * Starts a file download for a file containing the
- * JSON string version of the provided object
- *
- * @param name   The output file name
- * @param ext    The output file extension
- * @param object The object to stringify
- */
-function saveObject<T>(name: string, ext: string, object: T) {
-  const json = JSON.stringify(object);
-  const safeName: string = name.replace(/[ ^/]/g, "_");
-  const blob = new Blob([json], { type: "application/json" });
-
-  const URL = window.webkitURL ?? window.URL;
-  const element: HTMLAnchorElement = document.createElement("a");
-
-  element.download = safeName + "." + ext;
-  element.href = URL.createObjectURL(blob);
-  element.dataset.downloadurl = [
-    "application/json",
-    element.download,
-    element.href
-  ].join(":");
-  element.style.display = "none";
-  document.body.appendChild(element);
-  element.click();
-  document.body.removeChild(element);
+  // Blob created from the serialized JSON
+  return new Blob([json], { type: "application/json" });
 }
 
 /**
@@ -118,7 +91,7 @@ function saveObject<T>(name: string, ext: string, object: T) {
  * @throws {ZodError} If the validation failed
  * @returns The loaded quiz data
  */
-export async function loadQuiz(file: Blob): Promise<LoadedQuiz> {
+export async function parseQuizBlob(file: Blob): Promise<LoadedQuiz> {
   const reader = new FileReader();
 
   // Await the reading process

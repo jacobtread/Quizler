@@ -65,3 +65,28 @@ export function acceptUploadMany(): Promise<FileList | null> {
     document.body.removeChild(element);
   });
 }
+
+/**
+ * Triggers a file download for a file with the
+ * provided file name containing the blob data
+ *
+ * Creates a temporary link element with a object URL and
+ * clicks it to begin the download
+ *
+ * @param fileName The name for the file download
+ * @param blob     The blob file contents
+ */
+export function startDownload(fileName: string, blob: Blob) {
+  const element: HTMLAnchorElement = document.createElement("a");
+  element.download = fileName.replace(/[ ^/]/g, "_");
+  element.href = URL.createObjectURL(blob);
+  element.dataset.downloadurl = [
+    "application/json",
+    element.download,
+    element.href
+  ].join(":");
+  element.style.display = "none";
+  document.body.appendChild(element);
+  element.click();
+  document.body.removeChild(element);
+}
