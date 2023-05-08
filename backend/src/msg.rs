@@ -110,7 +110,7 @@ pub enum ServerMessage {
     /// Player has been kicked from the game
     Kicked {
         /// The ID of the player that was kicked
-        session_id: SessionId,
+        id: SessionId,
         /// The reason the player was kicked
         reason: RemoveReason,
     },

@@ -452,7 +452,7 @@ impl Actor for Game {
         for player in &self.players {
             // Send the visual kick message
             player.addr.do_send(ServerMessage::Kicked {
-                session_id: player.id,
+                id: player.id,
                 reason: RemoveReason::HostDisconnect,
             });
 
@@ -639,7 +639,7 @@ impl Handler<RemovePlayerMessage> for Game {
             .ok_or(ServerError::UnknownPlayer)?;
 
         let kick_msg = Arc::new(ServerMessage::Kicked {
-            session_id: msg.target_id,
+            id: msg.target_id,
             reason: msg.reason,
         });
 

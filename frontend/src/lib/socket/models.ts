@@ -206,7 +206,7 @@ export type ServerMessageSchema = {
   | { ty: ServerMessage.Scores; scores: Scores }
   | { ty: ServerMessage.Score; score: Score }
   | { ty: ServerMessage.Error; error: ServerError }
-  | { ty: ServerMessage.Kicked; session_id: number; reason: RemoveReason }
+  | { ty: ServerMessage.Kicked; id: number; reason: RemoveReason }
   | { ty: ServerMessage.Ok }
 );
 

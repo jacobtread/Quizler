@@ -120,10 +120,10 @@
   socket.setHandler(ServerMessage.Kicked, (msg) => {
     console.debug("Kick message", msg);
     // Remove from the players list
-    players = players.filter((player) => player.id !== msg.session_id);
+    players = players.filter((player) => player.id !== msg.id);
 
     // if the removed player was us
-    if (msg.session_id === gameData.id) {
+    if (msg.id === gameData.id) {
       // TODO: Display kicked message
       setHome();
     }
