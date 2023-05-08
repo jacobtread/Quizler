@@ -11,6 +11,7 @@
   } from "$stores/imageStore";
 
   let uploading: FileUpload[] = [];
+  let dragging = false;
 
   interface FileUpload {
     name: string;
@@ -24,6 +25,35 @@
     // No files were uploaded
     if (files === null) return;
 
+    uploadFiles(files);
+  }
+
+  function onDrop(event: DragEvent) {
+    event.stopPropagation();
+    event.preventDefault();
+
+    dragging = false;
+    const dataTransfer = event.dataTransfer;
+    if (dataTransfer === null) return;
+    const files = dataTransfer.files;
+    if (files === null) return;
+    uploadFiles(files);
+  }
+
+  function onDragEnter() {
+    dragging = true;
+  }
+
+  function onDragExit() {
+    dragging = false;
+  }
+
+  function onDragOver(event: DragEvent) {
+    event.stopPropagation();
+    event.preventDefault();
+  }
+
+  function uploadFiles(files: FileList) {
     for (const file of files) {
       uploading.push({
         name: file.name,
@@ -74,7 +104,13 @@
 
 {#if $selectImageStore}
   <div class="wrapper">
-    <div class="dialog">
+    <div
+      class="dialog"
+      on:drop={onDrop}
+      on:dragenter={onDragEnter}
+      on:dragleave={onDragExit}
+      on:dragover={onDragOver}
+    >
       <button on:click={clearSelectImage}>Close</button>
       <div class="images">
         {#each $imageStore as image}
@@ -109,6 +145,8 @@
       </div>
 
       <button on:click={doUpload}>Upload Images</button>
+
+      <p>Click upload or drag and drop files here to upload</p>
     </div>
   </div>
 {/if}

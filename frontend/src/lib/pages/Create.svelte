@@ -50,7 +50,7 @@
   async function back() {
     const result = await confirmDialog(
       "Confirm Back",
-      "Are you sure you want to go back? You will loose any unsave progress"
+      "Are you sure you want to go back? You will loose any unsaved progress"
     );
 
     if (result) {
