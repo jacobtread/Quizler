@@ -5,6 +5,7 @@
   import { setHome, setJoin } from "$stores/state";
   import { z } from "zod";
   import Play from "$lib/assets/icons/play.svg";
+  import Back from "$lib/assets/icons/back.svg";
   import { slide } from "svelte/transition";
   import { errorDialog } from "$lib/stores/dialogStore";
 
@@ -55,8 +56,10 @@
   }
 </script>
 
-<main class="main">
-  <button on:click={setHome} class="back">Back</button>
+<main class="main" transition:slide>
+  <button on:click={setHome} class="back back--floating">
+    <img src={Back} alt="Back" />
+  </button>
 
   <h1>Enter Code</h1>
   <p>Please enter your quiz code below</p>
@@ -93,12 +96,6 @@
     gap: 1rem;
     flex-flow: column;
     height: 100%;
-  }
-
-  .back {
-    position: absolute;
-    left: 0.5rem;
-    top: 0.5rem;
   }
 
   .play {

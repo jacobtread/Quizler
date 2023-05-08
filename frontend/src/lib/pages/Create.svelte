@@ -14,6 +14,7 @@
     MIN_WAIT_TIME,
     defaultQuestion
   } from "$lib/constants";
+  import Back from "$lib/assets/icons/back.svg";
   import QuestionEditor from "$components/QuestionEditor.svelte";
   import QuestionList from "$components/QuestionList.svelte";
   import ImageStorage from "$components/ImageStorage.svelte";
@@ -24,6 +25,7 @@
   import TimeInput from "$components/TimeInput.svelte";
   import { ZodError } from "zod";
   import { confirmDialog } from "$lib/stores/dialogStore";
+  import { slide } from "svelte/transition";
 
   // Input used for loading quiz files
   let loadInput: HTMLInputElement;
@@ -154,11 +156,13 @@
   }
 </script>
 
-<main>
+<main class="main" transition:slide>
   {#if editing}
     <QuestionEditor question={editing} back={() => (editing = null)} />
   {:else}
-    <button on:click={back}>Back</button>
+    <button on:click={back} class="back">
+      <img src={Back} alt="Back" />
+    </button>
 
     <input hidden bind:this={loadInput} type="file" on:change={onLoadQuiz} />
 
@@ -191,4 +195,7 @@
 <ImageStorage />
 
 <style>
+  .main {
+    height: 100%;
+  }
 </style>

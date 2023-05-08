@@ -1,7 +1,7 @@
 @import "scheme";
 
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
@@ -25,7 +25,46 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  height: 100%;
+}
+
 body {
   background-color: $appBackground;
   color: #999;
+}
+
+p {
+  line-height: 1.5;
+}
+
+.button {
+  border-radius: 1rem;
+  font-size: 1.25rem;
+
+  border: none;
+  transition: 0.5s ease;
+}
+
+.back {
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+
+  border: none;
+  background-color: $surface;
+
+  transition: background-color 0.25s ease, transform 0.2s ease;
+  line-height: 0;
+  cursor: pointer;
+}
+
+.back--floating {
+  position: absolute;
+  left: 1rem;
+  top: 1rem;
+}
+
+.back:hover {
+  background-color: $primary;
 }

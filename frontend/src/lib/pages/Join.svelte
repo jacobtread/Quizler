@@ -2,8 +2,9 @@
   import * as socket from "$lib/socket";
   import { ClientMessage, ServerMessage, errorText } from "$lib/socket/models";
   import { errorDialog } from "$lib/stores/dialogStore";
-  import { setGame, setHome } from "$stores/state";
+  import { setConnect, setGame } from "$stores/state";
   import { z } from "zod";
+  import Back from "$lib/assets/icons/back.svg";
 
   export let token: string;
 
@@ -52,7 +53,10 @@
   }
 </script>
 
-<button on:click={setHome}>Back</button>
+<button on:click={setConnect} class="back back--floating">
+  <img src={Back} alt="Back" />
+</button>
+
 <h2>{token}</h2>
 
 <p>Enter name to join as</p>

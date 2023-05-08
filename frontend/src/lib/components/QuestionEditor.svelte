@@ -16,6 +16,7 @@
     MIN_BONUS_TIME
   } from "$lib/constants";
   import { randomRange } from "$lib/utils";
+  import Back from "$lib/assets/icons/back.svg";
 
   // The question that is being created
   export let question: Question;
@@ -161,7 +162,9 @@
 </script>
 
 <div class="editor">
-  <button on:click={back}>Back</button>
+  <button on:click={back} class="back">
+    <img src={Back} alt="Back" />
+  </button>
 
   <div
     tabindex="0"
