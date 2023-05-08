@@ -59,6 +59,33 @@ p {
   cursor: pointer;
 }
 
+.icon-button {
+  padding: 0.5rem;
+  padding-right: 1rem;
+  border-radius: 0.5rem;
+
+  border: none;
+  background-color: $surface;
+
+  transition: background-color 0.25s ease, transform 0.2s ease;
+  line-height: 0;
+  cursor: pointer;
+  vertical-align: middle;
+
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.icon-button__img {
+  width: 32px;
+  height: 32px;
+}
+
+.icon-button__text {
+  font-size: 1rem;
+}
+
 .back--floating {
   position: absolute;
   left: 1rem;

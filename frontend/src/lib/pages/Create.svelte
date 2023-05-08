@@ -15,6 +15,9 @@
     defaultQuestion
   } from "$lib/constants";
   import Back from "$lib/assets/icons/back.svg";
+  import Import from "$lib/assets/icons/import.svg";
+  import Export from "$lib/assets/icons/export.svg";
+  import Play from "$lib/assets/icons/play.svg";
   import QuestionEditor from "$components/QuestionEditor.svelte";
   import QuestionList from "$components/QuestionList.svelte";
   import ImageStorage from "$components/ImageStorage.svelte";
@@ -25,7 +28,6 @@
   import TimeInput from "$components/TimeInput.svelte";
   import { ZodError } from "zod";
   import { confirmDialog } from "$lib/stores/dialogStore";
-  import { slide } from "svelte/transition";
 
   // Input used for loading quiz files
   let loadInput: HTMLInputElement;
@@ -156,22 +158,32 @@
   }
 </script>
 
-<main class="main" transition:slide>
+<main class="main">
   {#if editing}
     <QuestionEditor question={editing} back={() => (editing = null)} />
   {:else}
-    <button on:click={back} class="back">
-      <img src={Back} alt="Back" />
-    </button>
-
+    <!-- File input for uploading quiz -->
     <input hidden bind:this={loadInput} type="file" on:change={onLoadQuiz} />
 
-    <h1>Create Quiz</h1>
-    <div>
-      <button on:click={save}>Save</button>
-      <button on:click={() => loadInput.click()}>Load</button>
-      <button on:click={startQuiz}>Play</button>
-    </div>
+    <header class="header">
+      <button on:click={back} class="icon-button">
+        <img src={Back} alt="Back" class="icon-button__img" />
+        <span class="icon-button__text">Back</span>
+      </button>
+      <button on:click={() => loadInput.click()} class="icon-button">
+        <img src={Import} alt="Import" class="icon-button__img" />
+        <span class="icon-button__text">Import</span>
+      </button>
+      <button on:click={save} class="icon-button">
+        <img src={Export} alt="Export" class="icon-button__img" />
+        <span class="icon-button__text">Export</span>
+      </button>
+      <button on:click={startQuiz} class="icon-button">
+        <img src={Play} alt="Play" class="icon-button__img" />
+        <span class="icon-button__text">Play</span>
+      </button>
+      <h1>Create Quiz</h1>
+    </header>
 
     <div>
       <input type="text" bind:value={name} />
@@ -194,8 +206,16 @@
 
 <ImageStorage />
 
-<style>
+<style lang="scss">
+  @import "../assets/scheme.scss";
+
   .main {
     height: 100%;
+    padding: 1rem;
+  }
+
+  .header {
+    display: flex;
+    gap: 1rem;
   }
 </style>
