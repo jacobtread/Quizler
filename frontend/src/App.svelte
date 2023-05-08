@@ -7,6 +7,7 @@
   import { AppStateType, appState } from "$stores/state";
   import Home from "$lib/pages/Home.svelte";
   import Loading from "$lib/pages/Loading.svelte";
+  import GlobalDialog from "$lib/components/GlobalDialog.svelte";
 </script>
 
 {#if $socketReady}
@@ -24,3 +25,5 @@
 {:else}
   <Loading />
 {/if}
+
+<GlobalDialog />

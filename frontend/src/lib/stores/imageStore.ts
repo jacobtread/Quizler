@@ -40,7 +40,7 @@ type UploadImageCallback = (image: StoredImage | null) => void;
  *
  * @returns
  */
-export async function selectImage(): Promise<StoredImage | null> {
+export function selectImage(): Promise<StoredImage | null> {
   return new Promise((resolve) => {
     selectImageStore.set(resolve);
   });

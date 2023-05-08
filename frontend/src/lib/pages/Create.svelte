@@ -23,6 +23,7 @@
   import { setGame, setHome } from "$stores/state";
   import TimeInput from "$components/TimeInput.svelte";
   import { ZodError } from "zod";
+  import { confirmDialog } from "$lib/stores/dialogStore";
 
   // Input used for loading quiz files
   let loadInput: HTMLInputElement;
@@ -141,12 +142,13 @@
     }
   }
 
-  function back() {
-    if (
-      confirm(
-        "Are you sure you want to go back? You will loose quiz content you've created"
-      )
-    ) {
+  async function back() {
+    const result = await confirmDialog(
+      "Confirm Back",
+      "Are you sure you want to go back? You will loose any unsave progress"
+    );
+
+    if (result) {
       setHome();
     }
   }
