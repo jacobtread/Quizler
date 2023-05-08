@@ -10,7 +10,7 @@
   <img src={Logo} alt="Quizler Logo" class="logo" />
   <div class="paths">
     <button on:click={setConnect} class="path" aria-label="Join">
-      <img src={Play} alt="Create Icon" class="path__icon" />
+      <img src={Play} alt="Join Icon" class="path__icon" />
       <div>
         <span class="path__name">Join a quiz</span>
         <p class="path__text">Enter a game code and hop right in</p>
