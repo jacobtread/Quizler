@@ -1,11 +1,12 @@
 <script lang="ts">
   import { TOKEN_LENGTH } from "$lib/constants";
   import * as socket from "$lib/socket";
-  import { ClientMessage, ServerMessage } from "$lib/socket/models";
+  import { ClientMessage, ServerMessage, errorText } from "$lib/socket/models";
   import { setHome, setJoin } from "$stores/state";
   import { z } from "zod";
   import Play from "$lib/assets/icons/play.svg";
   import { slide } from "svelte/transition";
+  import { errorDialog } from "$lib/stores/dialogStore";
 
   let userToken: string = "";
   let disabled: boolean = true;
@@ -46,7 +47,8 @@
     });
 
     if (resp.ty === ServerMessage.Error) {
-      console.error("Error while initializing", resp.error);
+      console.error("Error while connecting", resp.error);
+      errorDialog("Failed to connect", errorText[resp.error]);
     } else {
       setJoin(token);
     }

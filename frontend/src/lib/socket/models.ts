@@ -47,6 +47,18 @@ export const enum ServerError {
   InvalidAnswer = "InvalidAnswer"
 }
 
+export const errorText: Record<ServerError, string> = {
+  [ServerError.MalformedMessage]: "Unknown client sent invalid message",
+  [ServerError.InvalidToken]: "Invalid token provided",
+  [ServerError.UsernameTaken]: "Username already in use",
+  [ServerError.NotJoinable]: "Quiz is not joinable",
+  [ServerError.UnknownPlayer]: "Target player not found",
+  [ServerError.Unexpected]: "Unexpected error occurred",
+  [ServerError.InvalidPermission]: "You don't have permission to do that",
+  [ServerError.UnexpectedMessage]: "Client and server out of sync",
+  [ServerError.InvalidAnswer]: "Invalid answer type"
+};
+
 export const enum GameState {
   Lobby = "Lobby",
   Starting = "Starting",
