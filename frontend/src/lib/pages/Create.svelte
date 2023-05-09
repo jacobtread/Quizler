@@ -89,7 +89,64 @@
     }
   }
 
+  /**
+   * Uses the HTTP API to create the Quiz returning the
+   * UUID of the quiz that was prepared for initialization
+   *
+   * @param config The quiz config
+   */
+  async function createHttp(config: CreateRequest): Promise<string> {
+    // Create the form to upload
+    const form = new FormData();
+    // Append the config
+    form.append("config", JSON.stringify(config));
+
+    // Load the images from the image store
+    const images = get(imageStore);
+    // Append the images to the form
+    images.forEach((image) => form.append(image.uuid, image.blob));
+
+    const request: XMLHttpRequest = new XMLHttpRequest();
+
+    // Listen to the upload progress
+    request.upload.onprogress = onUploadProgress;
+    // Accept JSON responses
+    request.responseType = "json";
+
+    // Await failure or response from request (TODO: Handle this reject case)
+    await new Promise((resolve, reject) => {
+      // Handle success
+      request.onload = resolve;
+      // Handle all failure callbacks
+      request.onerror = request.ontimeout = request.onabort = reject;
+
+      // Create the URL to the create endpoint
+      const url = new URL(
+        "/api/quiz",
+        DEBUG ? "http://localhost" : window.location.origin
+      );
+
+      // Set the request method and URL
+      request.open("POST", url);
+
+      // Send the multipart form body
+      request.send(form);
+    });
+
+    const response: CreatedResponse = request.response;
+    return response.uuid;
+  }
+
+  function onUploadProgress(event: ProgressEvent) {
+    if (event.lengthComputable) {
+      const percentComplete = (event.loaded / event.total) * 100;
+      console.debug(`Uploading content: ${percentComplete}%`);
+    }
+  }
+
   async function doPlay() {
+    console.debug("Creating quiz");
+
     const config: CreateRequest = {
       name,
       text,
@@ -97,40 +154,17 @@
       questions
     };
 
-    console.debug("Creating quiz");
+    const uuid = await createHttp(config);
 
-    // Create the form
-    const form = new FormData();
-    // Append the config
-    form.append("config", JSON.stringify(config));
-
-    // Append the images to the form
-    const images = get(imageStore);
-    for (const image of images) {
-      form.append(image.uuid, image.blob);
-    }
-
-    const url = new URL(
-      "/api/quiz",
-      DEBUG ? "http://localhost" : window.location.origin
-    );
-
-    let response = await fetch(url, { method: "POST", body: form });
-    let json: CreatedResponse = await response.json();
-
-    console.debug("Quiz waiting for initialize", json.uuid);
-
-    console.debug("Waiting for socket ready");
+    console.debug("Quiz waiting for initialize", uuid);
 
     // Await the socket being alive
     await socket.ready();
 
-    console.debug("Sending initialize message");
-
     try {
       const { id, token, config } = await socket.send({
         ty: ClientMessage.Initialize,
-        uuid: json.uuid
+        uuid
       });
 
       setGame({ id, token, config, host: true });
