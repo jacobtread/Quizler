@@ -66,10 +66,10 @@
     uploading = uploading.filter((value) => value.name !== file.name);
   }
 
-  function onUploadFailed(file: File, error: any) {
+  function onUploadFailed(file: File, error: Error) {
     uploading = uploading.map((value) => {
       if (value.name === file.name) {
-        value.error = error;
+        value.error = error.message;
       }
       return value;
     });
@@ -107,6 +107,7 @@
 
     imageStore.set([]);
     imagePreviewStore.set({});
+    uploading = [];
   }
 </script>
 
