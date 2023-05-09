@@ -37,6 +37,7 @@
   @import "../assets/scheme";
 
   .dialog-wrapper {
+    z-index: 2;
     position: fixed;
     left: 0;
     top: 0;

@@ -93,6 +93,8 @@ export async function uploadFile(
     onProgress
   });
 
+  // TODO: Handle compressed file still being too large
+
   // Update the image store with the new image
   imageStore.update((store) => {
     // Update the data store

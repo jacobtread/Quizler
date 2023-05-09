@@ -1,5 +1,6 @@
 <script lang="ts">
   import { acceptUploadMany } from "$lib/file";
+  import { confirmDialog } from "$lib/stores/dialogStore";
   import {
     imageStore,
     selectImageStore,
@@ -9,6 +10,7 @@
     consumeSelectImage,
     imagePreviewStore
   } from "$stores/imageStore";
+  import Import from "$lib/assets/icons/import.svg";
 
   let uploading: FileUpload[] = [];
 
@@ -55,18 +57,22 @@
       uploadFile(file, (progress) => {
         onProgress(file.name, progress);
       })
-        .then(() => {
-          uploading = uploading.filter((value) => value.name !== file.name);
-        })
-        .catch((error) => {
-          uploading = uploading.map((value) => {
-            if (value.name === file.name) {
-              value.error = error;
-            }
-            return value;
-          });
-        });
+        .then(() => onUploadComplete(file))
+        .catch((error) => onUploadFailed(file, error));
     }
+  }
+
+  function onUploadComplete(file: File) {
+    uploading = uploading.filter((value) => value.name !== file.name);
+  }
+
+  function onUploadFailed(file: File, error: any) {
+    uploading = uploading.map((value) => {
+      if (value.name === file.name) {
+        value.error = error;
+      }
+      return value;
+    });
   }
 
   function onProgress(name: string, progress: number) {
@@ -90,13 +96,30 @@
       return store;
     });
   }
+
+  async function doClear() {
+    const confirmed = await confirmDialog(
+      "Confirm Deletion",
+      "Are you sure you want to delete all the uploaded files?"
+    );
+
+    if (!confirmed) return;
+
+    imageStore.set([]);
+    imagePreviewStore.set({});
+  }
 </script>
 
 {#if $selectImageStore}
   <div class="wrapper">
     <div class="dialog" on:drop={onDrop} on:dragover={onDragOver}>
-      <button on:click={clearSelectImage}>Close</button>
       <div class="images">
+        {#if $imageStore.length < 1}
+          <p class="images__text">
+            Click upload or drag and drop files here to upload
+          </p>
+        {/if}
+
         {#each $imageStore as image}
           <div class="file">
             <div class="image-wrapper">
@@ -128,14 +151,25 @@
         {/each}
       </div>
 
-      <button on:click={doUpload}>Upload Images</button>
-
-      <p>Click upload or drag and drop files here to upload</p>
+      <div class="actions">
+        <button on:click={clearSelectImage} class="button">Close</button>
+        <button on:click={doUpload} class="icon-button">
+          <img src={Import} alt="Import" class="icon-button__img" />
+          <span class="icon-button__text">Upload Images</span>
+        </button>
+        <button
+          on:click={doClear}
+          class="button"
+          disabled={$imageStore.length === 0}>Delete All Images</button
+        >
+      </div>
     </div>
   </div>
 {/if}
 
-<style>
+<style lang="scss">
+  @import "../assets/scheme";
+
   .error {
     color: #ff8989;
   }
@@ -151,13 +185,21 @@
     display: flex;
     justify-content: center;
     align-items: center;
+
     background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+  }
+
+  .button,
+  .icon-button {
+    background-color: $surfaceLight;
   }
 
   .dialog {
-    background-color: #333;
+    background-color: $surface;
     padding: 1rem;
-    border: 1px solid #999;
+    border-radius: 0.5rem;
     max-width: 48rem;
     width: 100%;
   }
@@ -170,11 +212,23 @@
 
     gap: 1rem;
     padding: 0.5rem;
-    border: 1px solid #777;
-    margin: 1rem 0;
+    border-radius: 0.25rem;
+    background-color: $surfaceLight;
 
+    min-height: 30vh;
     max-height: 60vh;
     overflow: auto;
+    margin-bottom: 1rem;
+    position: relative;
+  }
+
+  .images__text {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    max-width: 30%;
+    text-align: center;
+    transform: translate(-50%, -50%);
   }
 
   .image-wrapper {
@@ -190,5 +244,10 @@
     top: 50%;
     transform: translate(-50%, -50%);
     width: 100%;
+  }
+
+  .actions {
+    display: flex;
+    gap: 1rem;
   }
 </style>
