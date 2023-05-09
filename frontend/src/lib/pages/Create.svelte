@@ -176,44 +176,61 @@
   }
 </script>
 
+{#if !editing}
+  <header class="header">
+    <button on:click={back} class="icon-button">
+      <img src={Back} alt="Back" class="icon-button__img" />
+      <span class="icon-button__text">Back</span>
+    </button>
+    <button on:click={doImport} class="icon-button">
+      <img src={Import} alt="Import" class="icon-button__img" />
+      <span class="icon-button__text">Import</span>
+    </button>
+    <button on:click={doExport} class="icon-button">
+      <img src={Export} alt="Export" class="icon-button__img" />
+      <span class="icon-button__text">Export</span>
+    </button>
+    <button on:click={doPlay} class="icon-button">
+      <img src={Play} alt="Play" class="icon-button__img" />
+      <span class="icon-button__text">Play</span>
+    </button>
+    <h1>Create Quiz</h1>
+  </header>
+{/if}
+
 <main class="main">
   {#if editing}
     <QuestionEditor question={editing} back={() => (editing = null)} />
   {:else}
-    <header class="header">
-      <button on:click={back} class="icon-button">
-        <img src={Back} alt="Back" class="icon-button__img" />
-        <span class="icon-button__text">Back</span>
-      </button>
-      <button on:click={doImport} class="icon-button">
-        <img src={Import} alt="Import" class="icon-button__img" />
-        <span class="icon-button__text">Import</span>
-      </button>
-      <button on:click={doExport} class="icon-button">
-        <img src={Export} alt="Export" class="icon-button__img" />
-        <span class="icon-button__text">Export</span>
-      </button>
-      <button on:click={doPlay} class="icon-button">
-        <img src={Play} alt="Play" class="icon-button__img" />
-        <span class="icon-button__text">Play</span>
-      </button>
-      <h1>Create Quiz</h1>
-    </header>
-
     <div>
-      <input type="text" bind:value={name} />
-      <textarea name="" id="" cols="30" rows="10" bind:value={text} />
+      <label class="field">
+        <span class="field__name">Title</span>
+        <p class="field__desc">Give your quiz a title</p>
+        <input class="input" type="text" bind:value={name} />
+      </label>
+      <label class="field">
+        <span class="field__name">Description</span>
+        <p class="field__desc">Describe your quiz</p>
+        <textarea
+          class="input input--desc"
+          name=""
+          id=""
+          cols="30"
+          rows="10"
+          bind:value={text}
+        />
+      </label>
     </div>
 
-    <label for="">
-      <span>Wait Time</span>
-      <p>Time to wait between each question</p>
+    <div class="field">
+      <span class="field__name">Wait Time</span>
+      <p class="field__desc">Time to wait between each question</p>
       <TimeInput
         bind:value={timing.wait_time}
         min={MIN_WAIT_TIME}
         max={MAX_WAIT_TIME}
       />
-    </label>
+    </div>
 
     <QuestionList {questions} bind:editing />
   {/if}
@@ -227,10 +244,58 @@
   .main {
     height: 100%;
     padding: 1rem;
+    overflow: auto;
+    padding-top: 0;
   }
 
   .header {
+    position: sticky;
+    top: 0;
+    left: 0;
     display: flex;
     gap: 1rem;
+    background-color: $appBackground;
+    padding: 1rem;
+  }
+
+  .field {
+    display: block;
+    margin-bottom: 1rem;
+    background-color: $surface;
+    padding: 1rem;
+    border-radius: 0.55rem;
+
+    &__name {
+      font-weight: bold;
+      color: #ffffff;
+    }
+
+    &__desc {
+      color: #cccccc;
+      margin-bottom: 0.25rem;
+    }
+  }
+
+  .title,
+  .description {
+    display: block;
+    margin-bottom: 1rem;
+  }
+
+  .input {
+    display: block;
+    margin-top: 0.25rem;
+    width: 100%;
+    padding: 0.5rem;
+    border: none;
+    background-color: $surfaceLight;
+    border-radius: 0.25rem;
+    margin-top: 0.5rem;
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  .input--desc {
+    resize: vertical;
   }
 </style>

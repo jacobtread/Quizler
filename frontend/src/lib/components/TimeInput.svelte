@@ -9,7 +9,6 @@
 
   const enum Unit {
     Seconds,
-    Milliseconds,
     Minutes
   }
 
@@ -36,30 +35,59 @@
     }
   }
 
-  function onChange() {
-    let converted = convertFrom(actualValue);
-    if (converted > max) {
-      converted = max;
-    } else if (converted < min) {
-      converted = min;
+  /**
+   * Handles updating the produced value to ensure it
+   * stays within the desired range
+   */
+  function updateValue() {
+    if (actualValue < 1) {
+      actualValue = 1;
+    } else {
+      let converted = convertFrom(actualValue);
+      if (converted > max) {
+        converted = max;
+      } else if (converted < min) {
+        converted = min;
+      }
+      actualValue = convertTo(converted);
+      value = converted;
     }
-    actualValue = convertTo(converted);
-    value = converted;
   }
 </script>
 
-<div>
+<div class="wrapper">
   <input
+    class="input"
     type="number"
     min={convertTo(min)}
     max={convertTo(max)}
     bind:value={actualValue}
-    on:change={onChange}
+    on:change={updateValue}
   />
-  <select bind:value={unit} on:change={onChange}>
+  <select class="select" bind:value={unit} on:change={updateValue}>
     <option value={Unit.Minutes}>Minutes</option>
     <option value={Unit.Seconds}>Seconds</option>
-    <option value={Unit.Milliseconds}>Milliseconds</option>
   </select>
-  {value}
 </div>
+
+<style lang="scss">
+  @import "../assets/scheme.scss";
+
+  .wrapper {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .select,
+  .input {
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 1rem;
+    background-color: $surfaceLight;
+    border: none;
+  }
+
+  .select {
+    cursor: pointer;
+  }
+</style>

@@ -4,6 +4,7 @@
   import type { Question } from "$lib/socket/models";
   import { randomRange } from "$lib/utils";
   import { flip } from "svelte/animate";
+  import Add from "$lib/assets/icons/add.svg";
 
   export let questions: Question[];
   export let editing: Question | null;
@@ -51,58 +52,42 @@
   }
 </script>
 
-<button on:click={addQuestion} disabled={questions.length >= 50}>
-  Add Question
-</button>
-
-<button on:click={shuffleQuestions} disabled={questions.length <= 1}>
-  Shuffle
-</button>
+<div class="actions">
+  <button
+    on:click={addQuestion}
+    disabled={questions.length >= 50}
+    class="icon-button"
+  >
+    <img src={Add} alt="Back" class="icon-button__img" />
+    <span class="icon-button__text"> Add Question</span>
+  </button>
+  <button
+    on:click={shuffleQuestions}
+    disabled={questions.length <= 1}
+    class="button"
+  >
+    Shuffle
+  </button>
+</div>
 
 <ol class="questions">
   {#each questions as question, index (question.id)}
     <li class="question" animate:flip={{ duration: 500 }}>
-      <div class="question__head">
-        <div class="answer__move">
-          <button
-            disabled={index <= 0}
-            class="answer__move__dir"
-            on:click={() => swapQuestion(index, index - 1)}
-          >
-            &uarr;
-          </button>
-          <button
-            disabled={index + 1 >= questions.length}
-            class="answer__move__dir"
-            on:click={() => swapQuestion(index, index + 1)}
-          >
-            &darr;
-          </button>
-          <button
-            disabled={questions.length == 1}
-            class="answer__move__dir"
-            on:click={() => removeQuestion(index)}
-          >
-            Del
-          </button>
-          <button
-            class="answer__move__dir"
-            on:click={() => (editing = question)}
-          >
-            Edit
-          </button>
-        </div>
-        <h2>
-          {question.text}
-        </h2>
-
-        <QuestionView bind:question />
-      </div>
+      <QuestionView
+        bind:question
+        {index}
+        length={questions.length}
+        {swapQuestion}
+        {removeQuestion}
+        bind:editing
+      />
     </li>
   {/each}
 </ol>
 
-<div />
-
 <style>
+  .actions {
+    display: flex;
+    gap: 1rem;
+  }
 </style>
