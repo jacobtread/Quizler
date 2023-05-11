@@ -142,14 +142,15 @@
   <LobbyView {gameData} {gameState} {players} {timer} {scores} />
 {:else if gameState === GameState.AwaitingReady}
   <AwaitReadyView />
-{:else if gameState === GameState.AwaitingAnswers}
-  {#if question !== null}
-    {#if !answered}
-      <QuestionView {question} {gameData} {timer} bind:answered />
-    {:else}
-      <AnsweredView />
-    {/if}
+{:else if gameState === GameState.AwaitingAnswers && question != null}
+  {#if !answered}
+    <QuestionView {question} {gameData} {timer} bind:answered />
+  {:else}
+    <AnsweredView />
   {/if}
 {:else if gameState === GameState.Marked}
   <ScoreView {gameData} {scores} {score} />
+{:else}
+  <!-- TODO: Properly loading view for unknown states -->
+  <h1>Loading...</h1>
 {/if}
