@@ -135,8 +135,6 @@
   });
 </script>
 
-<button on:click={setHome}>Leave</button>
-
 {#if gameState === GameState.Lobby}
   <LobbyView {gameData} {players} />
 {:else if gameState === GameState.Starting}
