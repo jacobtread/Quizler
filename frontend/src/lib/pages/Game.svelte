@@ -76,6 +76,11 @@
   socket.setHandler(ServerMessage.GameState, (msg) => {
     console.debug("Game state message", msg);
     gameState = msg.state;
+
+    // Once we've been marked clear the answered state
+    if (msg.state === GameState.Marked) {
+      answered = false;
+    }
   });
 
   socket.setHandler(ServerMessage.TimeSync, (msg) => {
