@@ -82,6 +82,13 @@ export const enum RemoveReason {
   Disconnected = "Disconnected"
 }
 
+export const removeReasonText: Record<RemoveReason, string> = {
+  [RemoveReason.RemovedByHost]: "Removed by host",
+  [RemoveReason.HostDisconnect]: "Quiz host left",
+  [RemoveReason.LostConnection]: "Connection lost",
+  [RemoveReason.Disconnected]: "Disconnected"
+};
+
 export const enum QuestionType {
   Single = "Single",
   Multiple = "Multiple"

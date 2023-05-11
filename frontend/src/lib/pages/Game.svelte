@@ -16,8 +16,10 @@
     type TimerState,
     ClientMessage,
     ScoreType,
-    ServerError
+    ServerError,
+    removeReasonText
   } from "$lib/socket/models";
+  import { errorDialog } from "$lib/stores/dialogStore";
   import { formatImageUrl } from "$lib/utils";
   import { setHome, type GameData } from "$stores/state";
 
@@ -130,8 +132,9 @@
 
     // if the removed player was us
     if (msg.id === gameData.id) {
-      // TODO: Display kicked message
       setHome();
+      const reason = removeReasonText[msg.reason];
+      errorDialog("Removed from game", reason);
     }
   });
 </script>
