@@ -14,10 +14,11 @@
     [ScoreType.Incorrect]: incorrectMessages
   }[score.ty];
 
-  const message: string = messages[randomRange(0, messages.length) - 1];
+  const message: string = messages[randomRange(0, messages.length - 1)];
 </script>
 
 <main class="main" data-type={score.ty} transition:slide>
+  <h1 class="title">{score.ty}</h1>
   <p class="text">{message}</p>
   {#if score.ty === ScoreType.Correct}
     <p class="score">+{score.value}</p>
@@ -38,11 +39,9 @@
   }
 
   .score {
-    display: block;
     padding: 1rem;
-    background-color: $surface;
+    background-color: rgba(0, 0, 0, 0.3);
     border-radius: 0.5rem;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
     color: #fff;
   }
 
@@ -55,14 +54,35 @@
     justify-content: center;
     align-items: center;
     background: linear-gradient(to bottom right, $primary, $secondary);
+
+    .title,
+    .text {
+      text-shadow: 0 3px 1px darken($color: $primary, $amount: 15);
+    }
   }
 
   .main[data-type="Correct"] {
     background: linear-gradient(to bottom right, $correctStart, $correctEnd);
+
+    .title {
+      text-shadow: 0 3px 1px darken($color: $correctEnd, $amount: 15);
+    }
+
+    .text {
+      text-shadow: 0 2px 1px darken($color: $correctEnd, $amount: 15);
+    }
   }
 
   .main[data-type="Partial"] {
     background: linear-gradient(to bottom right, $partialStart, $partialEnd);
+
+    .title {
+      text-shadow: 0 3px 1px darken($color: $partialStart, $amount: 15);
+    }
+
+    .text {
+      text-shadow: 0 2px 1px darken($color: $partialStart, $amount: 15);
+    }
   }
 
   .main[data-type="Incorrect"] {
@@ -71,5 +91,22 @@
       $incorrectStart,
       $incorrectEnd
     );
+
+    .title {
+      text-shadow: 0 3px 1px darken($color: $incorrectEnd, $amount: 15);
+    }
+    .text {
+      text-shadow: 0 2px 1px darken($color: $incorrectEnd, $amount: 15);
+    }
+  }
+
+  .title {
+    font-size: 3rem;
+    color: #fff;
+  }
+
+  .text {
+    font-size: 1.25rem;
+    color: #fff;
   }
 </style>
