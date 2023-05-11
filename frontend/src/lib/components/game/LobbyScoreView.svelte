@@ -25,7 +25,7 @@
       });
     } catch (e) {
       const error = e as ServerError;
-      console.error("Error while attempting to cancel", error);
+      console.error("Error while attempting to skip", error);
     }
   }
 </script>

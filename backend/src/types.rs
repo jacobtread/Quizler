@@ -39,6 +39,8 @@ pub enum HostAction {
     Cancel,
     /// Skip the current waiting timer state
     Skip,
+    /// Reset the game and all its state back to lobby
+    Reset,
 }
 
 /// Reasons why a player was removed from the game

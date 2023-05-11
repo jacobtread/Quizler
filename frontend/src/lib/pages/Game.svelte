@@ -158,5 +158,5 @@
     <ScoreView {gameData} {scores} {score} />
   {/if}
 {:else if gameState === GameState.Finished}
-  <FinishedView />
+  <FinishedView {gameData} />
 {/if}

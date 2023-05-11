@@ -41,6 +41,11 @@
   <p class="token">
     {gameData.token}
   </p>
+
+  <!-- Start button if theres players in the game -->
+  {#if players.length > 0}
+    <button on:click={doStart}>Start</button>
+  {/if}
 {/if}
 <h1>
   {gameData.config.name}
@@ -49,11 +54,6 @@
   {/if}
 </h1>
 <p>{gameData.config.text}</p>
-
-<!-- Start button if theres players in the game -->
-{#if players.length > 0}
-  <button on:click={doStart}>Start</button>
-{/if}
 
 <ul>
   {#each players as player}

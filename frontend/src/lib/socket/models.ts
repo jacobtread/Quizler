@@ -71,7 +71,8 @@ export const enum GameState {
 export const enum HostAction {
   Start = "Start",
   Cancel = "Cancel",
-  Skip = "Skip"
+  Skip = "Skip",
+  Reset = "Reset"
 }
 
 export const enum RemoveReason {

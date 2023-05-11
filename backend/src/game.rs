@@ -266,6 +266,20 @@ impl Game {
         self.skip_timer();
     }
 
+    /// Resets the game state and all the player data to its initial values
+    fn reset_completely(&mut self) {
+        for player in self.players.iter_mut() {
+            // Fill the answers and scores with None
+            player.answers.fill(None);
+            player.results.fill(None);
+
+            // Reset the player score
+            player.score = 0;
+        }
+
+        self.reset_state();
+    }
+
     /// Handles progresing the state to [`GameState::Starting`].
     /// This is called when the host starts the game
     fn start(&mut self) {
@@ -337,7 +351,10 @@ impl Game {
 
             // Increase the player score
             player.score += score.value();
-            player.results.push(score);
+
+            // Set the stored result
+            player.results[self.question_index] = Some(score);
+
             player.addr.do_send(ServerMessage::Score { score });
 
             scores.insert(player.id, player.score);
@@ -553,6 +570,7 @@ impl Handler<HostActionMessage> for Game {
             HostAction::Start => self.start(),
             HostAction::Cancel => self.reset_state(),
             HostAction::Skip => self.skip_timer(),
+            HostAction::Reset => self.reset_completely(),
         };
 
         Ok(())
@@ -746,7 +764,7 @@ pub struct PlayerSession {
     /// The players answers and the score they got for them
     answers: Vec<Option<AnswerData>>,
     /// Marked version of each question answer
-    results: Vec<Score>,
+    results: Vec<Option<Score>>,
     /// The player total score
     score: u32,
 }
@@ -755,6 +773,7 @@ impl PlayerSession {
     pub fn new(id: SessionId, addr: Addr<Session>, name: String, question_len: usize) -> Self {
         // Initialize the empty answers list
         let answers = vec![None; question_len];
+        let results = vec![None; question_len];
 
         Self {
             id,
@@ -762,7 +781,7 @@ impl PlayerSession {
             name,
             ready: false,
             answers,
-            results: Vec::new(),
+            results,
             score: 0,
         }
     }
