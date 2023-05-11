@@ -2,11 +2,9 @@
   import AnsweredView from "$lib/components/game/AnsweredView.svelte";
   import AwaitReadyView from "$lib/components/game/AwaitReadyView.svelte";
   import FinishedView from "$lib/components/game/FinishedView.svelte";
-  import LobbyScoreView from "$lib/components/game/LobbyScoreView.svelte";
   import LobbyView from "$lib/components/game/LobbyView.svelte";
   import QuestionView from "$lib/components/game/QuestionView.svelte";
   import ScoreView from "$lib/components/game/ScoreView.svelte";
-  import StartingView from "$lib/components/game/StartingView.svelte";
   import * as socket from "$lib/socket";
   import {
     ServerMessage,
@@ -135,16 +133,14 @@
   });
 </script>
 
-{#if gameState === GameState.Lobby}
-  <LobbyView {gameData} {players} />
-{:else if gameState === GameState.Starting}
-  <StartingView {gameData} {timer} />
+{#if gameState === GameState.Finished}
+  <FinishedView {gameData} />
+{:else if gameData.host || gameState === GameState.Lobby || gameState === GameState.Starting}
+  <LobbyView {gameData} {gameState} {players} {timer} {scores} />
 {:else if gameState === GameState.AwaitingReady}
   <AwaitReadyView />
 {:else if gameState === GameState.AwaitingAnswers}
-  {#if gameData.host}
-    <LobbyScoreView {gameData} {players} {timer} {scores} />
-  {:else if question !== null}
+  {#if question !== null}
     {#if !answered}
       <QuestionView {question} {gameData} {timer} bind:answered />
     {:else}
@@ -152,11 +148,5 @@
     {/if}
   {/if}
 {:else if gameState === GameState.Marked}
-  {#if gameData.host}
-    <LobbyScoreView {gameData} {players} {timer} {scores} />
-  {:else}
-    <ScoreView {gameData} {scores} {score} />
-  {/if}
-{:else if gameState === GameState.Finished}
-  <FinishedView {gameData} />
+  <ScoreView {gameData} {scores} {score} />
 {/if}
