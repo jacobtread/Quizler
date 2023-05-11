@@ -10,7 +10,8 @@
     type TimerState,
     GameState
   } from "$lib/socket/models";
-  import type { GameData } from "$lib/stores/state";
+  import { confirmDialog } from "$lib/stores/dialogStore";
+  import { setHome, type GameData } from "$lib/stores/state";
   import { formatTime } from "$lib/utils";
 
   export let timer: TimerState;
@@ -19,11 +20,11 @@
   export let scores: Record<SessionId, number>;
   export let gameState: GameState;
 
-  async function doKick(player: OtherPlayer) {
+  async function doKick(id: number) {
     try {
       await socket.send({
         ty: ClientMessage.Kick,
-        id: player.id
+        id
       });
     } catch (e) {
       const error = e as ServerError;
@@ -66,6 +67,23 @@
       console.error("Error while attempting to skip", error);
     }
   }
+
+  async function doLeave() {
+    if (gameData.host) {
+      const result = await confirmDialog(
+        "Confirm Leave",
+        "Are you sure you want to leave? Leaving will remove all other players from the game"
+      );
+
+      if (!result) return;
+    }
+
+    // Kick self from game to leave
+    await doKick(gameData.id);
+
+    // Take back to the home scren
+    setHome();
+  }
 </script>
 
 <main class="main">
@@ -88,8 +106,10 @@
     <h2 class="name">{gameData.config.name}</h2>
     <p class="desc">{gameData.config.text}</p>
 
-    {#if gameData.host}
-      <div class="actions">
+    <div class="actions">
+      <button class="button" on:click={doLeave}>Leave</button>
+
+      {#if gameData.host}
         <!-- Theres an active timer add skip button -->
         {#if timer.elapsed !== timer.total}
           <button class="button" on:click={doSkip}>Skip</button>
@@ -102,8 +122,8 @@
           <!-- Start button if theres players in the game -->
           <button class="button" on:click={doStart}>Start</button>
         {/if}
-      </div>
-    {/if}
+      {/if}
+    </div>
 
     <table class="players">
       <thead>
@@ -123,7 +143,7 @@
             <!-- Host privilleges -->
             {#if gameData.host}
               <td class="player__action">
-                <button class="button" on:click={() => doKick(player)}>
+                <button class="button" on:click={() => doKick(player.id)}>
                   Kick
                 </button>
               </td>
