@@ -2,70 +2,49 @@
   import {
     ClientMessage,
     type CreatedResponse,
-    type Question,
-    type TimingConfig,
     type CreateRequest,
     errorText,
     ServerError
   } from "$lib/socket/models";
   import * as socket from "$lib/socket";
-  import {
-    DEBUG,
-    MAX_WAIT_TIME,
-    MIN_WAIT_TIME,
-    defaultQuestion
-  } from "$lib/constants";
+  import { DEBUG, MAX_WAIT_TIME, MIN_WAIT_TIME } from "$lib/constants";
   import Back from "$lib/assets/icons/back.svg";
   import Import from "$lib/assets/icons/import.svg";
+  import Add from "$lib/assets/icons/add.svg";
   import Export from "$lib/assets/icons/export.svg";
   import Play from "$lib/assets/icons/play.svg";
-  import QuestionEditor from "$components/QuestionEditor.svelte";
-  import QuestionList from "$components/QuestionList.svelte";
   import ImageStorage from "$components/ImageStorage.svelte";
   import { get } from "svelte/store";
   import { imageStore } from "$stores/imageStore";
   import { loadQuizBlob, createQuizBlob } from "$lib/format";
   import { setGame, setHome } from "$stores/state";
   import TimeInput from "$components/TimeInput.svelte";
-  import { confirmDialog, errorDialog } from "$lib/stores/dialogStore";
+  import { errorDialog } from "$lib/stores/dialogStore";
   import { acceptUpload, startDownload } from "$lib/file";
-
-  // Questions array
-  let questions: Question[] = [defaultQuestion()];
-
-  // Active question being edited
-  let editing: Question | null = null;
-
-  // Name of the quiz
-  let name: string = "Example Quiz";
-
-  // Quiz description text
-  let text: string = "Small description about your quiz";
-
-  // Game timing configuration
-  let timing: TimingConfig = {
-    wait_time: 1000 * 10
-  };
-
-  async function back() {
-    const result = await confirmDialog(
-      "Confirm Back",
-      "Are you sure you want to go back? You will loose any unsaved progress"
-    );
-
-    if (result) {
-      setHome();
-    }
-  }
+  import {
+    createData,
+    shuffleQuestions,
+    type CreateData,
+    addQuestion
+  } from "$lib/stores/createStore";
+  import { flip } from "svelte/animate";
+  import QuestionListItem from "$lib/components/QuestionListItem.svelte";
 
   async function doExport() {
-    console.debug("Exporting quiz to file", name);
+    const data: CreateData = get(createData);
+
+    console.debug("Exporting quiz to file", data.name);
 
     // Create a blob from the quiz contents
-    const blob = await createQuizBlob(name, text, timing, questions);
+    const blob = await createQuizBlob(
+      data.name,
+      data.text,
+      data.timing,
+      data.questions
+    );
 
     // Start the file download
-    const fileName = name + ".quizler";
+    const fileName = data.name + ".quizler";
     startDownload(fileName, blob);
   }
 
@@ -77,10 +56,9 @@
 
     try {
       const imported = await loadQuizBlob(file);
-      questions = imported.questions;
-      name = imported.name;
-      text = imported.text;
-      timing = imported.timing;
+
+      // Update the store
+      createData.set(imported);
 
       console.debug("Imported quiz file", imported);
     } catch (e) {
@@ -145,13 +123,15 @@
   }
 
   async function doPlay() {
+    const data: CreateData = $createData;
+
     console.debug("Creating quiz");
 
     const config: CreateRequest = {
-      name,
-      text,
-      timing,
-      questions
+      name: data.name,
+      text: data.text,
+      timing: data.timing,
+      questions: data.questions
     };
 
     const uuid = await createHttp(config);
@@ -176,76 +156,130 @@
   }
 </script>
 
-{#if !editing}
-  <header class="header">
-    <button on:click={back} class="icon-button">
-      <img src={Back} alt="Back" class="icon-button__img" />
-      <span class="icon-button__text">Back</span>
-    </button>
-    <button on:click={doImport} class="icon-button">
-      <img src={Import} alt="Import" class="icon-button__img" />
-      <span class="icon-button__text">Import</span>
-    </button>
-    <button on:click={doExport} class="icon-button">
-      <img src={Export} alt="Export" class="icon-button__img" />
-      <span class="icon-button__text">Export</span>
-    </button>
-    <button on:click={doPlay} class="icon-button">
-      <img src={Play} alt="Play" class="icon-button__img" />
-      <span class="icon-button__text">Play</span>
-    </button>
-    <h1>Create Quiz</h1>
-  </header>
-{/if}
-
 <main class="main">
-  {#if editing}
-    <QuestionEditor question={editing} back={() => (editing = null)} />
-  {:else}
-    <div>
-      <label class="field">
-        <span class="field__name">Title</span>
-        <p class="field__desc">Give your quiz a title</p>
-        <input class="input" type="text" bind:value={name} />
-      </label>
-      <label class="field">
-        <span class="field__name">Description</span>
-        <p class="field__desc">Describe your quiz</p>
-        <textarea
-          class="input input--desc"
-          name=""
-          id=""
-          cols="30"
-          rows="10"
-          bind:value={text}
-        />
-      </label>
-    </div>
+  <div class="left">
+    <header class="header">
+      <button on:click={setHome} class="icon-button">
+        <img src={Back} alt="Back" class="icon-button__img" />
+        <span class="icon-button__text">Back</span>
+      </button>
+      <button on:click={doImport} class="icon-button">
+        <img src={Import} alt="Import" class="icon-button__img" />
+        <span class="icon-button__text">Import</span>
+      </button>
+      <button on:click={doExport} class="icon-button">
+        <img src={Export} alt="Export" class="icon-button__img" />
+        <span class="icon-button__text">Export</span>
+      </button>
+      <button on:click={doPlay} class="icon-button">
+        <img src={Play} alt="Play" class="icon-button__img" />
+        <span class="icon-button__text">Play</span>
+      </button>
+    </header>
 
+    <label class="field">
+      <span class="field__name">Title</span>
+      <p class="field__desc">Give your quiz a title</p>
+      <input class="input" type="text" bind:value={$createData.name} />
+    </label>
+    <label class="field">
+      <span class="field__name">Description</span>
+      <p class="field__desc">Describe your quiz</p>
+      <textarea
+        class="input input--desc"
+        name=""
+        id=""
+        cols="30"
+        rows="5"
+        bind:value={$createData.text}
+      />
+    </label>
     <div class="field">
       <span class="field__name">Wait Time</span>
       <p class="field__desc">Time to wait between each question</p>
       <TimeInput
-        bind:value={timing.wait_time}
+        bind:value={$createData.timing.wait_time}
         min={MIN_WAIT_TIME}
         max={MAX_WAIT_TIME}
       />
     </div>
-
-    <QuestionList {questions} bind:editing />
-  {/if}
+  </div>
+  <div class="right">
+    <div class="actions">
+      <button
+        on:click={addQuestion}
+        disabled={$createData.questions.length >= 50}
+        class="icon-button"
+      >
+        <img src={Add} alt="Back" class="icon-button__img" />
+        <span class="icon-button__text"> Add Question</span>
+      </button>
+      <button
+        on:click={shuffleQuestions}
+        disabled={$createData.questions.length <= 1}
+        class="button"
+      >
+        Shuffle
+      </button>
+    </div>
+    <div class="right__content">
+      <ol class="questions">
+        {#each $createData.questions as question, index (question.id)}
+          <li animate:flip={{ duration: 500 }}>
+            <QuestionListItem
+              bind:question
+              {index}
+              length={$createData.questions.length}
+            />
+          </li>
+        {/each}
+      </ol>
+    </div>
+  </div>
 </main>
 
 <ImageStorage />
 
 <style lang="scss">
   @import "../assets/scheme.scss";
+  .actions {
+    display: flex;
+    gap: 1rem;
+    position: sticky;
+    top: 0;
+    left: 0;
+  }
 
   .main {
     height: 100%;
     padding: 1rem;
     overflow: auto;
-    padding-top: 0;
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+  }
+
+  .left {
+    top: 0;
+  }
+
+  .right {
+    overflow: auto;
+    flex: auto;
+    display: flex;
+    flex-flow: column;
+    gap: 1rem;
+  }
+
+  .right__content {
+    overflow: auto;
+    flex: auto;
+  }
+
+  .questions {
+    display: flex;
+    gap: 1rem;
+    flex-flow: column;
   }
 
   .header {
@@ -255,7 +289,7 @@
     display: flex;
     gap: 1rem;
     background-color: $appBackground;
-    padding: 1rem;
+    margin-bottom: 1rem;
   }
 
   .field {
@@ -276,12 +310,6 @@
     }
   }
 
-  .title,
-  .description {
-    display: block;
-    margin-bottom: 1rem;
-  }
-
   .input {
     display: block;
     margin-top: 0.25rem;
@@ -293,9 +321,5 @@
     margin-top: 0.5rem;
     font-size: 1rem;
     line-height: 1.5;
-  }
-
-  .input--desc {
-    resize: vertical;
   }
 </style>

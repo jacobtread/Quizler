@@ -34,3 +34,13 @@ export function randomRange(min: number, max: number): number {
   if (value < min) return min;
   return value;
 }
+
+/**
+ * Creates a deep copy of the provided value
+ *
+ * @param value The value to copy
+ * @returns The copied value
+ */
+export function deepCopy<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value));
+}

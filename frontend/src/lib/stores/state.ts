@@ -1,5 +1,6 @@
 import { writable } from "svelte/store";
-import type { GameConfig, SessionId } from "$lib/socket/models";
+import type { GameConfig, Question, SessionId } from "$lib/socket/models";
+import { deepCopy } from "$lib/utils";
 
 export const enum AppStateType {
   /// Home screen
@@ -10,6 +11,8 @@ export const enum AppStateType {
   Join,
   /// Create game screen
   Create,
+  /// Editing question screen
+  Editing,
   /// App is in a game
   Game
 }
@@ -26,6 +29,7 @@ export type AppState =
   | { ty: AppStateType.Connect }
   | { ty: AppStateType.Join; token: string }
   | { ty: AppStateType.Create }
+  | { ty: AppStateType.Editing; question: Question }
   | { ty: AppStateType.Game; gameData: GameData };
 
 export const appState = writable<AppState>({
@@ -50,4 +54,9 @@ export function setJoin(token: string) {
 
 export function setGame(gameData: GameData) {
   appState.set({ ty: AppStateType.Game, gameData });
+}
+
+export function setEditing(question: Question) {
+  question = deepCopy(question);
+  appState.set({ ty: AppStateType.Editing, question });
 }

@@ -82,6 +82,19 @@ p {
   gap: 0.5rem;
 }
 
+.button:disabled,
+.icon-button:disabled {
+  background-color: $surfaceDisabled;
+}
+
+.icon-button:disabled .icon-button__img {
+  opacity: 0.25;
+}
+
+.icon-button--only {
+  display: inline-block;
+}
+
 .icon-button__img {
   width: 32px;
   height: 32px;

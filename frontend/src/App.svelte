@@ -8,6 +8,7 @@
   import Home from "$lib/pages/Home.svelte";
   import Loading from "$lib/pages/Loading.svelte";
   import GlobalDialog from "$lib/components/GlobalDialog.svelte";
+  import QuestionEditor from "$lib/pages/QuestionEditor.svelte";
 </script>
 
 {#if $socketReady}
@@ -19,6 +20,8 @@
     <Join />
   {:else if $appState.ty === AppStateType.Join}
     <JoinName token={$appState.token} />
+  {:else if $appState.ty === AppStateType.Editing}
+    <QuestionEditor question={$appState.question} />
   {:else if $appState.ty === AppStateType.Game}
     <Game gameData={$appState.gameData} />
   {/if}
