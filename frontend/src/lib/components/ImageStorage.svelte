@@ -123,6 +123,7 @@
 
         {#each $imageStore as image}
           <div class="file">
+            <p class="file__name">{image.name}</p>
             <div class="image-wrapper">
               {#if $imagePreviewStore[image.uuid] !== undefined}
                 <img
@@ -134,20 +135,28 @@
                 <span>Preview loading..</span>
               {/if}
             </div>
-            <p>{image.name}</p>
             <p>{image.size} bytes</p>
-            <button on:click={() => consumeSelectImage(image)}>Select</button>
-            <button on:click={() => onDelete(image)}>Delete</button>
+            <div class="file__actions">
+              <button
+                class="button button--small"
+                on:click={() => consumeSelectImage(image)}>Select</button
+              >
+              <button
+                class="button button--small"
+                on:click={() => onDelete(image)}>Delete</button
+              >
+            </div>
           </div>
         {/each}
 
         {#each uploading as upload}
           <div class="file">
+            <p>{upload.name}</p>
             {#if upload.error}
               <p class="error">{upload.error}</p>
+            {:else}
+              <p>Progress: {upload.progress}</p>
             {/if}
-            <p>Progress: {upload.progress}</p>
-            <p>{upload.name}</p>
           </div>
         {/each}
       </div>
@@ -208,10 +217,10 @@
   .images {
     display: grid;
 
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
     grid-template-rows: 1fr 1fr;
+    gap: 0.5rem;
 
-    gap: 1rem;
     padding: 0.5rem;
     border-radius: 0.25rem;
     background-color: $surfaceLight;
@@ -250,5 +259,30 @@
   .actions {
     display: flex;
     gap: 1rem;
+  }
+
+  .file {
+    border: 1px solid $surface;
+    // background-color: $surface;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+  }
+
+  .file__name {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    color: #ffffff;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+  }
+
+  .file__actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+  .file__actions .button {
+    flex: auto;
+    background-color: $surface;
   }
 </style>
