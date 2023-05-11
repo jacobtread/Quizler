@@ -268,6 +268,8 @@ impl Game {
 
     /// Resets the game state and all the player data to its initial values
     fn reset_completely(&mut self) {
+        self.question_index = 0;
+
         for player in self.players.iter_mut() {
             // Fill the answers and scores with None
             player.answers.fill(None);
