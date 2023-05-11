@@ -146,10 +146,16 @@
   {#if !answered}
     <QuestionView {question} {gameData} {timer} bind:answered />
   {:else}
+    <!-- Answer result screen -->
     <AnsweredView />
   {/if}
 {:else if gameState === GameState.Marked}
-  <ScoreView {gameData} {scores} {score} />
+  {#if timer.elapsed >= timer.total * 0.25}
+    <!--  If 1/4 of the wait timer has been elapsed show the lobby view -->
+    <LobbyView {gameData} {gameState} {players} {timer} {scores} />
+  {:else}
+    <ScoreView {gameData} {scores} {score} />
+  {/if}
 {:else}
   <!-- TODO: Properly loading view for unknown states -->
   <h1>Loading...</h1>
