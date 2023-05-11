@@ -98,7 +98,7 @@
         {#if gameState === GameState.Starting}
           <!-- Cancel started button for starting games -->
           <button class="button" on:click={doCancel}>Cancel</button>
-        {:else if players.length > 0}
+        {:else if players.length > 0 && gameState === GameState.Lobby}
           <!-- Start button if theres players in the game -->
           <button class="button" on:click={doStart}>Start</button>
         {/if}
