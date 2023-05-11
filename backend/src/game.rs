@@ -656,9 +656,16 @@ impl Handler<RemovePlayerMessage> for Game {
             .position(|player| player.id == msg.target_id)
             .ok_or(ServerError::UnknownPlayer)?;
 
+        let mut reason = msg.reason;
+
+        // Replace host remove reason for non hosts
+        if RemoveReason::RemovedByHost == reason && msg.id != self.host.id {
+            reason = RemoveReason::Disconnected;
+        }
+
         let kick_msg = Arc::new(ServerMessage::Kicked {
             id: msg.target_id,
-            reason: msg.reason,
+            reason,
         });
 
         // Inform each player of the removal

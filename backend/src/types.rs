@@ -44,7 +44,7 @@ pub enum HostAction {
 }
 
 /// Reasons why a player was removed from the game
-#[derive(Debug, Copy, Clone, Serialize)]
+#[derive(Debug, Copy, Clone, Serialize, PartialEq, Eq)]
 pub enum RemoveReason {
     /// Player was manually kicked by the host
     RemovedByHost,
