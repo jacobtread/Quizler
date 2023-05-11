@@ -13,6 +13,7 @@
   import { confirmDialog } from "$lib/stores/dialogStore";
   import { setHome, type GameData } from "$lib/stores/state";
   import { formatTime } from "$lib/utils";
+  import { slide } from "svelte/transition";
 
   export let timer: TimerState;
   export let gameData: GameData;
@@ -86,7 +87,7 @@
   }
 </script>
 
-<main class="main">
+<main class="main" transition:slide>
   <div class="quiz">
     <div class="head">
       <h1 class="token">

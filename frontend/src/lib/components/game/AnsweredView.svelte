@@ -1,4 +1,28 @@
-<h1>Answered</h1>
-<p>Waiting</p>
+<script lang="ts">
+  import messages from "$lib/data/answeredMessages.json";
+  import { randomRange } from "$lib/utils";
+  import { slide } from "svelte/transition";
 
-<!-- TODO: Replace this with the nice gradient and random messages -->
+  const message = messages[randomRange(0, messages.length - 1)];
+</script>
+
+<main class="main" transition:slide>
+  <p class="text">{message}</p>
+</main>
+
+<style lang="scss">
+  @import "../../assets/scheme";
+  .main {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(to bottom right, $primary, $secondary);
+  }
+
+  .text {
+    color: #fff;
+    text-shadow: 0 1px 2px #000;
+  }
+</style>

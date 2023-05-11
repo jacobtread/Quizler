@@ -154,7 +154,7 @@
     <!--  If 1/4 of the wait timer has been elapsed show the lobby view -->
     <LobbyView {gameData} {gameState} {players} {timer} {scores} />
   {:else}
-    <ScoreView {gameData} {scores} {score} />
+    <ScoreView {score} />
   {/if}
 {:else}
   <!-- TODO: Properly loading view for unknown states -->
