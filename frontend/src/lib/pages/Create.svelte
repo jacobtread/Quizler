@@ -13,7 +13,6 @@
   import Add from "$lib/assets/icons/add.svg";
   import Export from "$lib/assets/icons/export.svg";
   import Play from "$lib/assets/icons/play.svg";
-  import ImageStorage from "$components/ImageStorage.svelte";
   import { get } from "svelte/store";
   import { imageStore } from "$stores/imageStore";
   import { loadQuizBlob, createQuizBlob } from "$lib/format";
@@ -237,8 +236,6 @@
     </div>
   </div>
 </main>
-
-<ImageStorage />
 
 <style lang="scss">
   @import "../assets/scheme.scss";

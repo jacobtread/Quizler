@@ -20,6 +20,7 @@
   import { saveQuestion } from "$lib/stores/createStore";
   import { confirmDialog } from "$lib/stores/dialogStore";
   import { setCreate } from "$lib/stores/state";
+  import ImageStorage from "$lib/components/ImageStorage.svelte";
 
   export let question: Question;
 
@@ -179,174 +180,171 @@
 </script>
 
 <main class="main">
-  <div class="editor">
-    <button on:click={back} class="icon-button">
-      <img src={Back} alt="Back" class="icon-button__img" />
-      <span class="icon-button__text">Back</span>
-    </button>
-    <button on:click={save} class="button"> Save </button>
+  <button on:click={back} class="icon-button">
+    <img src={Back} alt="Back" class="icon-button__img" />
+    <span class="icon-button__text">Back</span>
+  </button>
+  <button on:click={save} class="button"> Save </button>
 
-    <div
-      tabindex="0"
-      role="button"
-      class="question__img-wrapper"
-      on:click={pickImage}
-      on:keypress={onImageKeyPress}
-    >
-      {#if image}
-        <img class="question__img" src={image} alt="Uploaded Content" />
-      {:else}
-        <p>Pick Image</p>
-      {/if}
-    </div>
-
+  <div
+    tabindex="0"
+    role="button"
+    class="question__img-wrapper"
+    on:click={pickImage}
+    on:keypress={onImageKeyPress}
+  >
     {#if image}
-      <button on:click={removeImage}>Remove Image</button>
+      <img class="question__img" src={image} alt="Uploaded Content" />
+    {:else}
+      <p>Pick Image</p>
     {/if}
+  </div>
 
-    <textarea
-      class="question__text"
-      cols="30"
-      rows="10"
-      bind:value={question.text}
-    />
+  {#if image}
+    <button on:click={removeImage}>Remove Image</button>
+  {/if}
 
-    <select on:change={onTypeChange}>
-      <option value={QuestionType.Single}>Single Choice</option>
-      <option value={QuestionType.Multiple}>Multiple Choice</option>
-    </select>
+  <textarea
+    class="question__text"
+    cols="30"
+    rows="10"
+    bind:value={question.text}
+  />
 
-    {#if question.ty == QuestionType.Single || question.ty == QuestionType.Multiple}
-      <!-- Min/max choice decision for multiple choice -->
-      {#if question.ty == QuestionType.Multiple}
-        <div>
-          <label>
-            <span>Min Choices</span>
-            <input
-              type="number"
-              name=""
-              id=""
-              bind:value={question.min}
-              min={1}
-              on:change={onChangeMin}
-              max={question.answers.length}
-            />
-          </label>
-          <label>
-            <span>Max Choices</span>
-            <input
-              type="number"
-              name=""
-              id=""
-              bind:value={question.max}
-              min={question.min}
-              max={question.answers.length}
-            />
-          </label>
-        </div>
-      {/if}
-      <div class="answers">
-        {#each question.answers as answer, index (answer.id)}
-          <div class="answer" animate:flip={{ duration: 500 }}>
-            <div class="answer__move">
-              <button
-                disabled={index <= 0}
-                class="answer__move__dir"
-                on:click={() => swapAnswer(index, index - 1)}
-              >
-                &uarr;
-              </button>
-              <button
-                disabled={index + 1 >= question.answers.length}
-                class="answer__move__dir"
-                on:click={() => swapAnswer(index, index + 1)}
-              >
-                &darr;
-              </button>
-            </div>
-            <button
-              disabled={question.answers.length == 1}
-              class="answer__del"
-              on:click={() => removeAnswer(index)}
-            >
-              D
-            </button>
-            <input
-              class="answer__check"
-              type="checkbox"
-              bind:checked={answer.correct}
-            />
-            <input
-              class="answer__question"
-              type="text"
-              bind:value={answer.value}
-            />
-          </div>
-        {/each}
-        <button on:click={addAnswer} disabled={question.answers.length >= 8}>
-          Add Answer
-        </button>
-        <button
-          on:click={shuffleAnswers}
-          disabled={question.answers.length <= 1}
-        >
-          Shuffle
-        </button>
+  <select on:change={onTypeChange}>
+    <option value={QuestionType.Single}>Single Choice</option>
+    <option value={QuestionType.Multiple}>Multiple Choice</option>
+  </select>
+
+  {#if question.ty == QuestionType.Single || question.ty == QuestionType.Multiple}
+    <!-- Min/max choice decision for multiple choice -->
+    {#if question.ty == QuestionType.Multiple}
+      <div>
+        <label>
+          <span>Min Choices</span>
+          <input
+            type="number"
+            name=""
+            id=""
+            bind:value={question.min}
+            min={1}
+            on:change={onChangeMin}
+            max={question.answers.length}
+          />
+        </label>
+        <label>
+          <span>Max Choices</span>
+          <input
+            type="number"
+            name=""
+            id=""
+            bind:value={question.max}
+            min={question.min}
+            max={question.answers.length}
+          />
+        </label>
       </div>
     {/if}
+    <div class="answers">
+      {#each question.answers as answer, index (answer.id)}
+        <div class="answer" animate:flip={{ duration: 500 }}>
+          <div class="answer__move">
+            <button
+              disabled={index <= 0}
+              class="answer__move__dir"
+              on:click={() => swapAnswer(index, index - 1)}
+            >
+              &uarr;
+            </button>
+            <button
+              disabled={index + 1 >= question.answers.length}
+              class="answer__move__dir"
+              on:click={() => swapAnswer(index, index + 1)}
+            >
+              &darr;
+            </button>
+          </div>
+          <button
+            disabled={question.answers.length == 1}
+            class="answer__del"
+            on:click={() => removeAnswer(index)}
+          >
+            D
+          </button>
+          <input
+            class="answer__check"
+            type="checkbox"
+            bind:checked={answer.correct}
+          />
+          <input
+            class="answer__question"
+            type="text"
+            bind:value={answer.value}
+          />
+        </div>
+      {/each}
+      <button on:click={addAnswer} disabled={question.answers.length >= 8}>
+        Add Answer
+      </button>
+      <button on:click={shuffleAnswers} disabled={question.answers.length <= 1}>
+        Shuffle
+      </button>
+    </div>
+  {/if}
 
-    <label for="">
-      <span>Answer Time</span>
-      <p>Time the players have to answer the question</p>
-      <TimeInput
-        bind:value={question.answer_time}
-        min={MIN_ANSWER_TIME}
-        max={MAX_ANSWER_TIME}
-      />
-    </label>
+  <label for="">
+    <span>Answer Time</span>
+    <p>Time the players have to answer the question</p>
+    <TimeInput
+      bind:value={question.answer_time}
+      min={MIN_ANSWER_TIME}
+      max={MAX_ANSWER_TIME}
+    />
+  </label>
 
-    <label for="">
-      <span>Bonus Score Time</span>
-      <p>Time the players must answer within for bonus scores</p>
-      <TimeInput
-        bind:value={question.bonus_score_time}
-        min={MIN_BONUS_TIME}
-        max={MAX_BONUS_TIME}
-      />
-    </label>
+  <label for="">
+    <span>Bonus Score Time</span>
+    <p>Time the players must answer within for bonus scores</p>
+    <TimeInput
+      bind:value={question.bonus_score_time}
+      min={MIN_BONUS_TIME}
+      max={MAX_BONUS_TIME}
+    />
+  </label>
 
-    <label for="">
-      <span>Min Score</span>
-      <p>The minimum amount of score to award for this question</p>
-      <input
-        type="number"
-        min={0}
-        max={question.scoring.max_score}
-        bind:value={question.scoring.min_score}
-      />
-    </label>
-    <label for="">
-      <span>Max Score</span>
-      <p>The maximum amount of score to award for this question</p>
-      <input
-        type="number"
-        min={question.scoring.min_score}
-        max={1000}
-        bind:value={question.scoring.max_score}
-      />
-    </label>
-    <label for="">
-      <span>Bonus Score</span>
-      <p>The amount of score to add for being within the bonus time</p>
-      <input
-        type="number"
-        min={0}
-        max={1000}
-        bind:value={question.scoring.bonus_score}
-      />
-    </label>
-  </div>
+  <label for="">
+    <span>Min Score</span>
+    <p>The minimum amount of score to award for this question</p>
+    <input
+      type="number"
+      min={0}
+      max={question.scoring.max_score}
+      bind:value={question.scoring.min_score}
+    />
+  </label>
+  <label for="">
+    <span>Max Score</span>
+    <p>The maximum amount of score to award for this question</p>
+    <input
+      type="number"
+      min={question.scoring.min_score}
+      max={1000}
+      bind:value={question.scoring.max_score}
+    />
+  </label>
+  <label for="">
+    <span>Bonus Score</span>
+    <p>The amount of score to add for being within the bonus time</p>
+    <input
+      type="number"
+      min={0}
+      max={1000}
+      bind:value={question.scoring.bonus_score}
+    />
+  </label>
 </main>
+
+<ImageStorage />
 
 <style lang="scss">
   @import "../assets/scheme.scss";
