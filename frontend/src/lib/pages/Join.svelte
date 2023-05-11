@@ -2,9 +2,11 @@
   import * as socket from "$lib/socket";
   import { ClientMessage, ServerError, errorText } from "$lib/socket/models";
   import { errorDialog } from "$lib/stores/dialogStore";
-  import { setConnect, setGame } from "$stores/state";
+  import { setConnect, setGame, setHome } from "$stores/state";
   import { z } from "zod";
+  import Play from "$lib/assets/icons/play.svg";
   import Back from "$lib/assets/icons/back.svg";
+  import { slide } from "svelte/transition";
 
   export let token: string;
 
@@ -47,20 +49,81 @@
   }
 </script>
 
-<button on:click={setConnect} class="back back--floating">
-  <img src={Back} alt="Back" />
-</button>
+<main class="main" transition:slide>
+  <button on:click={setConnect} class="back back--floating">
+    <img src={Back} alt="Back" />
+  </button>
+  <h2>{token}</h2>
 
-<h2>{token}</h2>
+  <h1>Enter Name</h1>
 
-<p>Enter name to join as</p>
+  <p>Please enter your desired name</p>
+  <div class="form">
+    <label>
+      <input
+        class="input"
+        type="text"
+        bind:value={name}
+        on:input={onNameInput}
+        minlength={1}
+        maxlength={30}
+      />
+    </label>
 
-<label for="">
-  Name
-  <input type="text" bind:value={name} on:input={onNameInput} />
-</label>
-
-<button on:click={joinQuiz} {disabled}>Join</button>
+    {#if !disabled}
+      <button
+        on:click={joinQuiz}
+        class="play"
+        transition:slide={{ axis: "x", duration: 200 }}
+      >
+        <img src={Play} alt="Play Icon" class="path__icon" />
+      </button>
+    {/if}
+  </div>
+</main>
 
 <style>
+  .main {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    flex-flow: column;
+    height: 100%;
+  }
+
+  .play {
+    padding: 0.5rem;
+    border-radius: 1rem;
+    border: none;
+    cursor: pointer;
+    color: #fff;
+    background-color: #f66828;
+  }
+
+  .input {
+    flex: auto;
+    display: block;
+    padding: 0.7rem;
+    font-size: 2rem;
+    width: 100%;
+    max-width: 24rem;
+    text-align: left;
+    background-color: transparent;
+    border: 5px solid #222;
+    color: #fff;
+    border-radius: 0.5rem;
+    outline: none;
+    transition: 0.5s ease;
+    letter-spacing: 0.25rem;
+  }
+
+  .input:focus {
+    border-bottom-color: #f66828;
+  }
+
+  .form {
+    display: flex;
+    gap: 1rem;
+  }
 </style>
