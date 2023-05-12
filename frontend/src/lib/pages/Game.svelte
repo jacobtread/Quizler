@@ -153,7 +153,10 @@
   {#if !answered}
     <QuestionView {question} {gameData} {timer} bind:answered />
   {:else if players.length !== 1}
-    <!-- Answer result screen -->
+    <!-- 
+      Don't bother showing answered screen if only one player 
+      as it will just be a blink before the score screen 
+    -->
     <AnsweredView />
   {/if}
 {:else if gameState === GameState.Marked}
