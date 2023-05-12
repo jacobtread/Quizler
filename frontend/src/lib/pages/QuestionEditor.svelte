@@ -229,7 +229,7 @@
       <label class="field">
         <span class="field__name">Min Choices</span>
         <p class="field__desc">
-          The minimum number of required answers to select
+          The minimum number of answers that must be selected to get a pass
         </p>
         <input
           class="input"
@@ -241,9 +241,10 @@
         />
       </label>
       <label class="field">
-        <span class="field__name">Max Choices</span>
+        <span class="field__name">Desired Choices</span>
         <p class="field__desc">
-          The maximum number of answers players can select
+          The total number of answers the player must choose to get a full
+          score. Can be the same as the minimum choices
         </p>
         <input
           class="input"
