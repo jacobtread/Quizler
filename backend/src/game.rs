@@ -427,7 +427,7 @@ impl Game {
 
                 if correct == *max {
                     Score::Correct { value: base_score }
-                } else if correct == 0 {
+                } else if correct < *min {
                     Score::Incorrect
                 } else {
                     let score = ((base_score as f32) * percent).round() as u32;
