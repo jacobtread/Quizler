@@ -52,36 +52,50 @@
   }
 </script>
 
-<p class="time">Remaining: {formatTime(timer)}</p>
+<p class="time">{formatTime(timer)}</p>
 
 <main class="main">
-  <div class="content">
-    <p class="name">{question.text}</p>
-    <div class="questions">
-      {#if question.ty === QuestionType.Single}
-        {#each question.answers as answer, index}
-          <button on:click={() => doAnswer(index)}>
-            {answer.value}
-          </button>
-        {/each}
-      {:else if question.ty === QuestionType.Multiple}
-        {#each question.answers as answer, index}
-          <label for="">
-            <input type="checkbox" bind:value={index} bind:group={answers} />
-            {answer.value}
-          </label>
-        {/each}
-        <button on:click={doAnswers}>Submit</button>
-      {/if}
-    </div>
-  </div>
-  <div class="image-wrapper">
-    {#if question.image !== null}
+  {#if question.image !== null}
+    <div class="image-wrapper">
       <img
         class="image"
         src={formatImageUrl(gameData.token, question.image)}
         alt={question.text}
       />
+    </div>
+  {/if}
+  <div class="content" data-image={question.image !== null}>
+    <p class="text">{question.text}</p>
+    {#if question.ty === QuestionType.Single}
+      <div class="answers">
+        {#each question.answers as answer, index}
+          <button class="answer button" on:click={() => doAnswer(index)}>
+            {answer.value}
+          </button>
+        {/each}
+      </div>
+    {:else if question.ty === QuestionType.Multiple}
+      <div class="answers">
+        {#each question.answers as answer, index}
+          <label class="answer button">
+            <input
+              type="checkbox"
+              value={index}
+              bind:group={answers}
+              disabled={answers.length >= question.max &&
+                !answers.includes(index)}
+            />
+            {answer.value}
+          </label>
+        {/each}
+      </div>
+      <button
+        class="button submit"
+        on:click={doAnswers}
+        disabled={answers.length < question.min}
+      >
+        Submit
+      </button>
     {/if}
   </div>
 </main>
@@ -92,15 +106,23 @@
   .main {
     display: flex;
     gap: 1rem;
-    flex-flow: column-reverse;
+    flex-flow: column;
     height: 100%;
     overflow: hidden;
+    padding: 1rem;
   }
 
   .time {
     position: fixed;
-    left: 0;
-    top: 0;
+    right: 1rem;
+    top: 1rem;
+    color: $primary;
+    font-weight: bold;
+    font-size: 2rem;
+  }
+
+  .text {
+    margin-bottom: 1rem;
   }
 
   .image-wrapper {
@@ -117,5 +139,38 @@
     height: 100%;
     aspect-ratio: auto;
     z-index: -1;
+  }
+
+  .content {
+    display: flex;
+    flex-flow: column;
+    min-height: 25vh;
+  }
+
+  .content[data-image="false"] {
+    flex: auto;
+  }
+
+  .answers {
+    flex: auto;
+
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  .answer:nth-child(odd):last-child {
+    grid-column-start: 1;
+    grid-column-end: 3;
+  }
+
+  .answer {
+    padding: 1rem;
+    width: 100%;
+  }
+
+  .submit {
+    margin-top: 1rem;
+    display: block;
   }
 </style>

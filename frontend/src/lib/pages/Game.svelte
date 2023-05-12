@@ -152,7 +152,7 @@
 {:else if gameState === GameState.AwaitingAnswers && question != null}
   {#if !answered}
     <QuestionView {question} {gameData} {timer} bind:answered />
-  {:else}
+  {:else if players.length !== 1}
     <!-- Answer result screen -->
     <AnsweredView />
   {/if}
