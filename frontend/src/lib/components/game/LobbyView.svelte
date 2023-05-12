@@ -14,6 +14,8 @@
   import { setHome, type GameData } from "$lib/stores/state";
   import { formatTime } from "$lib/utils";
   import { slide } from "svelte/transition";
+  import { flip } from "svelte/animate";
+  import ScoreTweened from "../ScoreTweened.svelte";
 
   export let timer: TimerState;
   export let gameData: GameData;
@@ -137,10 +139,12 @@
         </tr>
       </thead>
       <tbody>
-        {#each players as player}
-          <tr class="player">
+        {#each players as player (player.id)}
+          <tr class="player" animate:flip>
             <td class="player__name">{player.name}</td>
-            <td class="player__name">{scores[player.id] ?? 0}</td>
+            <td class="player__name">
+              <ScoreTweened value={scores[player.id] ?? 0} />
+            </td>
             <!-- Host privilleges -->
             {#if gameData.host}
               <td class="player__action">

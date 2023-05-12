@@ -114,6 +114,10 @@
   socket.setHandler(ServerMessage.Scores, (msg) => {
     console.debug("Score message", msg);
     scores = msg.scores;
+
+    // Sort players list by the player scores
+    let getScore = (id: number): number => scores[id] ?? 0;
+    players = players.sort((a, b) => getScore(b.id) - getScore(a.id));
   });
 
   socket.setHandler(ServerMessage.Score, (msg) => {
