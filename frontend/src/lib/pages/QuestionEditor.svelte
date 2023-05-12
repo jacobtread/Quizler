@@ -17,6 +17,7 @@
   } from "$lib/constants";
   import { randomRange } from "$lib/utils";
   import Back from "$lib/assets/icons/back.svg";
+  import Delete from "$lib/assets/icons/cross.svg";
   import { saveQuestion } from "$lib/stores/createStore";
   import { confirmDialog } from "$lib/stores/dialogStore";
   import { setCreate } from "$lib/stores/state";
@@ -143,7 +144,8 @@
     question.image = res.uuid;
   }
 
-  function removeImage() {
+  function removeImage(event: Event) {
+    event.stopPropagation();
     question.image = null;
     image = null;
   }
@@ -195,159 +197,235 @@
   >
     {#if image}
       <img class="question__img" src={image} alt="Uploaded Content" />
+
+      <button class="remove" on:click={removeImage}> Click to remove </button>
     {:else}
       <p>Pick Image</p>
     {/if}
   </div>
 
-  {#if image}
-    <button on:click={removeImage}>Remove Image</button>
-  {/if}
+  <div class="field">
+    <p class="field__name">Question</p>
+    <p class="field__desc">Enter the question to ask the players</p>
+    <textarea
+      class="question__text input"
+      cols="30"
+      rows="10"
+      bind:value={question.text}
+    />
+  </div>
 
-  <textarea
-    class="question__text"
-    cols="30"
-    rows="10"
-    bind:value={question.text}
-  />
-
-  <select on:change={onTypeChange}>
-    <option value={QuestionType.Single}>Single Choice</option>
-    <option value={QuestionType.Multiple}>Multiple Choice</option>
-  </select>
-
-  {#if question.ty == QuestionType.Single || question.ty == QuestionType.Multiple}
+  <div class="field-group">
+    <div class="field">
+      <p class="field__name">Question Type</p>
+      <p class="field__desc">The type of question to present</p>
+      <select on:change={onTypeChange} class="input">
+        <option value={QuestionType.Single}>Single Choice</option>
+        <option value={QuestionType.Multiple}>Multiple Choice</option>
+      </select>
+    </div>
     <!-- Min/max choice decision for multiple choice -->
     {#if question.ty == QuestionType.Multiple}
-      <div>
-        <label>
-          <span>Min Choices</span>
-          <input
-            type="number"
-            name=""
-            id=""
-            bind:value={question.min}
-            min={1}
-            on:change={onChangeMin}
-            max={question.answers.length}
-          />
-        </label>
-        <label>
-          <span>Max Choices</span>
-          <input
-            type="number"
-            name=""
-            id=""
-            bind:value={question.max}
-            min={question.min}
-            max={question.answers.length}
-          />
-        </label>
-      </div>
+      <label class="field">
+        <span class="field__name">Min Choices</span>
+        <p class="field__desc">
+          The minimum number of required answers to select
+        </p>
+        <input
+          class="input"
+          type="number"
+          bind:value={question.min}
+          min={1}
+          on:change={onChangeMin}
+          max={question.answers.length}
+        />
+      </label>
+      <label class="field">
+        <span class="field__name">Max Choices</span>
+        <p class="field__desc">
+          The maximum number of answers players can select
+        </p>
+        <input
+          class="input"
+          type="number"
+          bind:value={question.max}
+          min={question.min}
+          max={question.answers.length}
+        />
+      </label>
     {/if}
+  </div>
+
+  {#if question.ty == QuestionType.Single || question.ty == QuestionType.Multiple}
     <div class="answers">
       {#each question.answers as answer, index (answer.id)}
         <div class="answer" animate:flip={{ duration: 500 }}>
-          <div class="answer__move">
+          <div class="actions">
             <button
               disabled={index <= 0}
-              class="answer__move__dir"
+              class="answer__move button"
               on:click={() => swapAnswer(index, index - 1)}
             >
               &uarr;
             </button>
             <button
               disabled={index + 1 >= question.answers.length}
-              class="answer__move__dir"
+              class="answer__move button"
               on:click={() => swapAnswer(index, index + 1)}
             >
               &darr;
             </button>
           </div>
-          <button
-            disabled={question.answers.length == 1}
-            class="answer__del"
-            on:click={() => removeAnswer(index)}
-          >
-            D
-          </button>
+
           <input
             class="answer__check"
             type="checkbox"
             bind:checked={answer.correct}
           />
+
           <input
-            class="answer__question"
+            class="answer__question input"
             type="text"
             bind:value={answer.value}
           />
+
+          <button
+            disabled={question.answers.length == 1}
+            on:click={() => removeAnswer(index)}
+            class="icon-button"
+          >
+            <img src={Delete} alt="Back" class="icon-button__img" />
+          </button>
         </div>
       {/each}
-      <button on:click={addAnswer} disabled={question.answers.length >= 8}>
-        Add Answer
-      </button>
-      <button on:click={shuffleAnswers} disabled={question.answers.length <= 1}>
-        Shuffle
-      </button>
+
+      <div class="field-group">
+        <button
+          class="button"
+          on:click={addAnswer}
+          disabled={question.answers.length >= 8}
+        >
+          Add Answer
+        </button>
+        <button
+          class="button"
+          on:click={shuffleAnswers}
+          disabled={question.answers.length <= 1}
+        >
+          Shuffle
+        </button>
+      </div>
     </div>
   {/if}
 
-  <label for="">
-    <span>Answer Time</span>
-    <p>Time the players have to answer the question</p>
-    <TimeInput
-      bind:value={question.answer_time}
-      min={MIN_ANSWER_TIME}
-      max={MAX_ANSWER_TIME}
-    />
-  </label>
+  <div class="group">
+    <h2 class="group__title">Timing</h2>
+    <p class="group__desc">
+      Below you can configuring the timing for different events
+    </p>
+    <div class="group__value field-group">
+      <div class="field">
+        <span class="field__name">Answer Time</span>
+        <p class="field__desc">Time the players have to answer the question</p>
+        <TimeInput
+          bind:value={question.answer_time}
+          min={MIN_ANSWER_TIME}
+          max={MAX_ANSWER_TIME}
+        />
+      </div>
 
-  <label for="">
-    <span>Bonus Score Time</span>
-    <p>Time the players must answer within for bonus scores</p>
-    <TimeInput
-      bind:value={question.bonus_score_time}
-      min={MIN_BONUS_TIME}
-      max={MAX_BONUS_TIME}
-    />
-  </label>
+      <div class="field">
+        <span class="field__name">Bonus Score Time</span>
+        <p class="field__desc">
+          Time the players must answer within for bonus scores
+        </p>
+        <TimeInput
+          bind:value={question.bonus_score_time}
+          min={MIN_BONUS_TIME}
+          max={MAX_BONUS_TIME}
+        />
+      </div>
+    </div>
+  </div>
 
-  <label for="">
-    <span>Min Score</span>
-    <p>The minimum amount of score to award for this question</p>
-    <input
-      type="number"
-      min={0}
-      max={question.scoring.max_score}
-      bind:value={question.scoring.min_score}
-    />
-  </label>
-  <label for="">
-    <span>Max Score</span>
-    <p>The maximum amount of score to award for this question</p>
-    <input
-      type="number"
-      min={question.scoring.min_score}
-      max={1000}
-      bind:value={question.scoring.max_score}
-    />
-  </label>
-  <label for="">
-    <span>Bonus Score</span>
-    <p>The amount of score to add for being within the bonus time</p>
-    <input
-      type="number"
-      min={0}
-      max={1000}
-      bind:value={question.scoring.bonus_score}
-    />
-  </label>
+  <div class="group">
+    <h2 class="group__title">Scoring</h2>
+    <p class="group__desc">
+      Score is awarded to players based on how quickly the player answers the
+      question. You can configure the minimum and maximum values for this below
+    </p>
+    <div class="group__value field-group">
+      <label class="field">
+        <span class="field__name">Min Score</span>
+        <p class="field__desc">
+          The minimum amount of score to award for this question
+        </p>
+        <input
+          class="input"
+          type="number"
+          min={0}
+          max={question.scoring.max_score}
+          bind:value={question.scoring.min_score}
+        />
+      </label>
+      <label class="field">
+        <span class="field__name">Max Score</span>
+        <p class="field__desc">
+          The maximum amount of score to award for this question
+        </p>
+        <input
+          class="input"
+          type="number"
+          min={question.scoring.min_score}
+          max={1000}
+          bind:value={question.scoring.max_score}
+        />
+      </label>
+      <label class="field">
+        <span class="field__name">Bonus Score</span>
+        <p class="field__desc">
+          The amount of score to add for being within the bonus time
+        </p>
+        <input
+          class="input"
+          type="number"
+          min={0}
+          max={1000}
+          bind:value={question.scoring.bonus_score}
+        />
+      </label>
+    </div>
+  </div>
 </main>
 
 <ImageStorage />
 
 <style lang="scss">
   @import "../assets/scheme.scss";
+
+  .field-group {
+    display: flex;
+    gap: 1rem;
+    width: 100%;
+
+    .field {
+      flex: auto;
+    }
+  }
+
+  .group {
+    &__title {
+      color: #ffffff;
+      margin-bottom: 0.5rem;
+    }
+
+    &__desc {
+      margin-bottom: 1rem;
+    }
+
+    &__value {
+    }
+  }
 
   .main {
     height: 100%;
@@ -359,31 +437,34 @@
   .question__text {
     display: block;
     width: 100%;
-    margin-bottom: 1rem;
     resize: vertical;
+  }
+
+  .actions {
+    display: flex;
+    flex-flow: column;
   }
 
   .answers {
     display: grid;
     grid-template-columns: 1fr;
     gap: 1rem;
+    margin-bottom: 1rem;
   }
 
   .answer {
     display: flex;
+    gap: 1rem;
   }
 
   .answer__move {
-    display: grid;
-    grid-template-rows: 1fr 1fr;
-    gap: 0.5rem;
+    font-size: 1rem;
+    padding: 0.5rem;
   }
 
-  .answer__move__dir {
-    font-size: 1.5rem;
-    transition: all 0.5s ease;
+  .icon-button {
+    padding-right: 0.5rem;
   }
-
   .answer__question {
     flex: auto;
   }
@@ -400,6 +481,23 @@
     align-items: center;
   }
 
+  .remove {
+    position: absolute;
+    left: 0;
+    top: 0;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    transition: opacity 0.15s ease;
+    font-size: 1rem;
+    background-color: rgba($color: #000000, $alpha: 0.7);
+    border: none;
+  }
+
+  .remove:hover {
+    opacity: 1;
+  }
+
   .question__img {
     position: absolute;
     left: 50%;
@@ -408,5 +506,36 @@
     height: 100%;
     aspect-ratio: auto;
     z-index: -1;
+  }
+
+  .field {
+    display: block;
+    margin-bottom: 1rem;
+    background-color: $surface;
+    padding: 1rem;
+    border-radius: 0.55rem;
+
+    &__name {
+      font-weight: bold;
+      color: #ffffff;
+    }
+
+    &__desc {
+      color: #cccccc;
+      margin-bottom: 0.25rem;
+    }
+  }
+
+  .input {
+    display: block;
+    margin-top: 0.25rem;
+    width: 100%;
+    padding: 0.5rem;
+    border: none;
+    background-color: $surfaceLight;
+    border-radius: 0.25rem;
+    margin-top: 0.5rem;
+    font-size: 1rem;
+    line-height: 1.5;
   }
 </style>
