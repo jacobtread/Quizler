@@ -79,7 +79,7 @@ pub enum ServerMessage {
     Ok,
     /// Message providing information about another player in
     /// the game
-    OtherPlayer {
+    PlayerData {
         id: SessionId,
         name: String,
     },

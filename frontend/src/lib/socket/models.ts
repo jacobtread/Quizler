@@ -21,7 +21,7 @@ export interface CreatedResponse {
   uuid: string;
 }
 
-export interface OtherPlayer {
+export interface PlayerData {
   id: SessionId;
   name: string;
 }
@@ -193,7 +193,7 @@ export type ClientMessageOf<T> = Extract<ClientMessageSchema, { ty: T }>;
 export const enum ServerMessage {
   Joined = "Joined",
   Ok = "Ok",
-  OtherPlayer = "OtherPlayer",
+  PlayerData = "PlayerData",
   GameState = "GameState",
   TimeSync = "TimeSync",
   Question = "Question",
@@ -207,7 +207,7 @@ export type ServerMessageSchema = {
   rid?: number;
 } & (
   | { ty: ServerMessage.Joined; id: number; token: string; config: GameConfig }
-  | { ty: ServerMessage.OtherPlayer; id: number; name: string }
+  | { ty: ServerMessage.PlayerData; id: number; name: string }
   | { ty: ServerMessage.GameState; state: GameState }
   | { ty: ServerMessage.TimeSync; total: number; elapsed: number }
   | { ty: ServerMessage.Question; question: Question }

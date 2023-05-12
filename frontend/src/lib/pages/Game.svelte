@@ -8,7 +8,7 @@
   import * as socket from "$lib/socket";
   import {
     ServerMessage,
-    type OtherPlayer,
+    type PlayerData,
     GameState,
     type Question,
     type Score,
@@ -25,7 +25,7 @@
 
   export let gameData: GameData;
 
-  let players: OtherPlayer[] = [];
+  let players: PlayerData[] = [];
   let gameState: GameState = GameState.Lobby;
 
   let question: Question | null = null;
@@ -66,7 +66,7 @@
   }
 
   // Hook the handlers for the different message types
-  socket.setHandler(ServerMessage.OtherPlayer, (msg) => {
+  socket.setHandler(ServerMessage.PlayerData, (msg) => {
     console.debug("Other player message", msg);
     // Add to the players list
     players.push(msg);

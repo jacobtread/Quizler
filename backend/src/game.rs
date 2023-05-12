@@ -520,7 +520,7 @@ impl Handler<JoinMessage> for Game {
             PlayerSession::new(msg.id, msg.addr, msg.name, self.config.questions.len());
 
         // Message sent to existing players for this player
-        let joiner_message = Arc::new(ServerMessage::OtherPlayer {
+        let joiner_message = Arc::new(ServerMessage::PlayerData {
             id: game_player.id,
             name: game_player.name.clone(),
         });
@@ -530,14 +530,16 @@ impl Handler<JoinMessage> for Game {
             player.addr.do_send(joiner_message.clone());
 
             // Message describing the other player
-            game_player.addr.do_send(ServerMessage::OtherPlayer {
+            game_player.addr.do_send(ServerMessage::PlayerData {
                 id: player.id,
                 name: player.name.clone(),
             });
         }
 
         // Notify the host of the join
-        self.host.addr.do_send(joiner_message);
+        self.host.addr.do_send(joiner_message.clone());
+        // Notify the player of themselves
+        game_player.addr.do_send(joiner_message);
 
         self.players.push(game_player);
 

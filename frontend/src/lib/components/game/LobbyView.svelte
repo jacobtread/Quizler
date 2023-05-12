@@ -3,7 +3,7 @@
   import * as socket from "$lib/socket";
   import {
     ClientMessage,
-    type OtherPlayer,
+    type PlayerData,
     HostAction,
     ServerError,
     type SessionId,
@@ -17,7 +17,7 @@
 
   export let timer: TimerState;
   export let gameData: GameData;
-  export let players: OtherPlayer[];
+  export let players: PlayerData[];
   export let scores: Record<SessionId, number>;
   export let gameState: GameState;
 
