@@ -1,6 +1,7 @@
 <script lang="ts">
   import AnsweredView from "$lib/components/game/AnsweredView.svelte";
   import AwaitReadyView from "$lib/components/game/AwaitReadyView.svelte";
+  import FinishedView from "$lib/components/game/FinishedView.svelte";
   import LobbyView from "$lib/components/game/LobbyView.svelte";
   import QuestionView from "$lib/components/game/QuestionView.svelte";
   import ScoreView from "$lib/components/game/ScoreView.svelte";
@@ -16,7 +17,8 @@
     ClientMessage,
     ScoreType,
     ServerError,
-    removeReasonText
+    removeReasonText,
+    type GameSummary
   } from "$lib/socket/models";
   import { errorDialog } from "$lib/stores/dialogStore";
   import { formatImageUrl } from "$lib/utils";
@@ -26,6 +28,9 @@
 
   let players: PlayerData[] = [];
   let gameState: GameState = GameState.Lobby;
+
+  // The current game summary
+  let summary: GameSummary | null = null;
 
   if (!gameData.host) {
     players.push({ id: gameData.id, name: gameData.name ?? "" });
@@ -86,6 +91,19 @@
     // Reset known scores when reverting to lobby state
     if (msg.state === GameState.Lobby) {
       scores = {};
+    } else if (msg.state === GameState.Finished) {
+      // Compute the finished summary
+      const playersExt = players.map((player) => ({
+        score: scores[player.id] ?? 0,
+        ...player
+      }));
+
+      // Sort the players based on score
+      playersExt.sort((a, b) => b.score - a.score);
+
+      summary = {
+        players: playersExt
+      };
     }
   });
 
@@ -146,7 +164,9 @@
   });
 </script>
 
-{#if gameData.host || gameState === GameState.Finished || gameState === GameState.Lobby || gameState === GameState.Starting}
+{#if gameState === GameState.Finished && summary != null}
+  <FinishedView {gameData} {summary} />
+{:else if gameData.host || gameState === GameState.Lobby || gameState === GameState.Starting}
   <LobbyView {gameData} {gameState} {players} {timer} {scores} />
 {:else if gameState === GameState.AwaitingReady}
   <AwaitReadyView />

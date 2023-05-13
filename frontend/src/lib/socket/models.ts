@@ -7,6 +7,15 @@ export type Scores = Record<SessionId, number>;
 export type ImageRef = string;
 export type QuestionIndex = number;
 
+// Snapshot of the game state at completion
+// to keep around the scores and players
+export interface GameSummary {
+  players: PlayerSummary[];
+}
+
+// Extended player data to include score
+type PlayerSummary = PlayerData & { score: number };
+
 // Request structure used for creating a quiz
 export interface CreateRequest {
   name: string;
