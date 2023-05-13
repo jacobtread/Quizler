@@ -290,6 +290,16 @@ impl Game {
         self.set_timer(START_DURATION);
     }
 
+    /// Handles updating state post removing a player
+    fn on_remove(&mut self) {
+        self.update_ready();
+
+        // Reset the game if everyone disconected while in progress
+        if self.state != GameState::Finished && self.players.is_empty() {
+            self.reset_completely();
+        }
+    }
+
     /// Updates the current state checking if all the players are ready
     /// then if they are progresses the state to [`GameState::AwaitingAnswers`]
     fn update_ready(&mut self) {
@@ -682,8 +692,7 @@ impl Handler<RemovePlayerMessage> for Game {
         // Tell the session itself that its been kicked
         target.addr.do_send(ClearGameMessage);
 
-        // Ready state may have changed now that this player is removed
-        self.update_ready();
+        self.on_remove();
 
         Ok(())
     }
