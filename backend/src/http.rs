@@ -14,6 +14,7 @@ use actix_web::{
 };
 use actix_web_actors::ws::{self};
 use bytes::BytesMut;
+use embeddy::Embedded;
 use futures_util::TryStreamExt;
 use log::debug;
 use serde::{Deserialize, Serialize};
@@ -34,6 +35,52 @@ pub fn configure(cfg: &mut ServiceConfig) {
     cfg.service(create_quiz);
     cfg.service(quiz_image);
     cfg.service(quiz_socket);
+    cfg.service(index);
+    cfg.service(assets);
+}
+
+const INDEX_FILE: &[u8] = include_bytes!("../../frontend/dist/index.html");
+
+#[get("/")]
+async fn index() -> impl Responder {
+    HttpResponse::Ok()
+        .content_type("text/html")
+        .body(INDEX_FILE)
+}
+
+/// Contains all the files stored in the "test" folder
+/// use the [`Embedded::get`] method to access the folders
+#[derive(Embedded)]
+#[folder = "../frontend/dist/assets"]
+struct Assets;
+
+#[get("/assets/{path:.*}")]
+async fn assets(path: web::Path<String>) -> impl Responder {
+    use std::path::Path as StdPath;
+
+    let path = path.into_inner();
+    let file = match Assets::get(&path) {
+        Some(value) => value,
+        None => return HttpResponse::NotFound().finish(),
+    };
+
+    let path = StdPath::new(&path);
+    let ext = match path.extension() {
+        Some(ext) => ext.to_str(),
+        None => None,
+    };
+
+    let ext = match ext {
+        Some(value) => match value {
+            "js" => "text/javascript",
+            "css" => "text/css",
+            "svg" => "image/svg+xml",
+            _ => "text/plain",
+        },
+        None => "text/plain",
+    };
+
+    HttpResponse::Ok().content_type(ext).body(file)
 }
 
 #[derive(Deserialize)]
