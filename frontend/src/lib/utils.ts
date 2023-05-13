@@ -65,3 +65,20 @@ export function getNumberWithOrdinal(n: number): string {
   const v: number = n % 100;
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
+
+/**
+ * Attempts to put the browser into fullscren
+ * mode for a better viewing experience
+ */
+export function tryFullscreen() {
+  const documentElement = document.documentElement;
+  if (documentElement.requestFullscreen === undefined) return false;
+
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen({
+      navigationUI: "hide"
+    });
+  }
+
+  return tryFullscreen;
+}

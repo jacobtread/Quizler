@@ -22,8 +22,9 @@
     RemoveReason
   } from "$lib/socket/models";
   import { errorDialog } from "$lib/stores/dialogStore";
-  import { formatImageUrl } from "$lib/utils";
+  import { formatImageUrl, tryFullscreen } from "$lib/utils";
   import { setHome, type GameData } from "$stores/state";
+  import { onMount } from "svelte";
 
   export let gameData: GameData;
 
@@ -157,6 +158,11 @@
         errorDialog("Removed from game", reason);
       }
     }
+  });
+
+  onMount(() => {
+    // Attempt to make the browser fullscreen to make the app more visible
+    if (!gameData.host) tryFullscreen();
   });
 </script>
 
