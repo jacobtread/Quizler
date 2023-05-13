@@ -208,6 +208,7 @@
     border-radius: 0.5rem;
     max-width: 48rem;
     width: 100%;
+    margin: 1rem;
   }
 
   .images {

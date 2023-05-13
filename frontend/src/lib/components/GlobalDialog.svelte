@@ -15,7 +15,7 @@
       <h1 class="dialog__title">{$dialogStore.title}</h1>
       <p class="dialog__msg">{$dialogStore.message}</p>
 
-      <div class="dialog__actions">
+      <div class="btn-row">
         {#if $dialogStore.ty === DialogType.Error}
           <button class="btn btn--surface" on:click={() => consumeDialog(true)}>
             Close
@@ -60,10 +60,7 @@
     border-radius: 0.5rem;
     max-width: 32rem;
     width: 100%;
-  }
-
-  .button {
-    flex: auto;
+    margin: 1rem;
   }
 
   .dialog__title {
@@ -73,10 +70,5 @@
 
   .dialog__msg {
     margin-bottom: 1rem;
-  }
-
-  .dialog__actions {
-    display: flex;
-    gap: 1rem;
   }
 </style>
