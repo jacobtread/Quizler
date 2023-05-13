@@ -156,7 +156,7 @@
 </script>
 
 <main class="main">
-  <div class="left">
+  <div class="details">
     <header class="header">
       <button on:click={setHome} class="btn btn--icon">
         <img src={Back} alt="Back" />
@@ -175,7 +175,6 @@
         Play
       </button>
     </header>
-
     <label class="field">
       <span class="field__name">Title</span>
       <p class="field__desc">Give your quiz a title</p>
@@ -203,8 +202,9 @@
       />
     </div>
   </div>
-  <div class="right">
-    <div class="actions">
+
+  <div class="list">
+    <div class="list__actions btn-row">
       <button
         on:click={addQuestion}
         disabled={$createData.questions.length >= 50}
@@ -221,7 +221,8 @@
         Shuffle
       </button>
     </div>
-    <div class="right__content">
+
+    <div class="list__content">
       <ol class="questions">
         {#each $createData.questions as question, index (question.id)}
           <li animate:flip={{ duration: 500 }}>
@@ -239,54 +240,43 @@
 
 <style lang="scss">
   @import "../assets/scheme.scss";
-  .actions {
-    display: flex;
-    gap: 1rem;
-    position: sticky;
-    top: 0;
-    left: 0;
-  }
 
   .main {
     height: 100%;
-    padding: 1rem;
-    overflow: auto;
     display: flex;
-    gap: 1rem;
     padding: 1rem;
+
+    overflow: hidden;
+    gap: 1rem;
   }
 
-  .left {
-    top: 0;
-  }
-
-  .right {
-    overflow: auto;
+  .list {
     flex: auto;
+
     display: flex;
     flex-flow: column;
-    gap: 1rem;
   }
 
-  .right__content {
+  .list__actions {
+    background-color: $appBackground;
+    padding-bottom: 1rem;
+  }
+
+  .list__content {
     overflow: auto;
-    flex: auto;
   }
 
   .questions {
     display: flex;
     gap: 1rem;
     flex-flow: column;
+    list-style: none;
   }
 
   .header {
-    position: sticky;
-    top: 0;
-    left: 0;
     display: flex;
     gap: 1rem;
-    background-color: $appBackground;
-    margin-bottom: 1rem;
+    padding-bottom: 1rem;
   }
 
   .field {
@@ -318,5 +308,36 @@
     margin-top: 0.5rem;
     font-size: 1rem;
     line-height: 1.5;
+  }
+
+  @media screen and (max-width: 64rem) {
+    .main {
+      flex-flow: column;
+      gap: 0;
+      overflow: auto;
+    }
+
+    .list {
+      overflow: visible;
+    }
+
+    .list__actions {
+      position: sticky;
+      top: 0;
+      left: 0;
+      z-index: 1;
+    }
+
+    .header,
+    .list__actions {
+      flex-wrap: wrap;
+    }
+
+    .header .btn,
+    .list__actions .btn {
+      flex: auto;
+      justify-content: center;
+      text-align: center;
+    }
   }
 </style>
