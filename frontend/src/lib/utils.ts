@@ -28,6 +28,14 @@ export function formatImageUrl(token: string, uuid: string): string {
   ).toString();
 }
 
+/**
+ * Produces a random number between the provided
+ * min and max (inclusive)
+ *
+ * @param min The minimum number
+ * @param max The maxmimum number
+ * @returns The random number
+ */
 export function randomRange(min: number, max: number): number {
   const value = Math.round(Math.random() * (max - min) + min);
   if (value > max) return max;
@@ -45,6 +53,13 @@ export function deepCopy<T>(value: T): T {
   return JSON.parse(JSON.stringify(value));
 }
 
+/**
+ * Appends the Ordinal string to the end of the provided
+ * number used for lists (e.g, 1st, 2nd, 3rd)
+ *
+ * @param n The number
+ * @returns The number with the ordinal
+ */
 export function getNumberWithOrdinal(n: number): string {
   const s: string[] = ["th", "st", "nd", "rd"];
   const v: number = n % 100;

@@ -1,34 +1,16 @@
 <script lang="ts">
   import type { GameSummary } from "$lib/socket/models";
   import { confirmDialog } from "$lib/stores/dialogStore";
-  import * as socket from "$lib/socket";
-  import {
-    ClientMessage,
-    HostAction,
-    ServerError,
-    GameState
-  } from "$lib/socket/models";
   import { setHome, type GameData } from "$lib/stores/state";
   import { slide } from "svelte/transition";
   import { flip } from "svelte/animate";
   import { getNumberWithOrdinal } from "$lib/utils";
   import ScoreTweened from "../ScoreTweened.svelte";
   import Crown from "$lib/assets/icons/crown.svg";
+  import { doHostReset, doKick } from "$lib/socket/actions";
 
   export let summary: GameSummary;
   export let gameData: GameData;
-
-  async function doKick(id: number) {
-    try {
-      await socket.send({
-        ty: ClientMessage.Kick,
-        id
-      });
-    } catch (e) {
-      const error = e as ServerError;
-      console.error("Error while attempting to kick", error);
-    }
-  }
 
   async function doLeave() {
     if (gameData.host) {
@@ -45,18 +27,6 @@
 
     // Take back to the home scren
     setHome();
-  }
-
-  async function doReset() {
-    try {
-      await socket.send({
-        ty: ClientMessage.HostAction,
-        action: HostAction.Reset
-      });
-    } catch (e) {
-      const error = e as ServerError;
-      console.error("Error while attempting to reset", error);
-    }
   }
 </script>
 
@@ -76,7 +46,7 @@
 
       {#if gameData.host}
         <!-- Restart started button for restarting games -->
-        <button class="btn" on:click={doReset}>Restart</button>
+        <button class="btn" on:click={doHostReset}>Restart</button>
       {/if}
     </div>
 

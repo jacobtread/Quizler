@@ -15,14 +15,14 @@
     [ScoreType.Incorrect]: incorrectMessages
   }[score.ty];
 
-  const scoreTweened = tweened(0, {
+  const message: string = messages[randomRange(0, messages.length - 1)];
+  const value = tweened(0, {
     delay: 500
   });
-  const message: string = messages[randomRange(0, messages.length - 1)];
 
   $: {
     if (score.ty === ScoreType.Correct || score.ty === ScoreType.Partial) {
-      scoreTweened.set(score.value);
+      value.set(score.value);
     }
   }
 </script>
@@ -31,10 +31,10 @@
   <h1 class="title">{score.ty}</h1>
   <p class="text">{message}</p>
   {#if score.ty === ScoreType.Correct}
-    <p class="score">+{$scoreTweened.toFixed(0)}</p>
+    <p class="score">+{$value.toFixed(0)}</p>
   {:else if score.ty === ScoreType.Partial}
     <p class="ratio">{score.count} / {score.total}</p>
-    <p class="score">+{$scoreTweened.toFixed(0)}</p>
+    <p class="score">+{$value.toFixed(0)}</p>
   {/if}
 </main>
 

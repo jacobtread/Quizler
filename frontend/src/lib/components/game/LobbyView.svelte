@@ -1,11 +1,7 @@
 <!-- Game view when the state is in the "Lobby" -->
 <script lang="ts">
-  import * as socket from "$lib/socket";
   import {
-    ClientMessage,
     type PlayerData,
-    HostAction,
-    ServerError,
     type SessionId,
     type TimerState,
     GameState
@@ -16,60 +12,18 @@
   import { slide } from "svelte/transition";
   import { flip } from "svelte/animate";
   import ScoreTweened from "../ScoreTweened.svelte";
+  import {
+    doHostCancel,
+    doHostSkip,
+    doHostStart,
+    doKick
+  } from "$lib/socket/actions";
 
   export let timer: TimerState;
   export let gameData: GameData;
   export let players: PlayerData[];
   export let scores: Record<SessionId, number>;
   export let gameState: GameState;
-
-  async function doKick(id: number) {
-    try {
-      await socket.send({
-        ty: ClientMessage.Kick,
-        id
-      });
-    } catch (e) {
-      const error = e as ServerError;
-      console.error("Error while attempting to kick", error);
-    }
-  }
-
-  async function doStart() {
-    try {
-      await socket.send({
-        ty: ClientMessage.HostAction,
-        action: HostAction.Start
-      });
-    } catch (e) {
-      const error = e as ServerError;
-      console.error("Error while attempting to start", error);
-    }
-  }
-
-  async function doCancel() {
-    try {
-      await socket.send({
-        ty: ClientMessage.HostAction,
-        action: HostAction.Cancel
-      });
-    } catch (e) {
-      const error = e as ServerError;
-      console.error("Error while attempting to cancel", error);
-    }
-  }
-
-  async function doSkip() {
-    try {
-      await socket.send({
-        ty: ClientMessage.HostAction,
-        action: HostAction.Skip
-      });
-    } catch (e) {
-      const error = e as ServerError;
-      console.error("Error while attempting to skip", error);
-    }
-  }
 
   async function doLeave() {
     if (gameData.host) {
@@ -115,15 +69,15 @@
       {#if gameData.host}
         <!-- Theres an active timer add skip button -->
         {#if timer.elapsed !== timer.total}
-          <button class="btn" on:click={doSkip}>Skip</button>
+          <button class="btn" on:click={doHostSkip}>Skip</button>
         {/if}
 
         {#if gameState === GameState.Starting}
           <!-- Cancel started button for starting games -->
-          <button class="btn" on:click={doCancel}>Cancel</button>
+          <button class="btn" on:click={doHostCancel}>Cancel</button>
         {:else if players.length > 0 && gameState === GameState.Lobby}
           <!-- Start button if theres players in the game -->
-          <button class="btn" on:click={doStart}>Start</button>
+          <button class="btn" on:click={doHostStart}>Start</button>
         {/if}
       {/if}
     </div>

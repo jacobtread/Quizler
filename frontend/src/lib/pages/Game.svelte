@@ -6,6 +6,7 @@
   import QuestionView from "$lib/components/game/QuestionView.svelte";
   import ScoreView from "$lib/components/game/ScoreView.svelte";
   import * as socket from "$lib/socket";
+  import { setReady } from "$lib/socket/actions";
   import {
     ServerMessage,
     type PlayerData,
@@ -14,9 +15,7 @@
     type Score,
     type SessionId,
     type TimerState,
-    ClientMessage,
     ScoreType,
-    ServerError,
     removeReasonText,
     type GameSummary,
     RemoveReason
@@ -62,15 +61,6 @@
     } else {
       // Request the next animation frame
       requestAnimationFrame(updateTimer);
-    }
-  }
-
-  async function setReady() {
-    try {
-      await socket.send({ ty: ClientMessage.Ready });
-    } catch (e) {
-      const error = e as ServerError;
-      console.error("Error while attempting to ready", error);
     }
   }
 
