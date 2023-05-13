@@ -16,12 +16,15 @@
     MIN_BONUS_TIME
   } from "$lib/constants";
   import { randomRange } from "$lib/utils";
-  import Back from "$lib/assets/icons/back.svg";
-  import Delete from "$lib/assets/icons/cross.svg";
   import { saveQuestion } from "$lib/stores/createStore";
   import { confirmDialog } from "$lib/stores/dialogStore";
   import { setCreate } from "$lib/stores/state";
   import ImageStorage from "$lib/components/ImageStorage.svelte";
+  import Back from "$lib/assets/icons/back.svg";
+  import Delete from "$lib/assets/icons/cross.svg";
+  import ArrowUp from "$lib/assets/icons/arrowup.svg";
+  import ArrowDown from "$lib/assets/icons/arrowdown.svg";
+  import Checkbox from "$lib/components/Checkbox.svelte";
 
   export let question: Question;
 
@@ -182,11 +185,13 @@
 </script>
 
 <main class="main">
-  <button on:click={back} class="icon-button">
-    <img src={Back} alt="Back" class="icon-button__img" />
-    <span class="icon-button__text">Back</span>
-  </button>
-  <button on:click={save} class="button"> Save </button>
+  <div>
+    <button on:click={back} class="btn btn--icon">
+      <img src={Back} alt="Back" />
+      Back
+    </button>
+    <button on:click={save} class="btn"> Save </button>
+  </div>
 
   <div
     tabindex="0"
@@ -263,26 +268,23 @@
         <div class="answer" animate:flip={{ duration: 500 }}>
           <div class="actions">
             <button
-              disabled={index <= 0}
-              class="answer__move button"
               on:click={() => swapAnswer(index, index - 1)}
+              disabled={index <= 0}
+              class="btn btn--icon-only btn--surface btn-small"
             >
-              &uarr;
+              <img src={ArrowUp} alt="Move Down" />
             </button>
+
             <button
-              disabled={index + 1 >= question.answers.length}
-              class="answer__move button"
               on:click={() => swapAnswer(index, index + 1)}
+              disabled={index + 1 >= question.answers.length}
+              class="btn btn--icon-only btn--surface btn-small"
             >
-              &darr;
+              <img src={ArrowDown} alt="Move Down" />
             </button>
           </div>
 
-          <input
-            class="answer__check"
-            type="checkbox"
-            bind:checked={answer.correct}
-          />
+          <Checkbox bind:value={answer.correct} />
 
           <input
             class="answer__question input"
@@ -293,23 +295,23 @@
           <button
             disabled={question.answers.length == 1}
             on:click={() => removeAnswer(index)}
-            class="icon-button"
+            class="btn btn--icon-only"
           >
-            <img src={Delete} alt="Back" class="icon-button__img" />
+            <img src={Delete} alt="Back" />
           </button>
         </div>
       {/each}
 
       <div class="field-group">
         <button
-          class="button"
+          class="btn"
           on:click={addAnswer}
           disabled={question.answers.length >= 8}
         >
           Add Answer
         </button>
         <button
-          class="button"
+          class="btn"
           on:click={shuffleAnswers}
           disabled={question.answers.length <= 1}
         >
@@ -423,9 +425,6 @@
     &__desc {
       margin-bottom: 1rem;
     }
-
-    &__value {
-    }
   }
 
   .main {
@@ -458,14 +457,6 @@
     gap: 1rem;
   }
 
-  .answer__move {
-    font-size: 1rem;
-    padding: 0.5rem;
-  }
-
-  .icon-button {
-    padding-right: 0.5rem;
-  }
   .answer__question {
     flex: auto;
   }

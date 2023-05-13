@@ -110,20 +110,20 @@
     <p class="desc">{gameData.config.text}</p>
 
     <div class="actions">
-      <button class="button" on:click={doLeave}>Leave</button>
+      <button class="btn" on:click={doLeave}>Leave</button>
 
       {#if gameData.host}
         <!-- Theres an active timer add skip button -->
         {#if timer.elapsed !== timer.total}
-          <button class="button" on:click={doSkip}>Skip</button>
+          <button class="btn" on:click={doSkip}>Skip</button>
         {/if}
 
         {#if gameState === GameState.Starting}
           <!-- Cancel started button for starting games -->
-          <button class="button" on:click={doCancel}>Cancel</button>
+          <button class="btn" on:click={doCancel}>Cancel</button>
         {:else if players.length > 0 && gameState === GameState.Lobby}
           <!-- Start button if theres players in the game -->
-          <button class="button" on:click={doStart}>Start</button>
+          <button class="btn" on:click={doStart}>Start</button>
         {/if}
       {/if}
     </div>
@@ -148,7 +148,7 @@
             <!-- Host privilleges -->
             {#if gameData.host}
               <td class="player__action">
-                <button class="button" on:click={() => doKick(player.id)}>
+                <button class="btn" on:click={() => doKick(player.id)}>
                   Kick
                 </button>
               </td>
@@ -162,14 +162,6 @@
 
 <style lang="scss">
   @import "../../assets/scheme.scss";
-  .host {
-    font-size: 1rem;
-    background-color: $primary;
-    padding: 0.5rem;
-    vertical-align: middle;
-    margin-left: 0.5rem;
-    color: #ffffff;
-  }
 
   .head {
     display: flex;
@@ -193,11 +185,6 @@
     color: $primary;
     font-size: 3rem;
     text-align: center;
-  }
-
-  .token__inner {
-    text-align: right;
-    margin-left: auto;
   }
 
   .quiz {
@@ -254,7 +241,7 @@
     gap: 1rem;
   }
 
-  .actions .button {
+  .actions .btn {
     flex: auto;
   }
 

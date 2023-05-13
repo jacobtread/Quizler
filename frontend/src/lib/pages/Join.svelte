@@ -2,7 +2,7 @@
   import * as socket from "$lib/socket";
   import { ClientMessage, ServerError, errorText } from "$lib/socket/models";
   import { errorDialog } from "$lib/stores/dialogStore";
-  import { setConnect, setGame, setHome } from "$stores/state";
+  import { setConnect, setGame } from "$stores/state";
   import { z } from "zod";
   import Play from "$lib/assets/icons/play.svg";
   import Back from "$lib/assets/icons/back.svg";
@@ -40,7 +40,7 @@
         name
       });
 
-      setGame({ id, token, config, host: false });
+      setGame({ id, token, config, host: false, name });
     } catch (e) {
       const error = e as ServerError;
       console.error("Failed to join", error);

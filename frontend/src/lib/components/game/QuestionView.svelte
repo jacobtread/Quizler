@@ -69,7 +69,7 @@
     {#if question.ty === QuestionType.Single}
       <div class="answers">
         {#each question.answers as answer, index}
-          <button class="answer button" on:click={() => doAnswer(index)}>
+          <button class="answer btn" on:click={() => doAnswer(index)}>
             {answer.value}
           </button>
         {/each}
@@ -77,7 +77,7 @@
     {:else if question.ty === QuestionType.Multiple}
       <div class="answers">
         {#each question.answers as answer, index}
-          <label class="answer button">
+          <label class="answer btn">
             <input
               type="checkbox"
               value={index}
@@ -90,7 +90,7 @@
         {/each}
       </div>
       <button
-        class="button submit"
+        class="btn submit"
         on:click={doAnswers}
         disabled={answers.length < question.min}
       >

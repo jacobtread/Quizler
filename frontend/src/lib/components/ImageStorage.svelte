@@ -138,12 +138,11 @@
             <p>{image.size} bytes</p>
             <div class="file__actions">
               <button
-                class="button button--small"
+                class="btn btn--small"
                 on:click={() => consumeSelectImage(image)}>Select</button
               >
-              <button
-                class="button button--small"
-                on:click={() => onDelete(image)}>Delete</button
+              <button class="btn btn--small" on:click={() => onDelete(image)}
+                >Delete</button
               >
             </div>
           </div>
@@ -162,14 +161,16 @@
       </div>
 
       <div class="actions">
-        <button on:click={clearSelectImage} class="button">Close</button>
-        <button on:click={doUpload} class="icon-button">
-          <img src={Import} alt="Import" class="icon-button__img" />
-          <span class="icon-button__text">Upload Images</span>
+        <button on:click={clearSelectImage} class="btn btn--surface"
+          >Close</button
+        >
+        <button on:click={doUpload} class="btn btn--icon btn--surface">
+          <img src={Import} alt="Import" />
+          Upload Images
         </button>
         <button
           on:click={doClear}
-          class="button"
+          class="btn btn--surface"
           disabled={$imageStore.length === 0}>Delete All Images</button
         >
       </div>
@@ -199,11 +200,6 @@
     background-color: rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
-  }
-
-  .button,
-  .icon-button {
-    background-color: $surfaceLight;
   }
 
   .dialog {
@@ -281,8 +277,7 @@
     display: flex;
     gap: 0.5rem;
   }
-  .file__actions .button {
+  .file__actions .btn {
     flex: auto;
-    background-color: $surface;
   }
 </style>

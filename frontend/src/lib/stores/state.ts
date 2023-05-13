@@ -18,10 +18,16 @@ export const enum AppStateType {
 }
 
 export interface GameData {
+  // ID of the current player
   id: SessionId;
+  // Current game token
   token: string;
+  // Current game config
   config: GameConfig;
+  // Whether we are the host
   host: boolean;
+  // The current player name
+  name?: string | undefined;
 }
 
 export type AppState =

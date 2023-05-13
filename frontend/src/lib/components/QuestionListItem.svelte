@@ -4,6 +4,8 @@
   import { setEditing } from "$lib/stores/state";
   import Delete from "$lib/assets/icons/cross.svg";
   import Edit from "$lib/assets/icons/edit.svg";
+  import ArrowUp from "$lib/assets/icons/arrowup.svg";
+  import ArrowDown from "$lib/assets/icons/arrowdown.svg";
 
   export let question: Question;
   export let index: number;
@@ -13,30 +15,34 @@
 <div class="question">
   <div class="actions">
     <button
-      disabled={index <= 0}
-      class="action_move button"
       on:click={() => swapQuestion(index, index - 1)}
+      disabled={index <= 0}
+      class="btn btn--icon-only btn--surface"
     >
-      &uarr;
+      <img src={ArrowUp} alt="Move Up" />
     </button>
+
     <button
-      disabled={index + 1 >= length}
-      class="action_move button"
       on:click={() => swapQuestion(index, index + 1)}
+      disabled={index + 1 >= length}
+      class="btn btn--icon-only btn--surface"
     >
-      &darr;
+      <img src={ArrowDown} alt="Move Down" />
     </button>
 
     <button
       on:click={() => removeQuestion(index)}
       disabled={length == 1}
-      class="icon-button"
+      class="btn btn--icon-only btn--surface"
     >
-      <img src={Delete} alt="Back" class="icon-button__img" />
+      <img src={Delete} alt="Back" />
     </button>
 
-    <button on:click={() => setEditing(question)} class="icon-button">
-      <img src={Edit} alt="Back" class="icon-button__img" />
+    <button
+      on:click={() => setEditing(question)}
+      class="btn btn--icon-only btn--surface"
+    >
+      <img src={Edit} alt="Back" />
     </button>
   </div>
   <div class="body">
@@ -73,24 +79,6 @@
     border-radius: 0.5rem;
     display: flex;
     gap: 1rem;
-  }
-
-  .button,
-  .icon-button {
-    background-color: $surfaceLight;
-  }
-
-  .icon-button {
-    padding-right: 0.5rem;
-  }
-  .button:disabled,
-  .icon-button:disabled {
-    background-color: $surfaceLightDisabled;
-  }
-  .icon-button__img {
-    margin: 0 auto;
-    width: 24px;
-    height: 24px;
   }
 
   .answers {

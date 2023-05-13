@@ -28,6 +28,10 @@
   let players: PlayerData[] = [];
   let gameState: GameState = GameState.Lobby;
 
+  if (!gameData.host) {
+    players.push({ id: gameData.id, name: gameData.name ?? "" });
+  }
+
   let question: Question | null = null;
 
   let score: Score = { ty: ScoreType.Incorrect };

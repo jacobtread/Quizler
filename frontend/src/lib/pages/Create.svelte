@@ -158,21 +158,21 @@
 <main class="main">
   <div class="left">
     <header class="header">
-      <button on:click={setHome} class="icon-button">
-        <img src={Back} alt="Back" class="icon-button__img" />
-        <span class="icon-button__text">Back</span>
+      <button on:click={setHome} class="btn btn--icon">
+        <img src={Back} alt="Back" />
+        Back
       </button>
-      <button on:click={doImport} class="icon-button">
-        <img src={Import} alt="Import" class="icon-button__img" />
-        <span class="icon-button__text">Import</span>
+      <button on:click={doImport} class="btn btn--icon">
+        <img src={Import} alt="Import" />
+        Import
       </button>
-      <button on:click={doExport} class="icon-button">
-        <img src={Export} alt="Export" class="icon-button__img" />
-        <span class="icon-button__text">Export</span>
+      <button on:click={doExport} class="btn btn--icon">
+        <img src={Export} alt="Export" />
+        Export
       </button>
-      <button on:click={doPlay} class="icon-button">
-        <img src={Play} alt="Play" class="icon-button__img" />
-        <span class="icon-button__text">Play</span>
+      <button on:click={doPlay} class="btn btn--icon">
+        <img src={Play} alt="Play" />
+        Play
       </button>
     </header>
 
@@ -208,15 +208,15 @@
       <button
         on:click={addQuestion}
         disabled={$createData.questions.length >= 50}
-        class="icon-button"
+        class="btn btn--icon"
       >
-        <img src={Add} alt="Back" class="icon-button__img" />
-        <span class="icon-button__text"> Add Question</span>
+        <img src={Add} alt="Back" />
+        Add Question
       </button>
       <button
         on:click={shuffleQuestions}
         disabled={$createData.questions.length <= 1}
-        class="button"
+        class="btn"
       >
         Shuffle
       </button>

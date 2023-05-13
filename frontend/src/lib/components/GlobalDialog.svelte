@@ -17,16 +17,19 @@
 
       <div class="dialog__actions">
         {#if $dialogStore.ty === DialogType.Error}
-          <button class="button" on:click={() => consumeDialog(true)}
-            >Close</button
-          >
+          <button class="btn btn--surface" on:click={() => consumeDialog(true)}>
+            Close
+          </button>
         {:else}
-          <button class="button" on:click={() => consumeDialog(true)}
-            >Confirm</button
+          <button class="btn btn--surface" on:click={() => consumeDialog(true)}>
+            Confirm
+          </button>
+          <button
+            class="btn btn--surface"
+            on:click={() => consumeDialog(false)}
           >
-          <button class="button" on:click={() => consumeDialog(false)}
-            >Cancel</button
-          >
+            Cancel
+          </button>
         {/if}
       </div>
     </div>
@@ -60,7 +63,6 @@
   }
 
   .button {
-    background-color: $surfaceLight;
     flex: auto;
   }
 

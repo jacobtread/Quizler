@@ -39,7 +39,7 @@ p {
   line-height: 1.5;
 }
 
-.button {
+.btn {
   padding: 1rem;
   border-radius: 0.5rem;
 
@@ -50,12 +50,64 @@ p {
 
   transition: background-color 0.25s ease, transform 0.2s ease;
   cursor: pointer;
+
+  &--surface {
+    background-color: $surfaceLight;
+
+    &:disabled {
+      background-color: $surfaceLightDisabled;
+    }
+  }
+
+  &--small {
+    padding: 0.5rem;
+    font-size: 0.8rem;
+    border-radius: 0.25rem;
+  }
+
+  &:hover {
+    background-color: lighten($color: $surface, $amount: 15);
+  }
+
+  &:disabled {
+    background-color: $surfaceDisabled;
+    cursor: not-allowed;
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(1.1);
+  }
 }
 
-.button--small {
+// Icon specific button styling
+.btn--icon,
+.btn--icon-only {
   padding: 0.5rem;
-  font-size: 0.8rem;
-  border-radius: 0.25rem;
+  padding-right: 1rem;
+
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  > img {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  &:disabled > img {
+    opacity: 0.25;
+  }
+}
+
+.btn--icon.btn--small img,
+.btn--icon-only.btn-small img {
+  width: 1rem;
+  height: 1rem;
+}
+
+// Styling for buttons with only icons
+.btn--icon-only {
+  padding-right: 0.5rem;
 }
 
 .back {
@@ -68,59 +120,14 @@ p {
   transition: background-color 0.25s ease, transform 0.2s ease;
   line-height: 0;
   cursor: pointer;
-}
 
-.button:hover,
-.icon-button:hover {
-  background-color: lighten($color: $surface, $amount: 15);
-}
-
-.icon-button {
-  padding: 0.5rem;
-  padding-right: 1rem;
-  border-radius: 0.5rem;
-
-  border: none;
-  background-color: $surface;
-
-  transition: background-color 0.25s ease, transform 0.2s ease;
-  line-height: 0;
-  cursor: pointer;
-  vertical-align: middle;
-
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.button:disabled,
-.icon-button:disabled {
-  background-color: $surfaceDisabled;
-}
-
-.icon-button:disabled .icon-button__img {
-  opacity: 0.25;
-}
-
-.icon-button--only {
-  display: inline-block;
-}
-
-.icon-button__img {
-  width: 32px;
-  height: 32px;
-}
-
-.icon-button__text {
-  font-size: 1rem;
+  &:hover {
+    background-color: $primary;
+  }
 }
 
 .back--floating {
   position: absolute;
   left: 1rem;
   top: 1rem;
-}
-
-.back:hover {
-  background-color: $primary;
 }
