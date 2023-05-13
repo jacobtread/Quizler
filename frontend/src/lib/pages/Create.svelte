@@ -44,6 +44,7 @@
     const blob = await createQuizBlob(
       data.name,
       data.text,
+      data.max_players,
       data.timing,
       data.questions
     );

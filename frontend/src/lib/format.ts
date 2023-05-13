@@ -17,6 +17,7 @@ import { z } from "zod";
 const fileFormatSchema = z.object({
   name: z.string(),
   text: z.string(),
+  max_players: z.number(),
   timing: z.object({
     wait_time: z.number()
   }),
@@ -67,6 +68,7 @@ async function serializeImage(image: StoredImage): Promise<SerializedImage> {
 export async function createQuizBlob(
   name: string,
   text: string,
+  max_players: number,
   timing: TimingConfig,
   questions: Question[]
 ): Promise<Blob> {
@@ -76,7 +78,14 @@ export async function createQuizBlob(
   );
 
   // Create the object to serialize as the quiz file
-  const output: QuizFormat = { name, text, timing, questions, images };
+  const output: QuizFormat = {
+    name,
+    text,
+    max_players,
+    timing,
+    questions,
+    images
+  };
 
   const json = JSON.stringify(output);
 
@@ -131,6 +140,7 @@ export async function loadQuizBlob(file: Blob): Promise<LoadedQuiz> {
   return {
     name: obj.name,
     text: obj.text,
+    max_players: obj.max_players,
     questions: obj.questions,
     timing: obj.timing
   };
