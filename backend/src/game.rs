@@ -522,6 +522,9 @@ impl Handler<JoinMessage> for Game {
     type Result = Result<JoinedMessage, ServerError>;
 
     fn handle(&mut self, msg: JoinMessage, _ctx: &mut Self::Context) -> Self::Result {
+        // Trim name padding
+        let name = msg.name.trim();
+
         // Cannot join games that are already started or finished
         if !matches!(self.state, GameState::Lobby | GameState::Starting) {
             return Err(ServerError::NotJoinable);
@@ -531,14 +534,18 @@ impl Handler<JoinMessage> for Game {
         if self
             .players
             .iter()
-            .any(|player| player.name.eq_ignore_ascii_case(&msg.name))
+            .any(|player| player.name.eq_ignore_ascii_case(name))
         {
             return Err(ServerError::UsernameTaken);
         }
 
         // Create the player
-        let game_player =
-            PlayerSession::new(msg.id, msg.addr, msg.name, self.config.questions.len());
+        let game_player = PlayerSession::new(
+            msg.id,
+            msg.addr,
+            name.to_string(),
+            self.config.questions.len(),
+        );
 
         // Message sent to existing players for this player
         let joiner_message = Arc::new(ServerMessage::PlayerData {
