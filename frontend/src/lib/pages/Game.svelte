@@ -18,7 +18,8 @@
     ScoreType,
     ServerError,
     removeReasonText,
-    type GameSummary
+    type GameSummary,
+    RemoveReason
   } from "$lib/socket/models";
   import { errorDialog } from "$lib/stores/dialogStore";
   import { formatImageUrl } from "$lib/utils";
@@ -158,8 +159,12 @@
     // if the removed player was us
     if (msg.id === gameData.id) {
       setHome();
-      const reason = removeReasonText[msg.reason];
-      errorDialog("Removed from game", reason);
+
+      // For remove reasons other than self disconnect
+      if (msg.reason !== RemoveReason.Disconnected) {
+        const reason = removeReasonText[msg.reason];
+        errorDialog("Removed from game", reason);
+      }
     }
   });
 </script>
