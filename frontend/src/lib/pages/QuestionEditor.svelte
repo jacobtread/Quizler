@@ -416,10 +416,13 @@
 
   .field-group {
     display: flex;
+    flex-flow: row wrap;
     gap: 1rem;
     width: 100%;
+    margin-bottom: 1rem;
 
     .field {
+      margin-bottom: 0;
       flex: auto;
     }
   }
