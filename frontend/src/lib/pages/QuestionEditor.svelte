@@ -185,13 +185,13 @@
 </script>
 
 <main class="main">
-  <div>
+  <header class="header btn-row">
     <button on:click={back} class="btn btn--icon">
       <img src={Back} alt="Back" />
       Back
     </button>
     <button on:click={save} class="btn"> Save </button>
-  </div>
+  </header>
 
   <div
     tabindex="0"
@@ -405,6 +405,14 @@
 
 <style lang="scss">
   @import "../assets/scheme.scss";
+
+  .header {
+    position: sticky;
+    top: 0;
+    left: 0;
+    padding: 1rem 0;
+    background-color: $appBackground;
+  }
 
   .field-group {
     display: flex;

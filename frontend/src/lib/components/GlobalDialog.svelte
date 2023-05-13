@@ -15,7 +15,7 @@
       <h1 class="dialog__title">{$dialogStore.title}</h1>
       <p class="dialog__msg">{$dialogStore.message}</p>
 
-      <div class="btn-row">
+      <div class="btn-row btn-row--fill">
         {#if $dialogStore.ty === DialogType.Error}
           <button class="btn btn--surface" on:click={() => consumeDialog(true)}>
             Close

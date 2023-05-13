@@ -63,7 +63,7 @@
     <h2 class="name">{gameData.config.name}</h2>
     <p class="desc">{gameData.config.text}</p>
 
-    <div class="btn-row">
+    <div class="btn-row btn-row--fill">
       <button class="btn" on:click={doLeave}>Leave</button>
 
       {#if gameData.host}

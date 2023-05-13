@@ -43,10 +43,12 @@ p {
   display: flex;
   gap: 1rem;
 
-  .btn,
-  .btn--icon,
-  .btn--icon-only {
-    flex: auto;
+  &--fill {
+    .btn,
+    .btn--icon,
+    .btn--icon-only {
+      flex: auto;
+    }
   }
 }
 
