@@ -162,7 +162,7 @@
 
   onMount(() => {
     // Attempt to make the browser fullscreen to make the app more visible
-    if (!gameData.host) tryFullscreen();
+    // if (!gameData.host) tryFullscreen();
   });
 </script>
 

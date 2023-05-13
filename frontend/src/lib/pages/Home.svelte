@@ -158,7 +158,7 @@
     font-size: 1.1rem;
   }
 
-  @media screen and (max-height: 48rem) {
+  @media screen and (max-height: 48rem) and (max-width: 52rem) {
     .main {
       justify-content: flex-start;
       align-items: center;

@@ -412,6 +412,7 @@
     left: 0;
     padding: 1rem 0;
     background-color: $appBackground;
+    z-index: 1;
   }
 
   .field-group {
