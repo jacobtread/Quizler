@@ -39,6 +39,17 @@ p {
   line-height: 1.5;
 }
 
+.btn-row {
+  display: flex;
+  gap: 1rem;
+
+  .btn,
+  .btn--icon,
+  .btn--icon-only {
+    flex: auto;
+  }
+}
+
 .btn {
   padding: 1rem;
   border-radius: 0.5rem;

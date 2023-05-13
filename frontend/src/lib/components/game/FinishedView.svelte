@@ -71,7 +71,7 @@
     <h2 class="name">{gameData.config.name}</h2>
     <p class="desc">{gameData.config.text}</p>
 
-    <div class="actions">
+    <div class="btn-row">
       <button class="btn" on:click={doLeave}>Leave</button>
 
       {#if gameData.host}
@@ -114,28 +114,16 @@
 <style lang="scss">
   @import "../../assets/scheme.scss";
 
+  .main {
+    display: flex;
+    flex-flow: column;
+    align-items: center;
+    padding: 1rem;
+  }
+
   .head {
     display: flex;
     flex-flow: row nowrap;
-  }
-
-  .starting {
-    font-size: 1rem;
-    margin: 0 1rem;
-    color: #999;
-  }
-
-  .timing {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .time {
-    font-weight: bold;
-    color: $primary;
-    font-size: 3rem;
-    text-align: center;
   }
 
   .quiz {
@@ -144,6 +132,7 @@
   }
 
   .players {
+    margin-top: 1rem;
     width: 100%;
     border-collapse: collapse;
     border: 1px solid $surfaceLight;
@@ -221,26 +210,5 @@
 
   .desc {
     margin-bottom: 1rem;
-  }
-
-  .player__action {
-    padding: 0;
-  }
-
-  .actions {
-    margin-bottom: 1rem;
-    display: flex;
-    gap: 1rem;
-  }
-
-  .actions .btn {
-    flex: auto;
-  }
-
-  .main {
-    display: flex;
-    flex-flow: column;
-    align-items: center;
-    padding: 1rem;
   }
 </style>
