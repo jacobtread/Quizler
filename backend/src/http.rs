@@ -24,6 +24,7 @@ use std::{
         atomic::{AtomicU32, Ordering},
         Arc,
     },
+    time::Instant,
 };
 use uuid::Uuid;
 
@@ -181,6 +182,7 @@ async fn quiz_socket(
         Session {
             id: session_id,
             game: None,
+            hb: Instant::now(),
         },
         &req,
         stream,

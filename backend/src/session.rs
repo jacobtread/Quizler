@@ -14,7 +14,10 @@ use actix::{
 use actix_web_actors::ws;
 use log::{debug, error, info};
 use serde::Serialize;
-use std::sync::Arc;
+use std::{
+    sync::Arc,
+    time::{Duration, Instant},
+};
 use uuid::Uuid;
 
 /// Type alias for numbers that represent Session ID's
@@ -25,10 +28,26 @@ pub struct Session {
     pub id: SessionId,
     /// Address to the current game if apart of one
     pub game: Option<Addr<Game>>,
+    /// Last time the session was heard from
+    pub hb: Instant,
 }
 
 impl Actor for Session {
     type Context = ws::WebsocketContext<Session>;
+
+    fn started(&mut self, ctx: &mut Self::Context) {
+        // Run heartbeat intervals
+        ctx.run_interval(Self::HB_INTERVAL, |act, ctx| {
+            let elapsed = act.hb.elapsed();
+            // Connection lost timeout
+            if elapsed >= Self::TIMEOUT {
+                ctx.stop();
+                return;
+            }
+
+            ctx.ping(&[]);
+        });
+    }
 
     /// Handle the session being stopped by removing the
     /// session from any games and cleaning up after it
@@ -49,6 +68,11 @@ impl Actor for Session {
 type RespFut = LocalBoxActorFuture<Session, Result<ServerMessage, ServerError>>;
 
 impl Session {
+    // Time intervals to check heartbeats
+    const HB_INTERVAL: Duration = Duration::from_secs(5);
+    // Timeout for handling loss of connection
+    const TIMEOUT: Duration = Duration::from_secs(15);
+
     /// Writes a server message by encoding it to json and then sending it
     /// as a text message through the web socket context
     ///
@@ -290,6 +314,9 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Session {
                 return;
             }
         };
+
+        // Any message is considered a heartbeat
+        self.hb = Instant::now();
 
         // Only expect text messages
         let text = match message {
