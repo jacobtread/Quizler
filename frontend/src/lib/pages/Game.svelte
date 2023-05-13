@@ -1,7 +1,6 @@
 <script lang="ts">
   import AnsweredView from "$lib/components/game/AnsweredView.svelte";
   import AwaitReadyView from "$lib/components/game/AwaitReadyView.svelte";
-  import FinishedView from "$lib/components/game/FinishedView.svelte";
   import LobbyView from "$lib/components/game/LobbyView.svelte";
   import QuestionView from "$lib/components/game/QuestionView.svelte";
   import ScoreView from "$lib/components/game/ScoreView.svelte";
@@ -147,9 +146,7 @@
   });
 </script>
 
-{#if gameState === GameState.Finished}
-  <FinishedView {gameData} />
-{:else if gameData.host || gameState === GameState.Lobby || gameState === GameState.Starting}
+{#if gameData.host || gameState === GameState.Finished || gameState === GameState.Lobby || gameState === GameState.Starting}
   <LobbyView {gameData} {gameState} {players} {timer} {scores} />
 {:else if gameState === GameState.AwaitingReady}
   <AwaitReadyView />

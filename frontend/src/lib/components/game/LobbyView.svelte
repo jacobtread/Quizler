@@ -12,10 +12,11 @@
   } from "$lib/socket/models";
   import { confirmDialog } from "$lib/stores/dialogStore";
   import { setHome, type GameData } from "$lib/stores/state";
-  import { formatTime } from "$lib/utils";
+  import { formatTime, getNumberWithOrdinal } from "$lib/utils";
   import { slide } from "svelte/transition";
   import { flip } from "svelte/animate";
   import ScoreTweened from "../ScoreTweened.svelte";
+  import Crown from "$lib/assets/icons/crown.svg";
 
   export let timer: TimerState;
   export let gameData: GameData;
@@ -87,6 +88,18 @@
     // Take back to the home scren
     setHome();
   }
+
+  async function doReset() {
+    try {
+      await socket.send({
+        ty: ClientMessage.HostAction,
+        action: HostAction.Reset
+      });
+    } catch (e) {
+      const error = e as ServerError;
+      console.error("Error while attempting to reset", error);
+    }
+  }
 </script>
 
 <main class="main" transition:slide>
@@ -121,6 +134,9 @@
         {#if gameState === GameState.Starting}
           <!-- Cancel started button for starting games -->
           <button class="btn" on:click={doCancel}>Cancel</button>
+        {:else if gameState === GameState.Finished}
+          <!-- Restart started button for restarting games -->
+          <button class="btn" on:click={doReset}>Restart</button>
         {:else if players.length > 0 && gameState === GameState.Lobby}
           <!-- Start button if theres players in the game -->
           <button class="btn" on:click={doStart}>Start</button>
@@ -131,6 +147,10 @@
     <table class="players">
       <thead>
         <tr>
+          <!-- Game over placing  -->
+          {#if gameState === GameState.Finished}
+            <th>Place</th>
+          {/if}
           <th>Name</th>
           <th>Score</th>
           {#if gameData.host}
@@ -139,10 +159,22 @@
         </tr>
       </thead>
       <tbody>
-        {#each players as player (player.id)}
+        {#each players as player, index (player.id)}
           <tr class="player" animate:flip>
-            <td class="player__name">{player.name}</td>
+            <!-- first 3 places winners -->
+            {#if gameState === GameState.Finished}
+              <td class="player__place">
+                {#if index == 0}
+                  <img src={Crown} alt="Winner Crown" class="crown" />
+                {/if}
+                {getNumberWithOrdinal(index + 1)}
+              </td>
+            {/if}
+
             <td class="player__name">
+              {player.name}
+            </td>
+            <td class="player_score">
               <ScoreTweened value={scores[player.id] ?? 0} />
             </td>
             <!-- Host privilleges -->
@@ -211,11 +243,48 @@
   td {
     background-color: $surface;
     border: 1px solid $surfaceLight;
+    padding: 1rem;
   }
 
   .player {
+    position: relative;
     background-color: $surface;
     border: 1px solid $surfaceLight;
+  }
+
+  .player__place {
+    padding: 1rem;
+    color: #fff;
+    font-weight: bold;
+  }
+
+  .crown {
+    position: absolute;
+    width: 3rem;
+    left: 0;
+    top: 0;
+    transform: translate(-30%, -50%) rotate(-30deg);
+    animation: 0.5s 0.5s crown ease forwards;
+    opacity: 0;
+  }
+
+  @keyframes crown {
+    0% {
+      opacity: 0;
+      transform: translate(-30%, -50%) rotate(-30deg) scale(1);
+    }
+    30% {
+      opacity: 1;
+      transform: translate(-50%, -70%) rotate(-23deg) scale(1.5);
+    }
+    60% {
+      opacity: 1;
+      transform: translate(-40%, -60%) rotate(23deg) scale(1);
+    }
+    100% {
+      opacity: 1;
+      transform: translate(-30%, -50%) rotate(-30deg) scale(1);
+    }
   }
 
   .player__name {
@@ -233,6 +302,10 @@
 
   .desc {
     margin-bottom: 1rem;
+  }
+
+  .player__action {
+    padding: 0;
   }
 
   .actions {
