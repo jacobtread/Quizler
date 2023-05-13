@@ -290,9 +290,20 @@ impl Game {
         self.set_timer(START_DURATION);
     }
 
-    /// Handles progressing the state to [`GameState::AwaitingAnswers`]
-    /// once all the players have provided the Ready state message
-    fn all_ready(&mut self) {
+    /// Updates the current state checking if all the players are ready
+    /// then if they are progresses the state to [`GameState::AwaitingAnswers`]
+    fn update_ready(&mut self) {
+        // Ignore if we aren't expecting ready states
+        if self.state != GameState::AwaitingReady {
+            return;
+        }
+
+        // Check all players are ready
+        let all_ready = self.players.iter().all(|player| player.ready);
+        if !all_ready {
+            return;
+        }
+
         self.set_state(GameState::AwaitingAnswers);
         let question = self
             .config
@@ -586,20 +597,12 @@ impl Handler<ReadyMessage> for Game {
     type Result = ();
 
     fn handle(&mut self, msg: ReadyMessage, _ctx: &mut Self::Context) -> Self::Result {
-        // Whether all players are ready
-        let mut all_ready = true;
-
-        for player in &mut self.players {
-            if player.id == msg.id {
-                player.ready = true;
-            } else if !player.ready {
-                all_ready = false;
-            }
+        let player = self.players.iter_mut().find(|player| player.id == msg.id);
+        if let Some(player) = player {
+            player.ready = true;
         }
 
-        if all_ready {
-            self.all_ready();
-        }
+        self.update_ready();
     }
 }
 
@@ -678,6 +681,9 @@ impl Handler<RemovePlayerMessage> for Game {
         let target = self.players.remove(index);
         // Tell the session itself that its been kicked
         target.addr.do_send(ClearGameMessage);
+
+        // Ready state may have changed now that this player is removed
+        self.update_ready();
 
         Ok(())
     }
