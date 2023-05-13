@@ -16,6 +16,8 @@ pub enum ServerError {
     UsernameTaken,
     /// The game is already started or finish so cannot be joined
     NotJoinable,
+    /// The game is already at max capacity
+    CapacityReached,
     /// An action was attempting on a player that wasnt found
     UnknownPlayer,
     /// Something unexpected went wrong on the server

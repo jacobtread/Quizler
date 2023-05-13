@@ -530,6 +530,11 @@ impl Handler<JoinMessage> for Game {
             return Err(ServerError::NotJoinable);
         }
 
+        // Game already at max capacity
+        if self.players.len() >= self.config.max_players {
+            return Err(ServerError::CapacityReached);
+        }
+
         // Error if username is already taken
         if self
             .players
@@ -825,6 +830,8 @@ pub struct GameConfig {
     pub name: String,
     /// Text displayed under the game name
     pub text: String,
+    /// Maximum number of players allowed in this game
+    pub max_players: usize,
     /// Timing data for different game events
     #[serde(skip)]
     pub timing: GameTiming,

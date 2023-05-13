@@ -87,6 +87,7 @@ async fn assets(path: web::Path<String>) -> impl Responder {
 pub struct GameConfigUpload {
     pub name: String,
     pub text: String,
+    pub max_players: usize,
     pub timing: GameTiming,
     pub questions: Vec<Arc<Question>>,
 }
@@ -176,6 +177,7 @@ async fn create_quiz(mut payload: Multipart) -> Result<impl Responder, CreateErr
     let config = GameConfig {
         name: config.name,
         text: config.text,
+        max_players: config.max_players,
         timing: config.timing,
         questions: config.questions,
         images,

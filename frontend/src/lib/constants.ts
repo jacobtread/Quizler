@@ -19,6 +19,9 @@ export const MAX_WAIT_TIME = 1000 * 60 * 30; /* 30mins */
 export const MIN_BONUS_TIME = 1000; /* 1s */
 export const MAX_BONUS_TIME = 1000 * 60 * 30; /* 30mins */
 
+export const MIN_MAX_PLAYERS: number = 1; /* 1 max player min */
+export const MAX_MAX_PLAYERS: number = 50; /* 50 max player limit to games */
+
 /**
  * Creates a new default question object to use
  *

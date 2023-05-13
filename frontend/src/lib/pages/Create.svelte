@@ -7,7 +7,13 @@
     ServerError
   } from "$lib/socket/models";
   import * as socket from "$lib/socket";
-  import { DEBUG, MAX_WAIT_TIME, MIN_WAIT_TIME } from "$lib/constants";
+  import {
+    DEBUG,
+    MAX_MAX_PLAYERS,
+    MAX_WAIT_TIME,
+    MIN_MAX_PLAYERS,
+    MIN_WAIT_TIME
+  } from "$lib/constants";
   import Back from "$lib/assets/icons/back.svg";
   import Import from "$lib/assets/icons/import.svg";
   import Add from "$lib/assets/icons/add.svg";
@@ -129,6 +135,7 @@
     const config: CreateRequest = {
       name: data.name,
       text: data.text,
+      max_players: data.max_players,
       timing: data.timing,
       questions: data.questions
     };
@@ -201,6 +208,19 @@
         max={MAX_WAIT_TIME}
       />
     </div>
+    <label class="field">
+      <span class="field__name">Max Players</span>
+      <p class="field__desc">
+        Maximum number of players allowed to join this quiz
+      </p>
+      <input
+        class="input"
+        type="number"
+        bind:value={$createData.max_players}
+        min={MIN_MAX_PLAYERS}
+        max={MAX_MAX_PLAYERS}
+      />
+    </label>
   </div>
 
   <div class="list">

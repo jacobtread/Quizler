@@ -20,6 +20,7 @@ type PlayerSummary = PlayerData & { score: number };
 export interface CreateRequest {
   name: string;
   text: string;
+  max_players: number;
   timing: TimingConfig;
   questions: Question[];
 }
@@ -49,6 +50,7 @@ export const enum ServerError {
   InvalidToken = "InvalidToken",
   UsernameTaken = "UsernameTaken",
   NotJoinable = "NotJoinable",
+  CapacityReached = "CapacityReached",
   UnknownPlayer = "UnknownPlayer",
   Unexpected = "Unexpected",
   InvalidPermission = "InvalidPermission",
@@ -61,6 +63,7 @@ export const errorText: Record<ServerError, string> = {
   [ServerError.InvalidToken]: "Invalid token provided",
   [ServerError.UsernameTaken]: "Username already in use",
   [ServerError.NotJoinable]: "Quiz is not joinable",
+  [ServerError.CapacityReached]: "Quiz is full",
   [ServerError.UnknownPlayer]: "Target player not found",
   [ServerError.Unexpected]: "Unexpected error occurred",
   [ServerError.InvalidPermission]: "You don't have permission to do that",
