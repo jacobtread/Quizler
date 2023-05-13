@@ -528,7 +528,11 @@ impl Handler<JoinMessage> for Game {
         }
 
         // Error if username is already taken
-        if self.players.iter().any(|player| player.name.eq(&msg.name)) {
+        if self
+            .players
+            .iter()
+            .any(|player| player.name.eq_ignore_ascii_case(&msg.name))
+        {
             return Err(ServerError::UsernameTaken);
         }
 
