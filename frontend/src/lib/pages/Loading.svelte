@@ -1,8 +1,24 @@
+<script lang="ts">
+  import Spinner from "$lib/components/Spinner.svelte";
+</script>
+
 <!-- Loading page displayed while the socket is connecting -->
 
-<div>
-  <h1>Connecting to server...</h1>
-</div>
+<main class="main">
+  <Spinner />
+  <p class="text">Connecting to server...</p>
+</main>
 
-<style>
+<style lang="scss">
+  .text {
+    margin-top: 1rem;
+  }
+
+  .main {
+    display: flex;
+    flex-flow: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+  }
 </style>

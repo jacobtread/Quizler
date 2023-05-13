@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Spinner from "$lib/components/Spinner.svelte";
   import AnsweredView from "$lib/components/game/AnsweredView.svelte";
   import AwaitReadyView from "$lib/components/game/AwaitReadyView.svelte";
   import FinishedView from "$lib/components/game/FinishedView.svelte";
@@ -185,4 +186,5 @@
 {:else}
   <!-- TODO: Properly loading view for unknown states -->
   <h1>Loading...</h1>
+  <Spinner />
 {/if}
