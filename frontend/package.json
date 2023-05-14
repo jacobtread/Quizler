@@ -10,7 +10,9 @@
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "prettier": "prettier --write src/**/*.{js,svelte,html,ts}",
     "lint": "eslint ./src/**/*.{js,ts,svelte}",
-    "lint:fix": "eslint --fix ./src/**/*.{js,ts,svelte}"
+    "lint:fix": "eslint --fix ./src/**/*.{js,ts,svelte}",
+    "test": "vitest",
+    "coverage": "vitest run --coverage"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^2.0.3",
@@ -27,7 +29,8 @@
     "svelte-check": "^2.10.3",
     "tslib": "^2.5.0",
     "typescript": "^5.0.4",
-    "vite": "^4.3.2"
+    "vite": "^4.3.2",
+    "vitest": "^0.31.0"
   },
   "dependencies": {
     "browser-image-compression": "^2.0.2",
