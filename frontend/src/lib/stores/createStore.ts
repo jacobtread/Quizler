@@ -1,5 +1,9 @@
 import { MAX_MAX_PLAYERS, defaultQuestion } from "$lib/constants";
-import type { Question, TimingConfig } from "$lib/socket/models";
+import {
+  NameFiltering,
+  type Question,
+  type TimingConfig
+} from "$lib/socket/models";
 import { randomRange } from "$lib/utils";
 import { writable, type Writable } from "svelte/store";
 
@@ -7,6 +11,7 @@ export interface CreateData {
   name: string;
   text: string;
   max_players: number;
+  filtering: NameFiltering;
   timing: TimingConfig;
   questions: Question[];
 }
@@ -15,6 +20,7 @@ export const createData: Writable<CreateData> = writable({
   name: "Example Quiz",
   text: "Small description about your quiz",
   max_players: MAX_MAX_PLAYERS,
+  filtering: NameFiltering.High,
   timing: {
     wait_time: 1000 * 10
   },

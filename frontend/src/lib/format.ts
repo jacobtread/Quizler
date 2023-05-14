@@ -9,15 +9,18 @@ import {
 import {
   type Question,
   type TimingConfig,
-  questionSchema
+  questionSchema,
+  NameFiltering
 } from "$lib/socket/models";
 import { z } from "zod";
+import type { CreateData } from "./stores/createStore";
 
 /// Schema used for parsing and validating the file format
 const fileFormatSchema = z.object({
   name: z.string(),
   text: z.string(),
   max_players: z.number(),
+  filtering: z.string(),
   timing: z.object({
     wait_time: z.number()
   }),
@@ -35,7 +38,6 @@ const fileFormatSchema = z.object({
 
 type QuizFormat = z.infer<typeof fileFormatSchema>;
 type SerializedImage = QuizFormat["images"][0];
-type LoadedQuiz = Omit<QuizFormat, "images">;
 
 /**
  * Converts the provided stored image into a JSON
@@ -69,6 +71,7 @@ export async function createQuizBlob(
   name: string,
   text: string,
   max_players: number,
+  filtering: NameFiltering,
   timing: TimingConfig,
   questions: Question[]
 ): Promise<Blob> {
@@ -82,6 +85,7 @@ export async function createQuizBlob(
     name,
     text,
     max_players,
+    filtering,
     timing,
     questions,
     images
@@ -100,7 +104,7 @@ export async function createQuizBlob(
  * @throws {ZodError} If the validation failed
  * @returns The loaded quiz data
  */
-export async function loadQuizBlob(file: Blob): Promise<LoadedQuiz> {
+export async function loadQuizBlob(file: Blob): Promise<CreateData> {
   const reader = new FileReader();
 
   // Await the reading process
@@ -141,6 +145,7 @@ export async function loadQuizBlob(file: Blob): Promise<LoadedQuiz> {
     name: obj.name,
     text: obj.text,
     max_players: obj.max_players,
+    filtering: obj.filtering as NameFiltering,
     questions: obj.questions,
     timing: obj.timing
   };

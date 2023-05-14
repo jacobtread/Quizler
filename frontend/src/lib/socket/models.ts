@@ -16,15 +16,6 @@ export interface GameSummary {
 // Extended player data to include score
 type PlayerSummary = PlayerData & { score: number };
 
-// Request structure used for creating a quiz
-export interface CreateRequest {
-  name: string;
-  text: string;
-  max_players: number;
-  timing: TimingConfig;
-  questions: Question[];
-}
-
 // Response structure for a created quiz
 export interface CreatedResponse {
   // UUID of the prepared game
@@ -49,6 +40,7 @@ export const enum ServerError {
   MalformedMessage = "MalformedMessage",
   InvalidToken = "InvalidToken",
   UsernameTaken = "UsernameTaken",
+  InappropriateName = "InappropriateName",
   NotJoinable = "NotJoinable",
   CapacityReached = "CapacityReached",
   UnknownPlayer = "UnknownPlayer",
@@ -62,6 +54,8 @@ export const errorText: Record<ServerError, string> = {
   [ServerError.MalformedMessage]: "Unknown client sent invalid message",
   [ServerError.InvalidToken]: "Invalid token provided",
   [ServerError.UsernameTaken]: "Username already in use",
+  [ServerError.InappropriateName]:
+    "That name is not allowed/inappropriate choose another name",
   [ServerError.NotJoinable]: "Quiz is not joinable",
   [ServerError.CapacityReached]: "Quiz is full",
   [ServerError.UnknownPlayer]: "Target player not found",
@@ -70,6 +64,17 @@ export const errorText: Record<ServerError, string> = {
   [ServerError.UnexpectedMessage]: "Client and server out of sync",
   [ServerError.InvalidAnswer]: "Invalid answer type"
 };
+
+export const enum NameFiltering {
+  /// Don't filter names anything goes
+  None = "None",
+  /// Only stop the more severe names
+  Low = "Low",
+  /// Stop anything thats above mild
+  Medium = "Medium",
+  /// Filter out any names that might be inappropriate
+  High = "High"
+}
 
 export const enum GameState {
   Lobby = "Lobby",

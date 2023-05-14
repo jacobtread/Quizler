@@ -2,9 +2,9 @@
   import {
     ClientMessage,
     type CreatedResponse,
-    type CreateRequest,
     errorText,
-    ServerError
+    ServerError,
+    NameFiltering
   } from "$lib/socket/models";
   import * as socket from "$lib/socket";
   import {
@@ -45,6 +45,7 @@
       data.name,
       data.text,
       data.max_players,
+      data.filtering,
       data.timing,
       data.questions
     );
@@ -61,7 +62,7 @@
     if (file === null) return;
 
     try {
-      const imported = await loadQuizBlob(file);
+      const imported: CreateData = await loadQuizBlob(file);
 
       // Update the store
       createData.set(imported);
@@ -79,7 +80,7 @@
    *
    * @param config The quiz config
    */
-  async function createHttp(config: CreateRequest): Promise<string> {
+  async function createHttp(config: CreateData): Promise<string> {
     // Create the form to upload
     const form = new FormData();
     // Append the config
@@ -133,15 +134,7 @@
 
     console.debug("Creating quiz");
 
-    const config: CreateRequest = {
-      name: data.name,
-      text: data.text,
-      max_players: data.max_players,
-      timing: data.timing,
-      questions: data.questions
-    };
-
-    const uuid = await createHttp(config);
+    const uuid = await createHttp(data);
 
     console.debug("Quiz waiting for initialize", uuid);
 
@@ -222,6 +215,25 @@
         max={MAX_MAX_PLAYERS}
       />
     </label>
+    <label class="field">
+      <span class="field__name">Name Filtering</span>
+      <p class="field__desc">
+        Level of filtering on profane/inappropriate naming. Its recommended that
+        you leave this on Medium or High
+      </p>
+      <select bind:value={$createData.filtering} class="input">
+        <option value={NameFiltering.None}>None: Don't filter names</option>
+        <option value={NameFiltering.Low}
+          >Low: Filter out more severe names</option
+        >
+        <option value={NameFiltering.Medium}>
+          Medium: Filter out anything thats not mild
+        </option>
+        <option value={NameFiltering.High}>
+          High: Filter out as much as possible
+        </option>
+      </select>
+    </label>
   </div>
 
   <div class="list">
@@ -269,6 +281,11 @@
 
     overflow: hidden;
     gap: 1rem;
+  }
+
+  .details {
+    overflow: auto;
+    max-width: 30%;
   }
 
   .list {
@@ -331,6 +348,12 @@
     line-height: 1.5;
   }
 
+  @media screen and (max-width: 86rem) {
+    .details {
+      max-width: 50%;
+    }
+  }
+
   @media screen and (max-width: 64rem) {
     .main {
       flex-flow: column;
@@ -340,6 +363,11 @@
 
     .list {
       overflow: visible;
+    }
+
+    .details {
+      overflow: visible;
+      max-width: unset;
     }
 
     .list__actions {

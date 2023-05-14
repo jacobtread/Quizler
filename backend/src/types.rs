@@ -14,6 +14,8 @@ pub enum ServerError {
     InvalidToken,
     /// The provided username is already in use
     UsernameTaken,
+    /// Provided name was not allowed/inappropriate
+    InappropriateName,
     /// The game is already started or finish so cannot be joined
     NotJoinable,
     /// The game is already at max capacity
@@ -29,6 +31,33 @@ pub enum ServerError {
     UnexpectedMessage,
     /// Provided answer is not valid for the type of question
     InvalidAnswer,
+}
+
+/// Type for the different levels of profanity filtering
+/// on player names
+#[derive(Debug, Deserialize)]
+pub enum NameFiltering {
+    /// Don't filter names anything goes
+    None,
+    /// Only stop the more severe names
+    Low,
+    /// Stop anything thats above mild
+    Medium,
+    /// Filter out any names that might be inappropriate
+    High,
+}
+
+impl NameFiltering {
+    /// Returns the rustrict type of filtering for
+    /// this level or None if filtering is disabled
+    pub fn type_of(&self) -> Option<rustrict::Type> {
+        Some(match self {
+            NameFiltering::Low => rustrict::Type::SEVERE,
+            NameFiltering::Medium => rustrict::Type::MODERATE_OR_HIGHER,
+            NameFiltering::High => rustrict::Type::INAPPROPRIATE,
+            NameFiltering::None => return None,
+        })
+    }
 }
 
 /// Actions that can be executed by the host

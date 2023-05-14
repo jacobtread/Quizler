@@ -3,12 +3,13 @@ use crate::{
     msg::ServerMessage,
     session::{ClearGameMessage, Session, SessionId},
     types::{
-        Answer, AnswerData, HostAction, Image, ImageRef, Question, QuestionData, RemoveReason,
-        Score, ServerError,
+        Answer, AnswerData, HostAction, Image, ImageRef, NameFiltering, Question, QuestionData,
+        RemoveReason, Score, ServerError,
     },
 };
 use actix::{Actor, ActorContext, Addr, AsyncContext, Context, Handler, Message};
 use log::debug;
+use rustrict::CensorStr;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
@@ -30,7 +31,6 @@ pub struct Game {
     state: GameState,
     /// The index of the current question
     question_index: usize,
-
     /// Game timer
     timer: GameTimer,
     /// Address to the games manager
@@ -525,6 +525,13 @@ impl Handler<JoinMessage> for Game {
         // Trim name padding
         let name = msg.name.trim();
 
+        // Name filtering
+        if let Some(filter_type) = self.config.filtering.type_of() {
+            if name.is(filter_type) {
+                return Err(ServerError::InappropriateName);
+            }
+        }
+
         // Cannot join games that are already started or finished
         if !matches!(self.state, GameState::Lobby | GameState::Starting) {
             return Err(ServerError::NotJoinable);
@@ -832,6 +839,9 @@ pub struct GameConfig {
     pub text: String,
     /// Maximum number of players allowed in this game
     pub max_players: usize,
+    /// Filtering on names
+    #[serde(skip)]
+    pub filtering: NameFiltering,
     /// Timing data for different game events
     #[serde(skip)]
     pub timing: GameTiming,

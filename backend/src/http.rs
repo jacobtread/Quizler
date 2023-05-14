@@ -2,7 +2,7 @@ use crate::{
     game::{GameConfig, GameTiming, GetImageMessage},
     games::{Games, GetGameMessage, PrepareGameMessage},
     session::Session,
-    types::{Image, Question},
+    types::{Image, NameFiltering, Question},
 };
 use actix_multipart::{Multipart, MultipartError};
 use actix_web::{
@@ -88,6 +88,7 @@ pub struct GameConfigUpload {
     pub name: String,
     pub text: String,
     pub max_players: usize,
+    pub filtering: NameFiltering,
     pub timing: GameTiming,
     pub questions: Vec<Arc<Question>>,
 }
@@ -178,6 +179,7 @@ async fn create_quiz(mut payload: Multipart) -> Result<impl Responder, CreateErr
         name: config.name,
         text: config.text,
         max_players: config.max_players,
+        filtering: config.filtering,
         timing: config.timing,
         questions: config.questions,
         images,
