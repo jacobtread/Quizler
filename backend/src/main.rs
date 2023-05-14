@@ -32,6 +32,7 @@ async fn main() -> std::io::Result<()> {
     info!("Starting Quizler on port {}", port);
 
     HttpServer::new(move || {
+        // TODO: CORS is only required in development
         let cors = Cors::permissive();
         App::new().wrap(cors).configure(http::configure)
     })
