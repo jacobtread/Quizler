@@ -89,6 +89,8 @@
     flex-flow: column;
     align-items: center;
     padding: 1rem;
+    overflow: auto;
+    height: 100%;
   }
 
   .head {

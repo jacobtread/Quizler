@@ -81,7 +81,6 @@
         {/if}
       {/if}
     </div>
-
     <table class="players">
       <thead>
         <tr>
@@ -124,10 +123,13 @@
   @import "../../assets/scheme.scss";
 
   .main {
+    position: relative;
     display: flex;
     flex-flow: column;
     align-items: center;
     padding: 1rem;
+    overflow: auto;
+    height: 100%;
   }
 
   .head {
