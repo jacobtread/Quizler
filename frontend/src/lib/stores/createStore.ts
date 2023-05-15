@@ -1,4 +1,4 @@
-import { MAX_MAX_PLAYERS, defaultQuestion } from "$lib/constants";
+import { defaultCreateData, defaultQuestion } from "$lib/constants";
 import {
   NameFiltering,
   type Question,
@@ -16,22 +16,13 @@ export interface CreateData {
   questions: Question[];
 }
 
-export const createData: Writable<CreateData> = writable({
-  name: "Example Quiz",
-  text: "Small description about your quiz",
-  max_players: MAX_MAX_PLAYERS,
-  filtering: NameFiltering.High,
-  timing: {
-    wait_time: 1000 * 10
-  },
-  questions: [defaultQuestion()]
-});
+export const createData: Writable<CreateData> = writable(defaultCreateData());
 
 let nextQuestionId: number = 1;
 
 export function addQuestion() {
   createData.update((store) => {
-    const question = defaultQuestion();
+    const question: Question = defaultQuestion();
     question.id = nextQuestionId;
     nextQuestionId++;
 
@@ -42,11 +33,11 @@ export function addQuestion() {
 
 export function swapQuestion(aIndex: number, bIndex: number) {
   createData.update((store) => {
-    const questions = store.questions;
+    const questions: Question[] = store.questions;
 
     // Get the questions
-    const a = questions[aIndex];
-    const b = questions[bIndex];
+    const a: Question = questions[aIndex];
+    const b: Question = questions[bIndex];
 
     // Handle the indexes not existing
     if (a !== undefined || b !== undefined) {
@@ -68,8 +59,8 @@ export function removeQuestion(index: number) {
 
 export function shuffleQuestions() {
   createData.update((store) => {
-    const questions = store.questions;
-    const shuffleCount = randomRange(1, questions.length);
+    const questions: Question[] = store.questions;
+    const shuffleCount: number = randomRange(1, questions.length);
     let changes = 0;
     while (changes < shuffleCount) {
       const first = randomRange(0, questions.length - 1);
