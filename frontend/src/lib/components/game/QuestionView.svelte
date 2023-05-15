@@ -8,7 +8,7 @@
     AnswerType,
     ServerError
   } from "$lib/socket/models";
-  import type { GameData } from "$lib/stores/state";
+  import type { GameData } from "$lib/router";
   import { formatImageUrl, formatTime } from "$lib/utils";
 
   export let gameData: GameData;

@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { GameSummary } from "$lib/socket/models";
   import { confirmDialog } from "$lib/stores/dialogStore";
-  import { setHome, type GameData } from "$lib/stores/state";
+  import { setHome, type GameData } from "$lib/router";
   import { slide } from "svelte/transition";
   import { flip } from "svelte/animate";
   import { getNumberWithOrdinal } from "$lib/utils";

@@ -18,7 +18,7 @@
   import { randomRange } from "$lib/utils";
   import { saveQuestion } from "$lib/stores/createStore";
   import { confirmDialog } from "$lib/stores/dialogStore";
-  import { setCreate } from "$lib/stores/state";
+  import { setCreate } from "$lib/router";
   import ImageStorage from "$lib/components/ImageStorage.svelte";
   import Back from "$lib/assets/icons/back.svg";
   import Delete from "$lib/assets/icons/cross.svg";

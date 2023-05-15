@@ -8,7 +8,7 @@ import {
   type ClientMessageOf,
   ServerError
 } from "./models";
-import { setHome } from "$stores/state";
+import { setHome } from "$lib/router";
 import { onDestroy, onMount } from "svelte";
 
 type MessageHandler<T> = (msg: ServerMessageOf<T>) => void;

@@ -2,7 +2,7 @@
   import * as socket from "$lib/socket";
   import { ClientMessage, ServerError, errorText } from "$lib/socket/models";
   import { errorDialog } from "$lib/stores/dialogStore";
-  import { setConnect, setGame } from "$stores/state";
+  import { setConnect, setGame } from "$lib/router";
   import { z } from "zod";
   import Play from "$lib/assets/icons/play.svg";
   import Back from "$lib/assets/icons/back.svg";

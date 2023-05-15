@@ -2,7 +2,7 @@
   import { TOKEN_LENGTH } from "$lib/constants";
   import * as socket from "$lib/socket";
   import { ClientMessage, ServerError, errorText } from "$lib/socket/models";
-  import { setHome, setJoin } from "$stores/state";
+  import { setHome, setJoin } from "$lib/router";
   import { z } from "zod";
   import Play from "$lib/assets/icons/play.svg";
   import Back from "$lib/assets/icons/back.svg";

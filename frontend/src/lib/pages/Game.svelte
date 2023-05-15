@@ -23,7 +23,7 @@
   } from "$lib/socket/models";
   import { errorDialog } from "$lib/stores/dialogStore";
   import { formatImageUrl, tryFullscreen } from "$lib/utils";
-  import { setHome, type GameData } from "$stores/state";
+  import { setHome, type GameData } from "$lib/router";
   import { onMount } from "svelte";
 
   export let gameData: GameData;

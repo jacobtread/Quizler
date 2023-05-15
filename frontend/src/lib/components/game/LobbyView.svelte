@@ -7,7 +7,7 @@
     GameState
   } from "$lib/socket/models";
   import { confirmDialog } from "$lib/stores/dialogStore";
-  import { setHome, type GameData } from "$lib/stores/state";
+  import { setHome, type GameData } from "$lib/router";
   import { formatTime } from "$lib/utils";
   import { slide } from "svelte/transition";
   import { flip } from "svelte/animate";
