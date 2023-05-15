@@ -9,7 +9,7 @@
     ServerError
   } from "$lib/socket/models";
   import type { GameData } from "$lib/router";
-  import { formatImageUrl, formatTime } from "$lib/utils";
+  import { formatImageUrl, formatTime } from "$lib/utils/utils";
 
   export let gameData: GameData;
   export let timer: TimerState;

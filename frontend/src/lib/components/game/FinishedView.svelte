@@ -4,7 +4,7 @@
   import { setHome, type GameData } from "$lib/router";
   import { slide } from "svelte/transition";
   import { flip } from "svelte/animate";
-  import { getNumberWithOrdinal } from "$lib/utils";
+  import { getNumberWithOrdinal } from "$lib/utils/utils";
   import ScoreTweened from "../ScoreTweened.svelte";
   import Crown from "$lib/assets/icons/crown.svg";
   import { doHostReset, doKick } from "$lib/socket/actions";

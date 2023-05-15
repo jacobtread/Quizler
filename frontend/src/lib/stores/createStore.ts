@@ -4,7 +4,7 @@ import {
   type Question,
   type TimingConfig
 } from "$lib/socket/models";
-import { randomRange } from "$lib/utils";
+import { randomRange } from "$lib/utils/utils";
 import { writable, type Writable } from "svelte/store";
 
 export interface CreateData {

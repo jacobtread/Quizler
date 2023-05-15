@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { acceptUploadMany } from "$lib/file";
+  import { acceptUploadMany } from "$lib/utils/file";
   import { confirmDialog } from "$lib/stores/dialogStore";
   import {
     imageStore,

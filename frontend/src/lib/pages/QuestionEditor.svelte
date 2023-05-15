@@ -15,7 +15,7 @@
     MIN_ANSWER_TIME,
     MIN_BONUS_TIME
   } from "$lib/constants";
-  import { randomRange } from "$lib/utils";
+  import { randomRange } from "$lib/utils/utils";
   import { saveQuestion } from "$lib/stores/createStore";
   import { confirmDialog } from "$lib/stores/dialogStore";
   import { setCreate } from "$lib/router";

@@ -22,7 +22,7 @@
     RemoveReason
   } from "$lib/socket/models";
   import { errorDialog } from "$lib/stores/dialogStore";
-  import { formatImageUrl, tryFullscreen } from "$lib/utils";
+  import { formatImageUrl } from "$lib/utils/utils";
   import { setHome, type GameData } from "$lib/router";
   import { onMount } from "svelte";
 

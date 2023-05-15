@@ -13,7 +13,7 @@ import {
   NameFiltering
 } from "$lib/socket/models";
 import { z } from "zod";
-import type { CreateData } from "./stores/createStore";
+import type { CreateData } from "$stores/createStore";
 
 /// Schema used for parsing and validating the file format
 const fileFormatSchema = z.object({

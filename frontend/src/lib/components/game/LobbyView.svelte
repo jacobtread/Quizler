@@ -8,7 +8,7 @@
   } from "$lib/socket/models";
   import { confirmDialog } from "$lib/stores/dialogStore";
   import { setHome, type GameData } from "$lib/router";
-  import { formatTime } from "$lib/utils";
+  import { formatTime } from "$lib/utils/utils";
   import { slide } from "svelte/transition";
   import { flip } from "svelte/animate";
   import ScoreTweened from "../ScoreTweened.svelte";

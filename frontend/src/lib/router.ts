@@ -7,7 +7,7 @@ import type { ComponentProps, ComponentType } from "svelte";
 import { writable, type Writable } from "svelte/store";
 import QuestionEditor from "./pages/QuestionEditor.svelte";
 import type { GameConfig, Question, SessionId } from "./socket/models";
-import { deepCopy } from "./utils";
+import { deepCopy } from "./utils/utils";
 
 export const enum Route {
   /// Home screen
@@ -45,20 +45,22 @@ type PropsOf<Key extends RouteKey> = ComponentProps<
   MapToComponent<Routes[Key]>
 >;
 
-type RouteState<C, P> = {
+type RouteState<C extends ComponentType, P> = {
   component: C;
   props: P;
 };
 
-export const routeState: Writable<RouteState<unknown, unknown>> = writable({
-  component: routes[Route.Home],
-  props: {}
-});
+export const routeState: Writable<RouteState<ComponentType, object>> = writable(
+  {
+    component: routes[Route.Home],
+    props: {}
+  }
+);
 
 export function setState<T extends RouteKey, V = PropsOf<T>>(key: T, value: V) {
   routeState.set({
     component: routes[key],
-    props: value
+    props: value as object
   });
 
   return;

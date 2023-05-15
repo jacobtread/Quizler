@@ -1,6 +1,6 @@
 <script lang="ts">
   import { ScoreType, type Score } from "$lib/socket/models";
-  import { randomRange } from "$lib/utils";
+  import { randomRange } from "$lib/utils/utils";
   import correctMessages from "$lib/data/correctMessages.json";
   import incorrectMessages from "$lib/data/incorrectMessages.json";
   import partialMessages from "$lib/data/partialMessages.json";
