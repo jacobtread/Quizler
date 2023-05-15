@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { setConnect, setCreate } from "$lib/router";
+  import { setConnect, setCreate } from "$components/Router.svelte";
   import Logo from "$lib/assets/logo.svg";
   import Play from "$lib/assets/icons/play.svg";
   import Edit from "$lib/assets/icons/edit.svg";

@@ -22,7 +22,7 @@
   import { get } from "svelte/store";
   import { imageStore } from "$stores/imageStore";
   import { loadQuizBlob, createQuizBlob } from "$lib/utils/format";
-  import { setGame, setHome } from "$lib/router";
+  import { setGame, setHome } from "$components/Router.svelte";
   import TimeInput from "$components/TimeInput.svelte";
   import { errorDialog } from "$lib/stores/dialogStore";
   import { acceptUpload, startDownload } from "$lib/utils/file";

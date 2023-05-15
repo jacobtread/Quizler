@@ -1,7 +1,7 @@
 <script lang="ts">
   import { QuestionType, type Question } from "$lib/socket/models";
   import { removeQuestion, swapQuestion } from "$lib/stores/createStore";
-  import { setEditing } from "$lib/router";
+  import { setEditing } from "$components/Router.svelte";
   import Delete from "$lib/assets/icons/cross.svg";
   import Edit from "$lib/assets/icons/edit.svg";
   import ArrowUp from "$lib/assets/icons/arrowup.svg";

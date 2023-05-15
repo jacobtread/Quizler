@@ -8,7 +8,7 @@
   } from "$lib/socket/models";
   import { flip } from "svelte/animate";
   import { imagePreviewStore, selectImage } from "$stores/imageStore";
-  import TimeInput from "$lib/components/TimeInput.svelte";
+  import TimeInput from "$components/TimeInput.svelte";
   import {
     MAX_ANSWER_TIME,
     MAX_BONUS_TIME,
@@ -16,10 +16,10 @@
     MIN_BONUS_TIME
   } from "$lib/constants";
   import { randomRange } from "$lib/utils/utils";
-  import { saveQuestion } from "$lib/stores/createStore";
-  import { confirmDialog } from "$lib/stores/dialogStore";
-  import { setCreate } from "$lib/router";
-  import ImageStorage from "$lib/components/ImageStorage.svelte";
+  import { saveQuestion } from "$stores/createStore";
+  import { confirmDialog } from "$stores/dialogStore";
+  import { setCreate } from "$components/Router.svelte";
+  import ImageStorage from "$components/ImageStorage.svelte";
   import Back from "$lib/assets/icons/back.svg";
   import Delete from "$lib/assets/icons/cross.svg";
   import ArrowUp from "$lib/assets/icons/arrowup.svg";

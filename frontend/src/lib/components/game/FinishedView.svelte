@@ -1,13 +1,14 @@
 <script lang="ts">
   import type { GameSummary } from "$lib/socket/models";
   import { confirmDialog } from "$lib/stores/dialogStore";
-  import { setHome, type GameData } from "$lib/router";
+  import { setHome } from "$components/Router.svelte";
   import { slide } from "svelte/transition";
   import { flip } from "svelte/animate";
   import { getNumberWithOrdinal } from "$lib/utils/utils";
   import ScoreTweened from "../ScoreTweened.svelte";
   import Crown from "$lib/assets/icons/crown.svg";
   import { doHostReset, doKick } from "$lib/socket/actions";
+  import type { GameData } from "$lib/pages/Game.svelte";
 
   export let summary: GameSummary;
   export let gameData: GameData;

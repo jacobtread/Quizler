@@ -1,3 +1,20 @@
+<script context="module" lang="ts">
+  import type { GameConfig } from "$lib/socket/models";
+
+  export interface GameData {
+    // ID of the current player
+    id: SessionId;
+    // Current game token
+    token: string;
+    // Current game config
+    config: GameConfig;
+    // Whether we are the host
+    host: boolean;
+    // The current player name
+    name?: string | undefined;
+  }
+</script>
+
 <script lang="ts">
   import Spinner from "$lib/components/Spinner.svelte";
   import AnsweredView from "$lib/components/game/AnsweredView.svelte";
@@ -23,7 +40,7 @@
   } from "$lib/socket/models";
   import { errorDialog } from "$lib/stores/dialogStore";
   import { formatImageUrl } from "$lib/utils/utils";
-  import { setHome, type GameData } from "$lib/router";
+  import { setHome } from "$components/Router.svelte";
   import { onMount } from "svelte";
 
   export let gameData: GameData;

@@ -7,7 +7,7 @@
     GameState
   } from "$lib/socket/models";
   import { confirmDialog } from "$lib/stores/dialogStore";
-  import { setHome, type GameData } from "$lib/router";
+  import { setHome } from "$components/Router.svelte";
   import { formatTime } from "$lib/utils/utils";
   import { slide } from "svelte/transition";
   import { flip } from "svelte/animate";
@@ -18,6 +18,7 @@
     doHostStart,
     doKick
   } from "$lib/socket/actions";
+  import type { GameData } from "$lib/pages/Game.svelte";
 
   export let timer: TimerState;
   export let gameData: GameData;
