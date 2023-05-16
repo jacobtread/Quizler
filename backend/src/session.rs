@@ -339,11 +339,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Session {
                 ctx.stop();
                 return;
             }
-            ws::Message::Pong(_) => {
-                // TODO: Handle pong
-                return;
-            }
-            ws::Message::Nop => return,
+            _ => return,
         };
 
         // Decode the recieved client message
