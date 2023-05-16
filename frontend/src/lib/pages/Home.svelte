@@ -66,13 +66,8 @@
 
   .github {
     display: inline-block;
-
-    font-size: 1rem;
-    font-weight: bold;
-    text-decoration: none;
-    color: #fff;
-    padding: 1rem;
-    border-radius: 1rem;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
   }
 
   .main {
@@ -93,7 +88,6 @@
   .actions {
     display: grid;
     gap: 1rem;
-    margin: 1rem;
   }
 
   .action {
@@ -106,16 +100,13 @@
     align-items: center;
     gap: 1rem;
 
-    width: 100%;
-
     padding: 1rem;
     padding-right: 2rem;
 
-    border-radius: 2rem;
+    border-radius: 1rem;
 
     background-color: $surface;
     border: 5px solid $surface;
-
     text-align: left;
 
     cursor: pointer;
@@ -126,7 +117,7 @@
       padding: 1rem;
       box-sizing: content-box;
       background-color: $surfaceLight;
-      border-radius: 1.5rem;
+      border-radius: 0.5rem;
       transition: background-color 0.5s ease, color 0.2s linear;
     }
 
@@ -141,7 +132,7 @@
       z-index: -1;
 
       background: $primary;
-      border-radius: 1.5rem;
+      border-radius: 0.5rem;
 
       transform: translate(-100%);
 
