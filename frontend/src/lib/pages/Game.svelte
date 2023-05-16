@@ -36,16 +36,15 @@
   import { errorDialog } from "$stores/dialogStore";
 
   import { setRoute } from "$components/Router.svelte";
-  import AwaitReadyView from "$components/game/AwaitReadyView.svelte";
   import AnsweredView from "$components/game/AnsweredView.svelte";
   import FinishedView from "$components/game/FinishedView.svelte";
   import QuestionView from "$components/game/QuestionView.svelte";
   import LobbyView from "$components/game/LobbyView.svelte";
   import ScoreView from "$components/game/ScoreView.svelte";
-  import Spinner from "$components/Spinner.svelte";
 
   import { formatImageUrl } from "$lib/utils/utils";
   import { onMount } from "svelte";
+  import Loading from "./Loading.svelte";
 
   export let gameData: GameData;
 
@@ -192,7 +191,7 @@
 {:else if gameData.host || gameState === GameState.Lobby || gameState === GameState.Starting}
   <LobbyView {gameData} {gameState} {players} {timer} {scores} />
 {:else if gameState === GameState.AwaitingReady}
-  <AwaitReadyView />
+  <Loading text="Waiting for other players..." />
 {:else if gameState === GameState.AwaitingAnswers && question != null}
   {#if !answered}
     <QuestionView {question} {gameData} {timer} bind:answered />
@@ -211,7 +210,6 @@
     <ScoreView {score} />
   {/if}
 {:else}
-  <!-- TODO: Properly loading view for unknown states -->
-  <h1>Loading...</h1>
-  <Spinner />
+  <!-- Just dot for the message while waiting for a state -->
+  <Loading text="..." />
 {/if}

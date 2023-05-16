@@ -8,7 +8,7 @@
 {#if $socketReady}
   <Router />
 {:else}
-  <Loading />
+  <Loading text="Connecting to server..." />
 {/if}
 
 <GlobalDialog />

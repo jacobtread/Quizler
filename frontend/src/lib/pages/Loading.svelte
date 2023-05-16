@@ -1,12 +1,12 @@
 <script lang="ts">
   import Spinner from "$components/Spinner.svelte";
-</script>
 
-<!-- Loading page displayed while the socket is connecting -->
+  export let text: string;
+</script>
 
 <main class="main">
   <Spinner />
-  <p class="text">Connecting to server...</p>
+  <p class="text">{text}</p>
 </main>
 
 <style lang="scss">
