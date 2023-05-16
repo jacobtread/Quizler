@@ -59,28 +59,29 @@ async fn assets(path: web::Path<String>) -> impl Responder {
     use std::path::Path as StdPath;
 
     let path = path.into_inner();
-    let file = match Assets::get(&path) {
-        Some(value) => value,
-        None => return HttpResponse::NotFound().finish(),
+
+    let Some(file) = Assets::get(&path) else {
+        return HttpResponse::NotFound()
+            .finish()
     };
 
     let path = StdPath::new(&path);
-    let ext = match path.extension() {
-        Some(ext) => ext.to_str(),
-        None => None,
-    };
 
-    let ext = match ext {
-        Some(value) => match value {
-            "js" => "text/javascript",
-            "css" => "text/css",
-            "svg" => "image/svg+xml",
-            _ => "text/plain",
-        },
-        None => "text/plain",
-    };
+    // Find a matching content type or default to text/plain
+    let content_type = path
+        .extension()
+        .and_then(|ext| {
+            if ext == "js" {
+                Some("text/javascript")
+            } else if ext == "css" {
+                Some("text/css")
+            } else {
+                None
+            }
+        })
+        .unwrap_or("text/plain");
 
-    HttpResponse::Ok().content_type(ext).body(file)
+    HttpResponse::Ok().content_type(content_type).body(file)
 }
 
 #[derive(Deserialize)]
