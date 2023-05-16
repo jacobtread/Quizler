@@ -35,6 +35,8 @@
 
   import { errorDialog } from "$stores/dialogStore";
 
+  import Loading from "$pages/Loading.svelte";
+
   import { setRoute } from "$components/Router.svelte";
   import AnsweredView from "$components/game/AnsweredView.svelte";
   import FinishedView from "$components/game/FinishedView.svelte";
@@ -44,7 +46,6 @@
 
   import { preloadImage } from "$lib/utils/utils";
   import { onMount } from "svelte";
-  import Loading from "./Loading.svelte";
 
   export let gameData: GameData;
 

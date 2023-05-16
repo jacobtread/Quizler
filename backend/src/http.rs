@@ -119,8 +119,8 @@ async fn create_quiz(mut payload: Multipart) -> Result<impl Responder, CreateErr
     let mut images = HashMap::new();
 
     while let Some(mut field) = payload.try_next().await? {
-        /// Cap the image max size to 100mb
-        const MAX_BUFFER_SIZE_BYTES: usize = 1024 * 1024 * 1024;
+        /// Cap the upload max size to 15mb
+        const MAX_BUFFER_SIZE_BYTES: usize = 1024 * 1024 * 15;
 
         // Read all the buffered content for the config message
         let mut buffer = BytesMut::new();

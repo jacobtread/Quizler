@@ -7,6 +7,7 @@ import imageCompression from "browser-image-compression";
 import { writable, type Writable } from "svelte/store";
 import type { ImageRef } from "$lib/socket/models";
 import { v4 as uuidv4 } from "uuid";
+import { MAX_IMAGE_BYTES } from "$lib/constants";
 
 export interface StoredImage {
   /// The file UUID
@@ -93,7 +94,10 @@ export async function uploadFile(
     onProgress
   });
 
-  // TODO: Handle compressed file still being too large
+  // Ensure the file isn't still too large
+  if (compressed.size >= MAX_IMAGE_BYTES) {
+    throw Error("File is too large (max 15mb)");
+  }
 
   // Update the image store with the new image
   imageStore.update((store) => {

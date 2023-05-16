@@ -27,6 +27,8 @@ export const MAX_BONUS_TIME = 1000 * 60 * 30; /* 30mins */
 export const MIN_MAX_PLAYERS: number = 1; /* 1 max player min */
 export const MAX_MAX_PLAYERS: number = 50; /* 50 max player limit to games */
 
+export const MAX_IMAGE_BYTES: number = 1024 * 1024 * 15; /* 15mb */
+
 /**
  * Creates a new create data object with its defaults
  *
