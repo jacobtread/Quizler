@@ -42,7 +42,7 @@
   import LobbyView from "$components/game/LobbyView.svelte";
   import ScoreView from "$components/game/ScoreView.svelte";
 
-  import { formatImageUrl } from "$lib/utils/utils";
+  import { preloadImage } from "$lib/utils/utils";
   import { onMount } from "svelte";
   import Loading from "./Loading.svelte";
 
@@ -127,22 +127,21 @@
     updateTimer();
   });
 
-  socket.setHandler(ServerMessage.Question, (msg) => {
+  socket.setHandler(ServerMessage.Question, async (msg) => {
     console.debug("Question message", msg);
     question = msg.question;
     score = { ty: ScoreType.Incorrect };
 
-    if (msg.question.image !== null) {
-      // Preload the image and then send the ready state
-      const img = new Image();
-      img.src = formatImageUrl(gameData.token, msg.question.image);
-      img.onload = () => {
-        console.debug("Preloaded question image", img.src);
-        setReady();
-      };
-    } else {
-      setReady();
-    }
+    // Host doesn't need to load images
+    if (gameData.host) return;
+
+    // Preload the image
+    await preloadImage(gameData.token, question);
+
+    // Update the ready state
+    await setReady();
+
+    console.debug("Server acknowledged ready state");
   });
 
   socket.setHandler(ServerMessage.Scores, (msg) => {

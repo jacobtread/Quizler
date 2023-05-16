@@ -1,4 +1,4 @@
-import type { TimerState } from "$lib/socket/models";
+import type { Question, TimerState } from "$lib/socket/models";
 import { DEBUG } from "$lib/constants";
 
 /**
@@ -81,4 +81,46 @@ export function tryFullscreen() {
   }
 
   return tryFullscreen;
+}
+
+/**
+ * Attempts to preload the image for the provided
+ * question using the game token
+ *
+ * Will attempt 5 times before failing and will
+ * continue to ready state regardless of failure
+ *
+ * @param token    The question game token
+ * @param question The question itself
+ * @returns        Promise to the preloading complete
+ */
+export async function preloadImage(token: string, question: Question) {
+  const imageRef = question.image;
+
+  /// Question didn't have any images to load
+  if (imageRef === null) return;
+
+  const MAX_ATTEMPTS = 6;
+
+  let attempts: number = 0;
+
+  const url: string = formatImageUrl(token, imageRef);
+
+  while (attempts < MAX_ATTEMPTS) {
+    try {
+      // Attempt to load the image
+      await new Promise((resolve, reject) => {
+        const img = new Image();
+        img.src = url;
+        img.onload = resolve;
+        img.onerror = reject;
+      });
+
+      console.debug("Preloaded question image", url);
+      break;
+    } catch (e) {
+      console.error("Failed to preload image trying again", url, e);
+      attempts += 1;
+    }
+  }
 }
