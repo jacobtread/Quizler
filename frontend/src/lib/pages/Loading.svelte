@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Spinner from "$lib/components/Spinner.svelte";
+  import Spinner from "$components/Spinner.svelte";
 </script>
 
 <!-- Loading page displayed while the socket is connecting -->

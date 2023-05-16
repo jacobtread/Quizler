@@ -1,5 +1,5 @@
-import * as socket from "$lib/socket";
 import { ClientMessage, HostAction, ServerError } from "$lib/socket/models";
+import * as socket from "$lib/socket";
 
 export async function doKick(id: number) {
   try {

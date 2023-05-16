@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { setConnect, setCreate } from "$components/Router.svelte";
-  import Logo from "$lib/assets/logo.svg";
-  import Play from "$lib/assets/icons/play.svg";
-  import Edit from "$lib/assets/icons/edit.svg";
-  import GitHub from "$lib/assets/icons/github.svg";
+  import { setRoute } from "$components/Router.svelte";
   import { slide } from "svelte/transition";
+  import GitHub from "$assets/icons/github.svg";
+  import Play from "$assets/icons/play.svg";
+  import Edit from "$assets/icons/edit.svg";
+  import Logo from "$assets/logo.svg";
 </script>
 
 <main class="main" transition:slide>
@@ -22,7 +22,11 @@
     </a>
   </div>
   <div class="actions">
-    <button on:click={setConnect} class="action" aria-label="Join">
+    <button
+      on:click={() => setRoute("Connect")}
+      class="action"
+      aria-label="Join"
+    >
       <img src={Play} alt="Join Icon" class="action__icon" />
       <div class="action__body">
         <p class="action__name">Join a quiz</p>
@@ -30,7 +34,11 @@
       </div>
     </button>
 
-    <button on:click={setCreate} class="action" aria-label="Create">
+    <button
+      on:click={() => setRoute("Create")}
+      class="action"
+      aria-label="Create"
+    >
       <img src={Edit} alt="Create Icon" class="action__icon" />
       <div class="action__body">
         <p class="action__name">Create a quiz</p>

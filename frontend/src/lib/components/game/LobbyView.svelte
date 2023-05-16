@@ -1,24 +1,29 @@
 <!-- Game view when the state is in the "Lobby" -->
 <script lang="ts">
-  import {
-    type PlayerData,
-    type SessionId,
-    type TimerState,
-    GameState
-  } from "$lib/socket/models";
-  import { confirmDialog } from "$lib/stores/dialogStore";
-  import { setHome } from "$components/Router.svelte";
-  import { formatTime } from "$lib/utils/utils";
   import { slide } from "svelte/transition";
   import { flip } from "svelte/animate";
-  import ScoreTweened from "../ScoreTweened.svelte";
+
   import {
     doHostCancel,
     doHostSkip,
     doHostStart,
     doKick
   } from "$lib/socket/actions";
-  import type { GameData } from "$lib/pages/Game.svelte";
+  import {
+    type PlayerData,
+    type SessionId,
+    type TimerState,
+    GameState
+  } from "$lib/socket/models";
+
+  import { confirmDialog } from "$stores/dialogStore";
+
+  import { setRoute } from "$components/Router.svelte";
+  import ScoreTweened from "$components/ScoreTweened.svelte";
+
+  import { formatTime } from "$lib/utils/utils";
+
+  import type { GameData } from "$pages/Game.svelte";
 
   export let timer: TimerState;
   export let gameData: GameData;
@@ -40,7 +45,7 @@
     await doKick(gameData.id);
 
     // Take back to the home scren
-    setHome();
+    setRoute("Home");
   }
 </script>
 

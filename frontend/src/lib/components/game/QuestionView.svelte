@@ -9,7 +9,7 @@
     ServerError
   } from "$lib/socket/models";
   import { formatImageUrl, formatTime } from "$lib/utils/utils";
-  import type { GameData } from "$lib/pages/Game.svelte";
+  import type { GameData } from "$pages/Game.svelte";
 
   export let gameData: GameData;
   export let timer: TimerState;

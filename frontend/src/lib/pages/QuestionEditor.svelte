@@ -1,30 +1,31 @@
 <!-- Component represents a question that is being created -->
 
 <script lang="ts">
+  import { flip } from "svelte/animate";
+
   import {
     QuestionType,
     type Question,
     type AnswerValue
   } from "$lib/socket/models";
-  import { flip } from "svelte/animate";
-  import { imagePreviewStore, selectImage } from "$stores/imageStore";
-  import TimeInput from "$components/TimeInput.svelte";
-  import {
-    MAX_ANSWER_TIME,
-    MAX_BONUS_TIME,
-    MIN_ANSWER_TIME,
-    MIN_BONUS_TIME
-  } from "$lib/constants";
+
   import { randomRange } from "$lib/utils/utils";
+
+  import { imagePreviewStore, selectImage } from "$stores/imageStore";
   import { saveQuestion } from "$stores/createStore";
   import { confirmDialog } from "$stores/dialogStore";
-  import { setCreate } from "$components/Router.svelte";
+
+  import { setRoute } from "$components/Router.svelte";
   import ImageStorage from "$components/ImageStorage.svelte";
-  import Back from "$lib/assets/icons/back.svg";
-  import Delete from "$lib/assets/icons/cross.svg";
-  import ArrowUp from "$lib/assets/icons/arrowup.svg";
-  import ArrowDown from "$lib/assets/icons/arrowdown.svg";
-  import Checkbox from "$lib/components/Checkbox.svelte";
+  import TimeInput from "$components/TimeInput.svelte";
+  import Checkbox from "$components/Checkbox.svelte";
+
+  import ArrowDown from "$assets/icons/arrowdown.svg";
+  import ArrowUp from "$assets/icons/arrowup.svg";
+  import Delete from "$assets/icons/cross.svg";
+  import Back from "$assets/icons/back.svg";
+
+  import * as constants from "$lib/constants";
 
   export let question: Question;
 
@@ -35,8 +36,7 @@
     );
 
     if (!result) return;
-
-    setCreate();
+    setRoute("Create");
   }
 
   /**
@@ -180,7 +180,7 @@
 
   function save() {
     saveQuestion(question);
-    setCreate();
+    setRoute("Create");
   }
 </script>
 
@@ -332,8 +332,8 @@
         <p class="field__desc">Time the players have to answer the question</p>
         <TimeInput
           bind:value={question.answer_time}
-          min={MIN_ANSWER_TIME}
-          max={MAX_ANSWER_TIME}
+          min={constants.MIN_ANSWER_TIME}
+          max={constants.MAX_ANSWER_TIME}
         />
       </div>
 
@@ -344,8 +344,8 @@
         </p>
         <TimeInput
           bind:value={question.bonus_score_time}
-          min={MIN_BONUS_TIME}
-          max={MAX_BONUS_TIME}
+          min={constants.MIN_BONUS_TIME}
+          max={constants.MAX_BONUS_TIME}
         />
       </div>
     </div>

@@ -1,15 +1,15 @@
 <script context="module" lang="ts">
-  import Connect from "$lib/pages/Connect.svelte";
-  import Create from "$lib/pages/Create.svelte";
-  import Game, { type GameData } from "$lib/pages/Game.svelte";
-  import Home from "$lib/pages/Home.svelte";
-  import Join from "$lib/pages/Join.svelte";
-  import { onMount, type ComponentProps, type ComponentType } from "svelte";
+  import type { ComponentProps, ComponentType } from "svelte";
   import { writable, type Writable } from "svelte/store";
-  import QuestionEditor from "$pages/QuestionEditor.svelte";
-  import type { Question } from "$lib/socket/models";
-  import { deepCopy } from "$lib/utils/utils";
 
+  import Game from "$pages/Game.svelte";
+  import QuestionEditor from "$pages/QuestionEditor.svelte";
+  import Connect from "$pages/Connect.svelte";
+  import Create from "$pages/Create.svelte";
+  import Home from "$pages/Home.svelte";
+  import Join from "$pages/Join.svelte";
+
+  // Route definitions
   const routes = {
     Home: Home,
     Create: Create,
@@ -19,62 +19,36 @@
     Game: Game
   };
 
+  // Type of the routes object
   type Routes = typeof routes;
-  type RouteKey = keyof Routes;
 
-  // Maps the provided input type to its actual component type
-  type MapToComponent<Input> = Input extends ComponentType<infer Component>
-    ? Component
-    : never;
+  // Extracts the component properties type from the provided type
+  type Props<T> = ComponentProps<
+    T extends ComponentType<infer Component> ? Component : never
+  >;
 
-  type PropsOf<Input> = ComponentProps<MapToComponent<Input>>;
-
-  type RouteState<C extends ComponentType, P> = {
-    component: C;
-    props: P;
-  };
-
-  export const routeState: Writable<RouteState<ComponentType, object>> =
+  // State for the current route
+  const routeState: Writable<{ component: ComponentType; props?: object }> =
     writable({
       component: routes.Home,
       props: {}
     });
 
-  export function setState<T extends RouteKey, V = PropsOf<Routes[T]>>(
+  /**
+   * Sets the current route to the route at the provided key
+   * with the provided props
+   *
+   * @param key   The key for the route defintion
+   * @param props The props for the route
+   */
+  export function setRoute<T extends keyof Routes>(
     key: T,
-    value: V
+    props?: Props<Routes[T]>
   ) {
     routeState.set({
       component: routes[key],
-      props: value as object
+      props
     });
-
-    return;
-  }
-
-  export function setHome() {
-    setState("Home", {});
-  }
-
-  export function setCreate() {
-    setState("Create", {});
-  }
-
-  export function setConnect() {
-    setState("Connect", {});
-  }
-
-  export function setJoin(token: string) {
-    setState("Join", { token });
-  }
-
-  export function setGame(gameData: GameData) {
-    setState("Game", { gameData });
-  }
-
-  export function setEditing(question: Question) {
-    question = deepCopy(question);
-    setState("Editing", { question });
   }
 </script>
 

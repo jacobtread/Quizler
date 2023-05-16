@@ -1,14 +1,20 @@
 <script lang="ts">
-  import type { GameSummary } from "$lib/socket/models";
-  import { confirmDialog } from "$lib/stores/dialogStore";
-  import { setHome } from "$components/Router.svelte";
   import { slide } from "svelte/transition";
   import { flip } from "svelte/animate";
-  import { getNumberWithOrdinal } from "$lib/utils/utils";
-  import ScoreTweened from "../ScoreTweened.svelte";
-  import Crown from "$lib/assets/icons/crown.svg";
+
+  import type { GameSummary } from "$lib/socket/models";
   import { doHostReset, doKick } from "$lib/socket/actions";
-  import type { GameData } from "$lib/pages/Game.svelte";
+
+  import { confirmDialog } from "$stores/dialogStore";
+
+  import { setRoute } from "$components/Router.svelte";
+  import ScoreTweened from "$components/ScoreTweened.svelte";
+
+  import type { GameData } from "$pages/Game.svelte";
+
+  import Crown from "$assets/icons/crown.svg";
+
+  import { getNumberWithOrdinal } from "$lib/utils/utils";
 
   export let summary: GameSummary;
   export let gameData: GameData;
@@ -27,7 +33,7 @@
     await doKick(gameData.id);
 
     // Take back to the home scren
-    setHome();
+    setRoute("Home");
   }
 </script>
 

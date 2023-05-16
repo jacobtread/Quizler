@@ -20,7 +20,8 @@
       "$lib/*": ["./src/lib/*"],
       "$stores/*": ["./src/lib/stores/*"],
       "$components/*": ["./src/lib/components/*"],
-      "$pages/*": ["./src/lib/pages/*"]
+      "$pages/*": ["./src/lib/pages/*"],
+      "$assets/*": ["./src/lib/assets/*"]
     }
   },
   "include": ["src/**/*.d.ts", "src/**/*.ts", "src/**/*.js", "src/**/*.svelte"],

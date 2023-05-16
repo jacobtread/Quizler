@@ -1,6 +1,6 @@
 <script lang="ts">
   import { acceptUploadMany } from "$lib/utils/file";
-  import { confirmDialog } from "$lib/stores/dialogStore";
+  import { confirmDialog } from "$stores/dialogStore";
   import {
     imageStore,
     selectImageStore,
@@ -10,7 +10,7 @@
     consumeSelectImage,
     imagePreviewStore
   } from "$stores/imageStore";
-  import Import from "$lib/assets/icons/import.svg";
+  import Import from "$assets/icons/import.svg";
 
   let uploading: FileUpload[] = [];
 

@@ -1,11 +1,14 @@
 <script lang="ts">
+  import { slide } from "svelte/transition";
+  import { tweened } from "svelte/motion";
+
   import { ScoreType, type Score } from "$lib/socket/models";
+
   import { randomRange } from "$lib/utils/utils";
+
   import correctMessages from "$lib/data/correctMessages.json";
   import incorrectMessages from "$lib/data/incorrectMessages.json";
   import partialMessages from "$lib/data/partialMessages.json";
-  import { slide } from "svelte/transition";
-  import { tweened } from "svelte/motion";
 
   export let score: Score;
 

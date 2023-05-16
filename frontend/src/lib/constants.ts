@@ -1,5 +1,5 @@
 import { QuestionType, type Question, NameFiltering } from "$lib/socket/models";
-import type { CreateData } from "./stores/createStore";
+import type { CreateData } from "$stores/createStore";
 
 export const DEBUG: boolean = import.meta.env.DEV;
 

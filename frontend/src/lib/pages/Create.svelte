@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { get } from "svelte/store";
+  import { flip } from "svelte/animate";
+
   import {
     ClientMessage,
     type CreatedResponse,
@@ -14,26 +17,28 @@
     MIN_MAX_PLAYERS,
     MIN_WAIT_TIME
   } from "$lib/constants";
-  import Back from "$lib/assets/icons/back.svg";
-  import Import from "$lib/assets/icons/import.svg";
-  import Add from "$lib/assets/icons/add.svg";
-  import Export from "$lib/assets/icons/export.svg";
-  import Play from "$lib/assets/icons/play.svg";
-  import { get } from "svelte/store";
-  import { imageStore } from "$stores/imageStore";
-  import { loadQuizBlob, createQuizBlob } from "$lib/utils/format";
-  import { setGame, setHome } from "$components/Router.svelte";
+
+  import Back from "$assets/icons/back.svg";
+  import Import from "$assets/icons/import.svg";
+  import Add from "$assets/icons/add.svg";
+  import Export from "$assets/icons/export.svg";
+  import Play from "$assets/icons/play.svg";
+
+  import { setRoute } from "$components/Router.svelte";
+  import QuestionListItem from "$components/QuestionListItem.svelte";
   import TimeInput from "$components/TimeInput.svelte";
-  import { errorDialog } from "$lib/stores/dialogStore";
+
+  import { loadQuizBlob, createQuizBlob } from "$lib/utils/format";
   import { acceptUpload, startDownload } from "$lib/utils/file";
+
+  import { imageStore } from "$stores/imageStore";
+  import { errorDialog } from "$stores/dialogStore";
   import {
     createData,
     shuffleQuestions,
     type CreateData,
     addQuestion
-  } from "$lib/stores/createStore";
-  import { flip } from "svelte/animate";
-  import QuestionListItem from "$lib/components/QuestionListItem.svelte";
+  } from "$stores/createStore";
 
   async function doExport() {
     const data: CreateData = get(createData);
@@ -147,19 +152,25 @@
         uuid
       });
 
-      setGame({ id, token, config, host: true });
+      setRoute("Game", {
+        gameData: { id, token, config, host: true }
+      });
     } catch (e) {
       const error = e as ServerError;
       console.error("Failed to initialize", error);
       errorDialog("Failed to create", errorText[error]);
     }
   }
+
+  function back() {
+    setRoute("Home");
+  }
 </script>
 
 <main class="main">
   <div class="details">
     <header class="header">
-      <button on:click={setHome} class="btn btn--icon">
+      <button on:click={back} class="btn btn--icon">
         <img src={Back} alt="Back" />
         Back
       </button>

@@ -1,5 +1,5 @@
-import { DEBUG } from "$lib/constants";
 import type { TimerState } from "$lib/socket/models";
+import { DEBUG } from "$lib/constants";
 
 /**
  * Formats the provided timer as seconds

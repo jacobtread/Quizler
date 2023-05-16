@@ -1,4 +1,5 @@
 import { writable, type Unsubscriber } from "svelte/store";
+import { onDestroy, onMount } from "svelte";
 import { DEBUG } from "$lib/constants";
 import {
   ServerMessage,
@@ -7,9 +8,8 @@ import {
   type ServerMessageSchema,
   type ClientMessageOf,
   ServerError
-} from "./models";
-import { setHome } from "$components/Router.svelte";
-import { onDestroy, onMount } from "svelte";
+} from "$lib/socket/models";
+import { setRoute } from "$components/Router.svelte";
 
 type MessageHandler<T> = (msg: ServerMessageOf<T>) => void;
 type MessageHandlers = {
@@ -156,7 +156,7 @@ function createSocket(): WebSocket {
 
 function onDisconnected() {
   // Return to the home screen
-  setHome();
+  setRoute("Home");
 
   // Attempt to reconnect
   queueReconnect();

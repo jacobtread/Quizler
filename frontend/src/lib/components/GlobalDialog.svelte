@@ -1,12 +1,8 @@
 <!-- Global dialog that can be called -->
 
 <script lang="ts">
-  import {
-    DialogType,
-    consumeDialog,
-    dialogStore
-  } from "$lib/stores/dialogStore";
   import { fade, slide } from "svelte/transition";
+  import { DialogType, consumeDialog, dialogStore } from "$stores/dialogStore";
 </script>
 
 {#if $dialogStore}

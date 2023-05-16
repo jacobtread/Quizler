@@ -1,8 +1,8 @@
 <script lang="ts">
+  import GlobalDialog from "$components/GlobalDialog.svelte";
+  import Router from "$components/Router.svelte";
+  import Loading from "$pages/Loading.svelte";
   import { socketReady } from "$lib/socket";
-  import Loading from "$lib/pages/Loading.svelte";
-  import GlobalDialog from "$lib/components/GlobalDialog.svelte";
-  import Router from "$lib/components/Router.svelte";
 </script>
 
 {#if $socketReady}

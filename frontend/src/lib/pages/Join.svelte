@@ -1,12 +1,16 @@
 <script lang="ts">
+  import { slide } from "svelte/transition";
+  import { z } from "zod";
+
   import * as socket from "$lib/socket";
   import { ClientMessage, ServerError, errorText } from "$lib/socket/models";
-  import { errorDialog } from "$lib/stores/dialogStore";
-  import { setConnect, setGame } from "$components/Router.svelte";
-  import { z } from "zod";
-  import Play from "$lib/assets/icons/play.svg";
-  import Back from "$lib/assets/icons/back.svg";
-  import { slide } from "svelte/transition";
+
+  import { errorDialog } from "$stores/dialogStore";
+
+  import { setRoute } from "$components/Router.svelte";
+
+  import Play from "$assets/icons/play.svg";
+  import Back from "$assets/icons/back.svg";
 
   export let token: string;
 
@@ -40,17 +44,21 @@
         name
       });
 
-      setGame({ id, token, config, host: false, name });
+      setRoute("Game", {
+        gameData: { id, token, config, host: false, name }
+      });
     } catch (e) {
       const error = e as ServerError;
       console.error("Failed to join", error);
       errorDialog("Failed to join", errorText[error]);
     }
   }
+
+  const back = () => setRoute("Connect");
 </script>
 
 <main class="main" transition:slide>
-  <button on:click={setConnect} class="back back--floating">
+  <button on:click={back} class="back back--floating">
     <img src={Back} alt="Back" />
   </button>
   <h2>{token}</h2>

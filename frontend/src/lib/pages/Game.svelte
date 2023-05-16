@@ -16,15 +16,6 @@
 </script>
 
 <script lang="ts">
-  import Spinner from "$lib/components/Spinner.svelte";
-  import AnsweredView from "$lib/components/game/AnsweredView.svelte";
-  import AwaitReadyView from "$lib/components/game/AwaitReadyView.svelte";
-  import FinishedView from "$lib/components/game/FinishedView.svelte";
-  import LobbyView from "$lib/components/game/LobbyView.svelte";
-  import QuestionView from "$lib/components/game/QuestionView.svelte";
-  import ScoreView from "$lib/components/game/ScoreView.svelte";
-  import * as socket from "$lib/socket";
-  import { setReady } from "$lib/socket/actions";
   import {
     ServerMessage,
     type PlayerData,
@@ -38,9 +29,22 @@
     type GameSummary,
     RemoveReason
   } from "$lib/socket/models";
-  import { errorDialog } from "$lib/stores/dialogStore";
+
+  import * as socket from "$lib/socket";
+  import { setReady } from "$lib/socket/actions";
+
+  import { errorDialog } from "$stores/dialogStore";
+
+  import { setRoute } from "$components/Router.svelte";
+  import AwaitReadyView from "$components/game/AwaitReadyView.svelte";
+  import AnsweredView from "$components/game/AnsweredView.svelte";
+  import FinishedView from "$components/game/FinishedView.svelte";
+  import QuestionView from "$components/game/QuestionView.svelte";
+  import LobbyView from "$components/game/LobbyView.svelte";
+  import ScoreView from "$components/game/ScoreView.svelte";
+  import Spinner from "$components/Spinner.svelte";
+
   import { formatImageUrl } from "$lib/utils/utils";
-  import { setHome } from "$components/Router.svelte";
   import { onMount } from "svelte";
 
   export let gameData: GameData;
@@ -167,7 +171,7 @@
 
     // if the removed player was us
     if (msg.id === gameData.id) {
-      setHome();
+      setRoute("Home");
 
       // For remove reasons other than self disconnect
       if (msg.reason !== RemoveReason.Disconnected) {

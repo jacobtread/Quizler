@@ -1,15 +1,29 @@
 <script lang="ts">
   import { QuestionType, type Question } from "$lib/socket/models";
   import { removeQuestion, swapQuestion } from "$lib/stores/createStore";
-  import { setEditing } from "$components/Router.svelte";
-  import Delete from "$lib/assets/icons/cross.svg";
-  import Edit from "$lib/assets/icons/edit.svg";
-  import ArrowUp from "$lib/assets/icons/arrowup.svg";
-  import ArrowDown from "$lib/assets/icons/arrowdown.svg";
+  import { setRoute } from "$components/Router.svelte";
+
+  import Delete from "$assets/icons/cross.svg";
+  import Edit from "$assets/icons/edit.svg";
+  import ArrowUp from "$assets/icons/arrowup.svg";
+  import ArrowDown from "$assets/icons/arrowdown.svg";
+
+  import { deepCopy } from "$lib/utils/utils";
 
   export let question: Question;
   export let index: number;
   export let length: number;
+
+  /**
+   * Updates the route to the editing route
+   * for the current question.
+   */
+  function edit() {
+    setRoute("Editing", {
+      // Use a copy of the question for editing
+      question: deepCopy(question)
+    });
+  }
 </script>
 
 <div class="question">
@@ -38,11 +52,8 @@
       <img src={Delete} alt="Back" />
     </button>
 
-    <button
-      on:click={() => setEditing(question)}
-      class="btn btn--icon-only btn--surface"
-    >
-      <img src={Edit} alt="Back" />
+    <button on:click={edit} class="btn btn--icon-only btn--surface">
+      <img src={Edit} alt="Edit" />
     </button>
   </div>
   <div class="body">

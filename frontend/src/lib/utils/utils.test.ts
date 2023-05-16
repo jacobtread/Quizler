@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
 import { deepCopy, getNumberWithOrdinal } from "./utils";
+import { describe, expect, it } from "vitest";
 
 describe("Deep Copy", () => {
   it("Should produce a copy of the provided object", () => {

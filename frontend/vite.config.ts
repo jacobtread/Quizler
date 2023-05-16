@@ -10,7 +10,8 @@ export default defineConfig({
       $lib: path.resolve(__dirname, "./src/lib"),
       $pages: path.resolve(__dirname, "./src/lib/pages"),
       $stores: path.resolve(__dirname, "./src/lib/stores"),
-      $components: path.resolve(__dirname, "./src/lib/components")
+      $components: path.resolve(__dirname, "./src/lib/components"),
+      $assets: path.resolve(__dirname, "./src/lib/assets")
     }
   }
 });
