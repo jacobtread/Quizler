@@ -18,7 +18,7 @@
 
   import { confirmDialog } from "$stores/dialogStore";
 
-  import { setRoute } from "$components/Router.svelte";
+  import { setHome } from "$stores/state";
   import ScoreTweened from "$components/ScoreTweened.svelte";
 
   import { formatTime } from "$lib/utils/utils";
@@ -45,7 +45,7 @@
     await doKick(gameData.id);
 
     // Take back to the home scren
-    setRoute("Home");
+    setHome();
   }
 </script>
 

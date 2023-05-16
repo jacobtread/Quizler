@@ -6,8 +6,8 @@
   import { doHostReset, doKick } from "$lib/socket/actions";
 
   import { confirmDialog } from "$stores/dialogStore";
+  import { setHome } from "$stores/state";
 
-  import { setRoute } from "$components/Router.svelte";
   import ScoreTweened from "$components/ScoreTweened.svelte";
 
   import type { GameData } from "$pages/Game.svelte";
@@ -33,7 +33,7 @@
     await doKick(gameData.id);
 
     // Take back to the home scren
-    setRoute("Home");
+    setHome();
   }
 </script>
 

@@ -6,8 +6,7 @@
   import { ClientMessage, ServerError, errorText } from "$lib/socket/models";
 
   import { errorDialog } from "$stores/dialogStore";
-
-  import { setRoute } from "$components/Router.svelte";
+  import { setGame, setConnect } from "$stores/state";
 
   import Back from "$components/icons/Back.svelte";
   import Play from "$components/icons/Play.svelte";
@@ -44,21 +43,17 @@
         name
       });
 
-      setRoute("Game", {
-        gameData: { id, token, config, host: false, name }
-      });
+      setGame({ id, token, config, host: false, name });
     } catch (e) {
       const error = e as ServerError;
       console.error("Failed to join", error);
       errorDialog("Failed to join", errorText[error]);
     }
   }
-
-  const back = () => setRoute("Connect");
 </script>
 
 <main class="main" transition:slide>
-  <button on:click={back} class="back back--floating">
+  <button on:click={setConnect} class="back back--floating">
     <Back />
   </button>
   <h2>{token}</h2>

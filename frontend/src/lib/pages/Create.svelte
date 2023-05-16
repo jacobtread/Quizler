@@ -18,7 +18,6 @@
     MIN_WAIT_TIME
   } from "$lib/constants";
 
-  import { setRoute } from "$components/Router.svelte";
   import QuestionListItem from "$components/QuestionListItem.svelte";
   import TimeInput from "$components/TimeInput.svelte";
   import Import from "$components/icons/Import.svelte";
@@ -30,6 +29,7 @@
   import { loadQuizBlob, createQuizBlob } from "$lib/utils/format";
   import { acceptUpload, startDownload } from "$lib/utils/file";
 
+  import { setHome, setGame } from "$stores/state";
   import { imageStore } from "$stores/imageStore";
   import { errorDialog } from "$stores/dialogStore";
   import {
@@ -171,9 +171,7 @@
         uuid
       });
 
-      setRoute("Game", {
-        gameData: { id, token, config, host: true }
-      });
+      setGame({ id, token, config, host: true });
     } catch (e) {
       const error = e as ServerError;
       console.error("Failed to initialize", error);
@@ -182,7 +180,7 @@
   }
 
   function back() {
-    setRoute("Home");
+    setHome();
   }
 </script>
 

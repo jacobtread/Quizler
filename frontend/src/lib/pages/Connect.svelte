@@ -7,11 +7,10 @@
   import * as socket from "$lib/socket";
   import { ClientMessage, ServerError, errorText } from "$lib/socket/models";
 
-  import { setRoute } from "$components/Router.svelte";
-
   import Back from "$components/icons/Back.svelte";
   import Play from "$components/icons/Play.svelte";
 
+  import { setHome, setJoin } from "$stores/state";
   import { errorDialog } from "$stores/dialogStore";
 
   let userToken: string = "";
@@ -53,19 +52,17 @@
         token
       });
 
-      setRoute("Join", { token });
+      setJoin(token);
     } catch (e) {
       const error = e as ServerError;
       console.error("Failed to connect", error);
       errorDialog("Failed to connect", errorText[error]);
     }
   }
-
-  const back = () => setRoute("Home");
 </script>
 
 <main class="main" transition:slide>
-  <button on:click={back} class="back back--floating">
+  <button on:click={setHome} class="back back--floating">
     <Back />
   </button>
 

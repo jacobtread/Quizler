@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { setRoute } from "$components/Router.svelte";
+  import { setConnect, setCreate } from "$stores/state";
   import { slide } from "svelte/transition";
 
   import GitHub from "$components/icons/GitHub.svelte";
@@ -26,11 +26,7 @@
     </a>
   </div>
   <div class="actions">
-    <button
-      on:click={() => setRoute("Connect")}
-      class="action"
-      aria-label="Join"
-    >
+    <button on:click={setConnect} class="action" aria-label="Join">
       <Play />
       <div class="action__body">
         <p class="action__name">Join a quiz</p>
@@ -38,11 +34,7 @@
       </div>
     </button>
 
-    <button
-      on:click={() => setRoute("Create")}
-      class="action"
-      aria-label="Create"
-    >
+    <button on:click={setCreate} class="action" aria-label="Create">
       <Edit />
       <div class="action__body">
         <p class="action__name">Create a quiz</p>

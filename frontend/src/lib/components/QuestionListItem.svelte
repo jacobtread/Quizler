@@ -1,7 +1,9 @@
 <script lang="ts">
   import { QuestionType, type Question } from "$lib/socket/models";
-  import { removeQuestion, swapQuestion } from "$lib/stores/createStore";
-  import { setRoute } from "$components/Router.svelte";
+
+  import { removeQuestion, swapQuestion } from "$stores/createStore";
+  import { setEditing } from "$stores/state";
+
   import ArrowUp from "$components/icons/ArrowUp.svelte";
   import ArrowDown from "$components/icons/ArrowDown.svelte";
   import Delete from "$components/icons/Delete.svelte";
@@ -18,10 +20,8 @@
    * for the current question.
    */
   function edit() {
-    setRoute("Editing", {
-      // Use a copy of the question for editing
-      question: deepCopy(question)
-    });
+    // Use a copy of the question for editing
+    setEditing(deepCopy(question));
   }
 </script>
 

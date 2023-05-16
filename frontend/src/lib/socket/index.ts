@@ -9,7 +9,7 @@ import {
   type ClientMessageOf,
   ServerError
 } from "$lib/socket/models";
-import { setRoute } from "$components/Router.svelte";
+import { setHome } from "$stores/state";
 
 type MessageHandler<T> = (msg: ServerMessageOf<T>) => void;
 type MessageHandlers = {
@@ -156,8 +156,7 @@ function createSocket(): WebSocket {
 
 function onDisconnected() {
   // Return to the home screen
-  setRoute("Home");
-
+  setHome();
   // Attempt to reconnect
   queueReconnect();
 }

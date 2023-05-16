@@ -14,8 +14,8 @@
   import { imagePreviewStore, selectImage } from "$stores/imageStore";
   import { saveQuestion } from "$stores/createStore";
   import { confirmDialog } from "$stores/dialogStore";
+  import { setCreate } from "$stores/state";
 
-  import { setRoute } from "$components/Router.svelte";
   import ImageStorage from "$components/ImageStorage.svelte";
   import ArrowDown from "$components/icons/ArrowDown.svelte";
   import ArrowUp from "$components/icons/ArrowUp.svelte";
@@ -35,7 +35,7 @@
     );
 
     if (!result) return;
-    setRoute("Create");
+    setCreate();
   }
 
   /**
@@ -179,7 +179,7 @@
 
   function save() {
     saveQuestion(question);
-    setRoute("Create");
+    setCreate();
   }
 </script>
 

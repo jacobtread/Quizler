@@ -34,10 +34,10 @@
   import { setReady } from "$lib/socket/actions";
 
   import { errorDialog } from "$stores/dialogStore";
+  import { setHome } from "$stores/state";
 
   import Loading from "$pages/Loading.svelte";
 
-  import { setRoute } from "$components/Router.svelte";
   import AnsweredView from "$components/game/AnsweredView.svelte";
   import FinishedView from "$components/game/FinishedView.svelte";
   import QuestionView from "$components/game/QuestionView.svelte";
@@ -170,7 +170,7 @@
 
     // if the removed player was us
     if (msg.id === gameData.id) {
-      setRoute("Home");
+      setHome();
 
       // For remove reasons other than self disconnect
       if (msg.reason !== RemoveReason.Disconnected) {
