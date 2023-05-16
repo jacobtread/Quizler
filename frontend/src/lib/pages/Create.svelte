@@ -102,26 +102,30 @@
     // Accept JSON responses
     request.responseType = "json";
 
-    // Await failure or response from request (TODO: Handle this reject case)
-    await new Promise((resolve, reject) => {
-      // Handle success
-      request.onload = resolve;
-      // Handle all failure callbacks
-      request.onerror = request.ontimeout = request.onabort = reject;
+    // Await failure or response from request
+    try {
+      await new Promise((resolve, reject) => {
+        // Handle success
+        request.onload = resolve;
+        // Handle all failure callbacks
+        request.onerror = request.ontimeout = request.onabort = reject;
 
-      // Create the URL to the create endpoint
-      const url = new URL(
-        "/api/quiz",
-        DEBUG ? "http://localhost" : window.location.origin
-      );
+        // Create the URL to the create endpoint
+        const url = new URL(
+          "/api/quiz",
+          DEBUG ? "http://localhost" : window.location.origin
+        );
 
-      // Set the request method and URL
-      request.open("POST", url);
+        // Set the request method and URL
+        request.open("POST", url);
 
-      // Send the multipart form body
-      request.send(form);
-    });
-
+        // Send the multipart form body
+        request.send(form);
+      });
+    } catch (_) {
+      // TODO: Obtain error message using response status if present
+      errorDialog("Failed to create", "Unable to create quiz");
+    }
     const response: CreatedResponse = request.response;
     return response.uuid;
   }
