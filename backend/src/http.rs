@@ -257,7 +257,7 @@ impl Display for CreateError {
                 write!(f, "Missing image mime type for {}", uuid)
             }
             CreateError::Multipart(err) => err.fmt(f),
-            CreateError::TooLarge => f.write_str("Uploaded content was over 100mb"),
+            CreateError::TooLarge => f.write_str("Uploaded content was too large"),
             CreateError::MissingQuestions => f.write_str("Quiz must have atleast 1 question"),
         }
     }

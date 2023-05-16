@@ -103,29 +103,38 @@
     request.responseType = "json";
 
     // Await failure or response from request
-    try {
-      await new Promise((resolve, reject) => {
-        // Handle success
-        request.onload = resolve;
-        // Handle all failure callbacks
-        request.onerror = request.ontimeout = request.onabort = reject;
+    await new Promise((resolve, reject) => {
+      // Handle success
+      request.onload = resolve;
 
-        // Create the URL to the create endpoint
-        const url = new URL(
-          "/api/quiz",
-          DEBUG ? "http://localhost" : window.location.origin
-        );
+      // Handle all failure callbacks
+      request.onerror =
+        request.ontimeout =
+        request.onabort =
+          () => reject(new Error("Failed to connect"));
 
-        // Set the request method and URL
-        request.open("POST", url);
+      // Create the URL to the create endpoint
+      const url = new URL(
+        "/api/quiz",
+        DEBUG ? "http://localhost" : window.location.origin
+      );
 
-        // Send the multipart form body
-        request.send(form);
-      });
-    } catch (_) {
-      // TODO: Obtain error message using response status if present
-      errorDialog("Failed to create", "Unable to create quiz");
+      // Set the request method and URL
+      request.open("POST", url);
+
+      // Send the multipart form body
+      request.send(form);
+    });
+
+    const statusType = Math.floor(request.status / 100);
+    if (statusType !== 2) {
+      console.error("Failed invalid request", request.response);
+
+      throw new Error(
+        "Invalid request try reloading the page or updating Quizler"
+      );
     }
+
     const response: CreatedResponse = request.response;
     return response.uuid;
   }
@@ -142,7 +151,14 @@
 
     console.debug("Creating quiz");
 
-    const uuid = await createHttp(data);
+    let uuid: string;
+    try {
+      uuid = await createHttp(data);
+    } catch (e) {
+      const error = e as Error;
+      errorDialog("Failed to create", error.message);
+      return;
+    }
 
     console.debug("Quiz waiting for initialize", uuid);
 
