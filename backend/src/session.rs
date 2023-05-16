@@ -331,10 +331,6 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Session {
                 ctx.stop();
                 return;
             }
-            ws::Message::Binary(_) => {
-                error!("Unexpected binary message from socket");
-                return;
-            }
             ws::Message::Continuation(_) => {
                 ctx.stop();
                 return;
