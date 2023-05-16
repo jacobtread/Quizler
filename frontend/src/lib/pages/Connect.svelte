@@ -9,8 +9,8 @@
 
   import { setRoute } from "$components/Router.svelte";
 
-  import Play from "$assets/icons/play.svg";
-  import Back from "$assets/icons/back.svg";
+  import Back from "$components/icons/Back.svelte";
+  import Play from "$components/icons/Play.svelte";
 
   import { errorDialog } from "$stores/dialogStore";
 
@@ -66,7 +66,7 @@
 
 <main class="main" transition:slide>
   <button on:click={back} class="back back--floating">
-    <img src={Back} alt="Back" />
+    <Back />
   </button>
 
   <h1>Enter Code</h1>
@@ -90,7 +90,7 @@
         class="play"
         transition:slide={{ axis: "x", duration: 200 }}
       >
-        <img src={Play} alt="Play Icon" class="path__icon" />
+        <Play />
       </button>
     {/if}
   </div>

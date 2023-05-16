@@ -2,11 +2,10 @@
   import { QuestionType, type Question } from "$lib/socket/models";
   import { removeQuestion, swapQuestion } from "$lib/stores/createStore";
   import { setRoute } from "$components/Router.svelte";
-
-  import Delete from "$assets/icons/cross.svg";
-  import Edit from "$assets/icons/edit.svg";
-  import ArrowUp from "$assets/icons/arrowup.svg";
-  import ArrowDown from "$assets/icons/arrowdown.svg";
+  import ArrowUp from "$components/icons/ArrowUp.svelte";
+  import ArrowDown from "$components/icons/ArrowDown.svelte";
+  import Delete from "$components/icons/Delete.svelte";
+  import Edit from "$components/icons/Edit.svelte";
 
   import { deepCopy } from "$lib/utils/utils";
 
@@ -33,7 +32,7 @@
       disabled={index <= 0}
       class="btn btn--icon-only btn--surface"
     >
-      <img src={ArrowUp} alt="Move Up" />
+      <ArrowUp />
     </button>
 
     <button
@@ -41,7 +40,7 @@
       disabled={index + 1 >= length}
       class="btn btn--icon-only btn--surface"
     >
-      <img src={ArrowDown} alt="Move Down" />
+      <ArrowDown />
     </button>
 
     <button
@@ -49,11 +48,11 @@
       disabled={length == 1}
       class="btn btn--icon-only btn--surface"
     >
-      <img src={Delete} alt="Back" />
+      <Delete />
     </button>
 
     <button on:click={edit} class="btn btn--icon-only btn--surface">
-      <img src={Edit} alt="Edit" />
+      <Edit />
     </button>
   </div>
   <div class="body">
@@ -74,7 +73,7 @@
 </div>
 
 <style lang="scss">
-  @import "../assets/scheme.scss";
+  @import "../../assets/scheme.scss";
 
   .body {
     display: flex;

@@ -126,7 +126,7 @@
 </main>
 
 <style lang="scss">
-  @import "../../assets/scheme.scss";
+  @import "../../../assets/scheme.scss";
 
   .main {
     position: relative;

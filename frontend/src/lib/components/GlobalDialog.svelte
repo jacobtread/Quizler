@@ -33,7 +33,7 @@
 {/if}
 
 <style lang="scss">
-  @import "../assets/scheme";
+  @import "../../assets/scheme.scss";
 
   .dialog-wrapper {
     z-index: 2;

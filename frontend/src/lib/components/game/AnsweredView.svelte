@@ -12,7 +12,7 @@
 </main>
 
 <style lang="scss">
-  @import "../../assets/scheme";
+  @import "../../../assets/scheme.scss";
 
   .main {
     width: 100%;

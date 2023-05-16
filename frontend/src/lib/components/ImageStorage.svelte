@@ -10,7 +10,7 @@
     consumeSelectImage,
     imagePreviewStore
   } from "$stores/imageStore";
-  import Import from "$assets/icons/import.svg";
+  import Import from "$components/icons/Import.svelte";
 
   let uploading: FileUpload[] = [];
 
@@ -165,7 +165,7 @@
           >Close</button
         >
         <button on:click={doUpload} class="btn btn--icon btn--surface">
-          <img src={Import} alt="Import" />
+          <Import />
           Upload Images
         </button>
         <button
@@ -179,7 +179,7 @@
 {/if}
 
 <style lang="scss">
-  @import "../assets/scheme";
+  @import "../../assets/scheme.scss";
 
   .error {
     color: #ff8989;

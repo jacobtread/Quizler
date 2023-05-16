@@ -20,7 +20,7 @@
 </label>
 
 <style lang="scss">
-  @import "../assets/scheme";
+  @import "../../assets/scheme.scss";
 
   .wrapper {
     background-color: $surface;

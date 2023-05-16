@@ -12,7 +12,7 @@
 
   import type { GameData } from "$pages/Game.svelte";
 
-  import Crown from "$assets/icons/crown.svg";
+  import Crown from "$components/icons/Crown.svelte";
 
   import { getNumberWithOrdinal } from "$lib/utils/utils";
 
@@ -70,7 +70,7 @@
           <tr class="player" animate:flip>
             <td class="player__place">
               {#if index == 0}
-                <img src={Crown} alt="Winner Crown" class="crown" />
+                <div class="crown"><Crown /></div>
               {/if}
               {getNumberWithOrdinal(index + 1)}
             </td>
@@ -89,7 +89,7 @@
 </main>
 
 <style lang="scss">
-  @import "../../assets/scheme.scss";
+  @import "../../../assets/scheme.scss";
 
   .main {
     display: flex;
@@ -145,7 +145,7 @@
     font-weight: bold;
   }
 
-  .crown {
+  .crown > :global(svg) {
     position: absolute;
     width: 3rem;
     left: 0;

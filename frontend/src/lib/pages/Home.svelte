@@ -1,15 +1,19 @@
 <script lang="ts">
   import { setRoute } from "$components/Router.svelte";
   import { slide } from "svelte/transition";
-  import GitHub from "$assets/icons/github.svg";
-  import Play from "$assets/icons/play.svg";
-  import Edit from "$assets/icons/edit.svg";
-  import Logo from "$assets/logo.svg";
+
+  import GitHub from "$components/icons/GitHub.svelte";
+  import Play from "$components/icons/Play.svelte";
+  import Edit from "$components/icons/Edit.svelte";
+  import Logo from "$components/icons/Logo.svelte";
 </script>
 
 <main class="main" transition:slide>
   <div class="left">
-    <img src={Logo} alt="Quizler Logo" class="logo" width="248" height="135" />
+    <div class="logo">
+      <Logo />
+    </div>
+
     <a
       href="https://github.com/jacobtread/Quizler-v2"
       target="_blank"
@@ -17,7 +21,7 @@
       title="View on Github"
       class="btn btn--icon github"
     >
-      <img src={GitHub} alt="GitHub Icon" />
+      <GitHub />
       View on GitHub
     </a>
   </div>
@@ -27,7 +31,7 @@
       class="action"
       aria-label="Join"
     >
-      <img src={Play} alt="Join Icon" class="action__icon" />
+      <Play />
       <div class="action__body">
         <p class="action__name">Join a quiz</p>
         <p class="action__text">Enter a game code and hop right in</p>
@@ -39,7 +43,7 @@
       class="action"
       aria-label="Create"
     >
-      <img src={Edit} alt="Create Icon" class="action__icon" />
+      <Edit />
       <div class="action__body">
         <p class="action__name">Create a quiz</p>
         <p class="action__text">Create your own quiz</p>
@@ -50,7 +54,7 @@
 
 <style lang="scss">
   @use "sass:color";
-  @import "../assets/scheme.scss";
+  @import "../../assets/scheme.scss";
 
   .left {
     display: flex;
@@ -78,7 +82,7 @@
     height: 100%;
   }
 
-  .logo {
+  .logo :global(> svg) {
     max-width: 16rem;
     padding: 1rem;
   }
@@ -115,6 +119,14 @@
 
     transition: background-color 0.5s ease, color 0.2s linear;
 
+    :global(> svg) {
+      padding: 1rem;
+      box-sizing: content-box;
+      background-color: $surfaceLight;
+      border-radius: 1.5rem;
+      transition: background-color 0.5s ease, color 0.2s linear;
+    }
+
     &:before {
       content: "";
 
@@ -140,19 +152,11 @@
       &:before {
         transform: translate(0);
       }
+
+      :global(> svg) {
+        background-color: $primary;
+      }
     }
-  }
-
-  .action__icon {
-    padding: 1rem;
-    box-sizing: content-box;
-    background-color: $surfaceLight;
-    border-radius: 1.5rem;
-    transition: background-color 0.5s ease, color 0.2s linear;
-  }
-
-  .action:hover .action__icon {
-    background-color: $primary;
   }
 
   .action__name {
@@ -186,12 +190,12 @@
     .action {
       flex-flow: column;
       padding-right: 1rem;
-    }
 
-    .action__icon {
-      width: 100%;
-      max-height: 3rem;
-      padding: 1rem 0;
+      :global(> svg) {
+        width: 100%;
+        max-height: 3rem;
+        padding: 1rem 0;
+      }
     }
 
     .action__body {
@@ -211,15 +215,15 @@
     .action {
       flex-flow: column;
       padding-right: 1rem;
+
+      :global(> svg) {
+        padding: 1rem;
+        width: auto;
+      }
     }
 
     .action__body {
       display: none;
-    }
-
-    .action__icon {
-      padding: 1rem;
-      width: auto;
     }
   }
 </style>

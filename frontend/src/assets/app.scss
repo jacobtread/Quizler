@@ -102,12 +102,14 @@ p {
   align-items: center;
   gap: 0.5rem;
 
-  > img {
+  > img,
+  > svg {
     width: 1.75rem;
     height: 1.75rem;
   }
 
-  &:disabled > img {
+  &:disabled > img,
+  &:disabled > svg {
     opacity: 0.25;
   }
 }

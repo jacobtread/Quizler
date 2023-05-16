@@ -17,13 +17,12 @@
 
   import { setRoute } from "$components/Router.svelte";
   import ImageStorage from "$components/ImageStorage.svelte";
+  import ArrowDown from "$components/icons/ArrowDown.svelte";
+  import ArrowUp from "$components/icons/ArrowUp.svelte";
   import TimeInput from "$components/TimeInput.svelte";
   import Checkbox from "$components/Checkbox.svelte";
-
-  import ArrowDown from "$assets/icons/arrowdown.svg";
-  import ArrowUp from "$assets/icons/arrowup.svg";
-  import Delete from "$assets/icons/cross.svg";
-  import Back from "$assets/icons/back.svg";
+  import Back from "$components/icons/Back.svelte";
+  import Delete from "$components/icons/Delete.svelte";
 
   import * as constants from "$lib/constants";
 
@@ -187,7 +186,7 @@
 <main class="main">
   <header class="header btn-row">
     <button on:click={back} class="btn btn--icon">
-      <img src={Back} alt="Back" />
+      <Back />
       Back
     </button>
     <button on:click={save} class="btn"> Save </button>
@@ -272,7 +271,7 @@
               disabled={index <= 0}
               class="btn btn--icon-only btn--surface btn-small"
             >
-              <img src={ArrowUp} alt="Move Down" />
+              <ArrowUp />
             </button>
 
             <button
@@ -280,7 +279,7 @@
               disabled={index + 1 >= question.answers.length}
               class="btn btn--icon-only btn--surface btn-small"
             >
-              <img src={ArrowDown} alt="Move Down" />
+              <ArrowDown />
             </button>
           </div>
 
@@ -297,7 +296,7 @@
             on:click={() => removeAnswer(index)}
             class="btn btn--icon-only"
           >
-            <img src={Delete} alt="Back" />
+            <Delete />
           </button>
         </div>
       {/each}
@@ -404,7 +403,7 @@
 <ImageStorage />
 
 <style lang="scss">
-  @import "../assets/scheme.scss";
+  @import "../../assets/scheme.scss";
 
   .header {
     position: sticky;

@@ -71,7 +71,7 @@
 </div>
 
 <style lang="scss">
-  @import "../assets/scheme.scss";
+  @import "../../assets/scheme.scss";
 
   .wrapper {
     display: flex;

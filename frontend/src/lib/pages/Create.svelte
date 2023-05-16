@@ -18,15 +18,14 @@
     MIN_WAIT_TIME
   } from "$lib/constants";
 
-  import Back from "$assets/icons/back.svg";
-  import Import from "$assets/icons/import.svg";
-  import Add from "$assets/icons/add.svg";
-  import Export from "$assets/icons/export.svg";
-  import Play from "$assets/icons/play.svg";
-
   import { setRoute } from "$components/Router.svelte";
   import QuestionListItem from "$components/QuestionListItem.svelte";
   import TimeInput from "$components/TimeInput.svelte";
+  import Import from "$components/icons/Import.svelte";
+  import Back from "$components/icons/Back.svelte";
+  import Play from "$components/icons/Play.svelte";
+  import Export from "$components/icons/Export.svelte";
+  import Add from "$components/icons/Add.svelte";
 
   import { loadQuizBlob, createQuizBlob } from "$lib/utils/format";
   import { acceptUpload, startDownload } from "$lib/utils/file";
@@ -171,19 +170,19 @@
   <div class="details">
     <header class="header">
       <button on:click={back} class="btn btn--icon">
-        <img src={Back} alt="Back" />
+        <Back />
         Back
       </button>
       <button on:click={doImport} class="btn btn--icon">
-        <img src={Import} alt="Import" />
+        <Import />
         Import
       </button>
       <button on:click={doExport} class="btn btn--icon">
-        <img src={Export} alt="Export" />
+        <Export />
         Export
       </button>
       <button on:click={doPlay} class="btn btn--icon">
-        <img src={Play} alt="Play" />
+        <Play />
         Play
       </button>
     </header>
@@ -254,7 +253,7 @@
         disabled={$createData.questions.length >= 50}
         class="btn btn--icon"
       >
-        <img src={Add} alt="Back" />
+        <Add />
         Add Question
       </button>
       <button
@@ -283,7 +282,7 @@
 </main>
 
 <style lang="scss">
-  @import "../assets/scheme.scss";
+  @import "../../assets/scheme.scss";
 
   .main {
     height: 100%;
