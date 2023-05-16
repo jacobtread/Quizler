@@ -57,13 +57,16 @@
   @import "../../assets/scheme.scss";
 
   .left {
-    display: flex;
-    gap: 1rem;
-    flex-flow: column;
-    align-items: center;
+    text-align: center;
+  }
+
+  .logo {
+    margin: 1rem auto;
   }
 
   .github {
+    display: inline-block;
+
     font-size: 1rem;
     font-weight: bold;
     text-decoration: none;
@@ -88,8 +91,7 @@
   }
 
   .actions {
-    display: flex;
-    flex-flow: column;
+    display: grid;
     gap: 1rem;
     margin: 1rem;
   }
@@ -98,8 +100,9 @@
     position: relative;
     overflow: hidden;
 
-    display: flex;
-    flex-flow: row;
+    display: grid;
+    grid-template-columns: min-content auto;
+
     align-items: center;
     gap: 1rem;
 
@@ -172,7 +175,7 @@
 
   @media screen and (max-height: 48rem) and (max-width: 52rem) {
     .main {
-      justify-content: flex-start;
+      justify-content: start;
       align-items: center;
       padding: 1rem 0;
       gap: 1rem;
@@ -188,13 +191,13 @@
 
   @media screen and (max-width: 32rem) {
     .action {
-      flex-flow: column;
+      grid-template-columns: 1fr;
       padding-right: 1rem;
 
       :global(> svg) {
-        width: 100%;
+        display: block;
+        width: calc(100% - 2rem);
         max-height: 3rem;
-        padding: 1rem 0;
       }
     }
 
@@ -204,16 +207,8 @@
     }
   }
 
-  @media screen and (max-width: 24rem) {
-    .action {
-      flex-flow: column;
-      padding-right: 1rem;
-    }
-  }
-
   @media screen and (max-width: 16rem) {
     .action {
-      flex-flow: column;
       padding-right: 1rem;
 
       :global(> svg) {

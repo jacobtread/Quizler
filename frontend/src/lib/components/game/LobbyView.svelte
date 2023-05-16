@@ -55,15 +55,15 @@
       <h1 class="token">
         {gameData.token}
       </h1>
-      <div class="timing">
+      <p class="timing">
         {#if gameState === GameState.Starting}
-          <p class="starting">Starting</p>
+          <span class="starting">Starting</span>
         {/if}
 
         {#if timer.elapsed !== timer.total}
-          <p class="time">{formatTime(timer)}</p>
+          <span class="time">{formatTime(timer)}</span>
         {/if}
-      </div>
+      </p>
     </div>
 
     <h2 class="name">{gameData.config.name}</h2>
@@ -139,8 +139,12 @@
   }
 
   .head {
-    display: flex;
-    flex-flow: row nowrap;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    justify-content: space-between;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
   }
 
   .starting {
@@ -150,9 +154,7 @@
   }
 
   .timing {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    text-align: right;
   }
 
   .time {
@@ -160,6 +162,7 @@
     color: $primary;
     font-size: 3rem;
     text-align: center;
+    vertical-align: middle;
   }
 
   .quiz {

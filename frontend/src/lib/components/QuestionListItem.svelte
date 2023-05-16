@@ -76,18 +76,18 @@
   @import "../../assets/scheme.scss";
 
   .body {
-    display: flex;
     gap: 1rem;
-    flex-flow: column;
+    display: grid;
+    grid-template-columns: 1fr;
     justify-content: space-between;
-    flex: auto;
   }
 
   .question {
     background-color: $surface;
     padding: 1rem;
     border-radius: 0.5rem;
-    display: flex;
+    display: grid;
+    grid-template-columns: min-content auto;
     gap: 1rem;
   }
 
@@ -103,9 +103,9 @@
   }
 
   .actions {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr;
     gap: 0.5rem;
-    flex-flow: column;
   }
 
   .answer[data-correct="true"] {

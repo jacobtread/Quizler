@@ -265,6 +265,8 @@
     <div class="answers">
       {#each question.answers as answer, index (answer.id)}
         <div class="answer" animate:flip={{ duration: 500 }}>
+          <Checkbox bind:value={answer.correct} />
+
           <div class="actions">
             <button
               on:click={() => swapAnswer(index, index - 1)}
@@ -282,8 +284,6 @@
               <ArrowDown />
             </button>
           </div>
-
-          <Checkbox bind:value={answer.correct} />
 
           <input
             class="answer__question input"
@@ -451,11 +451,6 @@
     resize: vertical;
   }
 
-  .actions {
-    display: flex;
-    flex-flow: column;
-  }
-
   .answers {
     display: grid;
     grid-template-columns: 1fr;
@@ -464,12 +459,14 @@
   }
 
   .answer {
-    display: flex;
+    display: grid;
+    grid-template-columns: min-content min-content auto min-content;
+    align-items: center;
     gap: 1rem;
   }
 
   .answer__question {
-    flex: auto;
+    align-self: stretch;
   }
 
   .question__img-wrapper {

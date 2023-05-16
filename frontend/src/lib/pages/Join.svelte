@@ -100,17 +100,13 @@
     height: 100%;
   }
 
-  .play {
-    padding: 0.5rem;
-    border-radius: 1rem;
-    border: none;
-    cursor: pointer;
-    color: #fff;
-    background-color: #f66828;
+  .form {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: auto min-content;
   }
 
   .input {
-    flex: auto;
     display: block;
     padding: 0.7rem;
     font-size: 2rem;
@@ -130,8 +126,12 @@
     border-bottom-color: #f66828;
   }
 
-  .form {
-    display: flex;
-    gap: 1rem;
+  .play {
+    padding: 0.5rem;
+    border-radius: 1rem;
+    border: none;
+    cursor: pointer;
+    color: #fff;
+    background-color: #f66828;
   }
 </style>

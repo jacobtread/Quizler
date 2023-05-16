@@ -55,7 +55,7 @@
   }
 </script>
 
-<div class="wrapper">
+<div>
   <input
     class="input"
     type="number"
@@ -73,11 +73,6 @@
 <style lang="scss">
   @import "../../assets/scheme.scss";
 
-  .wrapper {
-    display: flex;
-    gap: 0.5rem;
-  }
-
   .select,
   .input {
     padding: 0.5rem;
@@ -85,6 +80,10 @@
     font-size: 1rem;
     background-color: $surfaceLight;
     border: none;
+  }
+
+  .input {
+    margin-right: 0.25rem;
   }
 
   .select {

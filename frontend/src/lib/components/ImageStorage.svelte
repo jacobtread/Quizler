@@ -214,7 +214,7 @@
   .images {
     display: grid;
 
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
     grid-template-rows: 1fr 1fr;
     gap: 0.5rem;
 
@@ -224,6 +224,7 @@
 
     min-height: 30vh;
     max-height: 60vh;
+
     overflow: auto;
     margin-bottom: 1rem;
     position: relative;
@@ -254,8 +255,9 @@
   }
 
   .actions {
-    display: flex;
+    display: grid;
     gap: 1rem;
+    grid-template-columns: repeat(3, auto);
   }
 
   .file {
@@ -275,10 +277,7 @@
   }
 
   .file__actions {
-    display: flex;
+    display: grid;
     gap: 0.5rem;
-  }
-  .file__actions .btn {
-    flex: auto;
   }
 </style>

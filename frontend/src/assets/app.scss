@@ -73,9 +73,13 @@ p {
   }
 
   &--small {
-    padding: 0.5rem;
+    padding: 0.5rem 1rem;
     font-size: 0.8rem;
     border-radius: 0.25rem;
+  }
+
+  &--sm {
+    padding: 0.5rem 1rem;
   }
 
   &:hover {
@@ -96,16 +100,16 @@ p {
 .btn--icon,
 .btn--icon-only {
   padding: 0.5rem;
-  padding-right: 1rem;
-
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  text-align: center;
 
   > img,
   > svg {
+    display: inline-block;
+    vertical-align: middle;
+
     width: 1.75rem;
     height: 1.75rem;
+    margin-right: 0.25rem;
   }
 
   &:disabled > img,
@@ -122,7 +126,10 @@ p {
 
 // Styling for buttons with only icons
 .btn--icon-only {
-  padding-right: 0.5rem;
+  > img,
+  > svg {
+    margin-right: 0;
+  }
 }
 
 .back {

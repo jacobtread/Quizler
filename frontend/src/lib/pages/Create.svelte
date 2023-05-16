@@ -267,7 +267,7 @@
   </div>
 
   <div class="list">
-    <div class="list__actions btn-row">
+    <div class="list__actions">
       <button
         on:click={addQuestion}
         disabled={$createData.questions.length >= 50}
@@ -279,7 +279,7 @@
       <button
         on:click={shuffleQuestions}
         disabled={$createData.questions.length <= 1}
-        class="btn"
+        class="btn btn--sm"
       >
         Shuffle
       </button>
@@ -306,32 +306,42 @@
 
   .main {
     height: 100%;
-    display: flex;
-    padding: 1rem;
+    width: 100%;
 
-    overflow: hidden;
-    gap: 1rem;
+    display: grid;
+    grid-template-columns: 1fr 1.75fr;
+    grid-template-rows: 100%;
   }
 
   .details {
     overflow: auto;
-    max-width: 30%;
+    height: 100%;
+    padding: 1rem 0 0 1rem;
   }
 
   .list {
-    flex: auto;
+    height: 100%;
+    display: grid;
 
-    display: flex;
-    flex-flow: column;
+    grid-template-rows: min-content auto;
   }
 
   .list__actions {
     background-color: $appBackground;
-    padding-bottom: 1rem;
+    padding: 1rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+
+    .btn {
+      text-align: center;
+      justify-content: center;
+    }
   }
 
   .list__content {
     overflow: auto;
+    padding: 0 1rem 1rem;
   }
 
   .questions {
@@ -342,10 +352,23 @@
   }
 
   .header {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
     gap: 1rem;
     padding-bottom: 1rem;
+
+    .btn {
+      text-align: center;
+      justify-content: center;
+    }
   }
+
+  // .header .btn,
+  // .list__actions .btn {
+  //   flex: auto;
+  //   justify-content: center;
+  //   text-align: center;
+  // }
 
   .field {
     display: block;
@@ -379,14 +402,15 @@
   }
 
   @media screen and (max-width: 86rem) {
-    .details {
-      max-width: 50%;
+    .main {
+      grid-template-columns: 1fr 1fr;
     }
   }
 
   @media screen and (max-width: 64rem) {
     .main {
-      flex-flow: column;
+      grid-template-columns: 1fr;
+      grid-template-rows: 1fr;
       gap: 0;
       overflow: auto;
     }
@@ -398,6 +422,7 @@
     .details {
       overflow: visible;
       max-width: unset;
+      padding: 1rem;
     }
 
     .list__actions {
@@ -407,16 +432,25 @@
       z-index: 1;
     }
 
+    .list__content {
+      padding: 1rem;
+    }
+
     .header,
     .list__actions {
       flex-wrap: wrap;
     }
+  }
 
-    .header .btn,
-    .list__actions .btn {
-      flex: auto;
-      justify-content: center;
-      text-align: center;
+  @media screen and (max-width: 32rem) {
+    .header {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  @media screen and (max-width: 22rem) {
+    .header {
+      grid-template-columns: 1fr;
     }
   }
 </style>
