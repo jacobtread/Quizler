@@ -319,25 +319,25 @@
 
   .list {
     height: 100%;
-    display: grid;
-
-    grid-template-rows: min-content auto;
+    display: flex;
+    flex-flow: column;
   }
 
   .list__actions {
     background-color: $appBackground;
     padding: 1rem;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
     gap: 1rem;
 
     .btn {
+      flex: auto;
       text-align: center;
       justify-content: center;
     }
   }
 
   .list__content {
+    flex: auto;
     overflow: auto;
     padding: 0 1rem 1rem;
   }
@@ -350,23 +350,17 @@
   }
 
   .header {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    display: flex;
+    flex-wrap: wrap;
     gap: 1rem;
     padding-bottom: 1rem;
 
     .btn {
+      flex: auto;
       text-align: center;
       justify-content: center;
     }
   }
-
-  // .header .btn,
-  // .list__actions .btn {
-  //   flex: auto;
-  //   justify-content: center;
-  //   text-align: center;
-  // }
 
   .field {
     display: block;
@@ -437,18 +431,6 @@
     .header,
     .list__actions {
       flex-wrap: wrap;
-    }
-  }
-
-  @media screen and (max-width: 32rem) {
-    .header {
-      grid-template-columns: 1fr 1fr;
-    }
-  }
-
-  @media screen and (max-width: 22rem) {
-    .header {
-      grid-template-columns: 1fr;
     }
   }
 </style>

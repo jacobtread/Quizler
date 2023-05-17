@@ -115,7 +115,8 @@
   <div class="wrapper">
     <div class="dialog" on:drop={onDrop} on:dragover={onDragOver}>
       <div class="images">
-        {#if $imageStore.length < 1}
+        <!-- Don't show the upload info if already uploading -->
+        {#if $imageStore.length < 1 && uploading.length < 1}
           <p class="images__text">
             Click upload or drag and drop files here to upload
           </p>
@@ -160,7 +161,7 @@
         {/each}
       </div>
 
-      <div class="actions">
+      <div class="actions btn-row btn-row--fill">
         <button on:click={clearSelectImage} class="btn btn--surface"
           >Close</button
         >
@@ -214,8 +215,7 @@
   .images {
     display: grid;
 
-    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
-    grid-template-rows: 1fr 1fr;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0.5rem;
 
     padding: 0.5rem;
@@ -228,22 +228,15 @@
     overflow: auto;
     margin-bottom: 1rem;
     position: relative;
-  }
 
-  .images__text {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    max-width: 30%;
-    text-align: center;
-    transform: translate(-50%, -50%);
-  }
-
-  .image-wrapper {
-    width: 100%;
-    height: 80px;
-    overflow: hidden;
-    position: relative;
+    &__text {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      max-width: 30%;
+      text-align: center;
+      transform: translate(-50%, -50%);
+    }
   }
 
   .image {
@@ -252,12 +245,13 @@
     top: 50%;
     transform: translate(-50%, -50%);
     width: 100%;
-  }
 
-  .actions {
-    display: grid;
-    gap: 1rem;
-    grid-template-columns: repeat(3, auto);
+    &-wrapper {
+      width: 100%;
+      height: 80px;
+      overflow: hidden;
+      position: relative;
+    }
   }
 
   .file {
@@ -266,18 +260,40 @@
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
     padding: 0.5rem;
     border-radius: 0.25rem;
+
+    &__name {
+      text-overflow: ellipsis;
+      overflow: hidden;
+      color: #ffffff;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+
+    &__actions {
+      display: flex;
+      flex-flow: column;
+      gap: 0.5rem;
+    }
   }
 
-  .file__name {
-    text-overflow: ellipsis;
-    overflow: hidden;
-    color: #ffffff;
-    font-weight: bold;
-    margin-bottom: 0.5rem;
+  .actions {
+    display: flex;
+    gap: 1rem;
   }
 
-  .file__actions {
-    display: grid;
-    gap: 0.5rem;
+  @media screen and (max-width: 48rem) {
+    .images {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  @media screen and (max-width: 32rem) {
+    .images {
+      grid-template-columns: 1fr;
+    }
+
+    .actions {
+      display: flex;
+      flex-flow: column;
+    }
   }
 </style>

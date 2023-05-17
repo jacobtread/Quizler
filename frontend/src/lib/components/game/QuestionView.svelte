@@ -54,7 +54,7 @@
 
 <p class="time">{formatTime(timer)}</p>
 
-<main class="main" data-image={question.image !== null}>
+<main class="main">
   {#if question.image !== null}
     <div class="image-wrapper">
       <img
@@ -65,7 +65,7 @@
     </div>
   {/if}
 
-  <div class="content">
+  <div class="content" data-image={question.image !== null}>
     <p class="text">{question.text}</p>
     {#if question.ty === QuestionType.Single}
       <div class="answers">
@@ -105,18 +105,13 @@
   @import "../../../assets/scheme.scss";
 
   .main {
-    display: grid;
-    grid-template-columns: 1fr;
-    grid-template-rows: auto;
+    display: flex;
+    flex-flow: column;
 
     gap: 1rem;
     height: 100%;
     overflow: hidden;
     padding: 1rem;
-  }
-
-  .main[data-image="true"] {
-    grid-template-rows: auto max-content;
   }
 
   .time {
@@ -149,14 +144,20 @@
   }
 
   .content {
-    display: grid;
-    grid-template-rows: min-content auto;
+    display: flex;
+    flex-flow: column;
     min-height: 25vh;
+
+    &[data-image="false"] {
+      flex: auto;
+    }
   }
 
   .answers {
+    flex: auto;
+
     display: grid;
-    grid-template-columns: repeat(2, minmax(calc(50% - 0.5rem), 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1rem;
   }
 

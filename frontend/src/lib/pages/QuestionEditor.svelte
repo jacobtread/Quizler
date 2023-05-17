@@ -267,7 +267,7 @@
         <div class="answer" animate:flip={{ duration: 500 }}>
           <Checkbox bind:value={answer.correct} />
 
-          <div class="actions">
+          <div class="answer__actions">
             <button
               on:click={() => swapAnswer(index, index - 1)}
               disabled={index <= 0}
@@ -452,21 +452,27 @@
   }
 
   .answers {
-    display: grid;
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-flow: column;
     gap: 1rem;
     margin-bottom: 1rem;
   }
 
   .answer {
-    display: grid;
-    grid-template-columns: min-content min-content auto min-content;
-    align-items: center;
+    display: flex;
+    align-items: stretch;
     gap: 1rem;
+  }
+
+  .answer__actions {
+    display: flex;
+    flex-flow: column;
+    gap: 0.5rem;
   }
 
   .answer__question {
     align-self: stretch;
+    flex: auto;
   }
 
   .question__img-wrapper {
@@ -476,7 +482,7 @@
     overflow: hidden;
     position: relative;
     margin-bottom: 1rem;
-    display: grid;
+    display: flex;
     justify-content: center;
     align-items: center;
   }

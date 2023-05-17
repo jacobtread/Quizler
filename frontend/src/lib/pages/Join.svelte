@@ -62,16 +62,14 @@
 
   <p>Please enter your desired name</p>
   <div class="form">
-    <label>
-      <input
-        class="input"
-        type="text"
-        bind:value={name}
-        on:input={onNameInput}
-        minlength={1}
-        maxlength={30}
-      />
-    </label>
+    <input
+      class="input"
+      type="text"
+      bind:value={name}
+      on:input={onNameInput}
+      minlength={1}
+      maxlength={30}
+    />
 
     {#if !disabled}
       <button
@@ -85,7 +83,9 @@
   </div>
 </main>
 
-<style>
+<style lang="scss">
+  @import "../../assets/scheme";
+
   .main {
     display: flex;
     justify-content: center;
@@ -96,18 +96,19 @@
   }
 
   .form {
-    display: grid;
-    gap: 1rem;
-    grid-template-columns: auto min-content;
+    max-width: 32rem;
+    width: 100%;
+    padding: 1rem;
+    text-align: center;
   }
 
   .input {
-    display: block;
+    display: inline-block;
     padding: 0.7rem;
     font-size: 2rem;
     width: 100%;
-    max-width: 24rem;
-    text-align: left;
+    max-width: 15rem;
+    text-align: center;
     background-color: transparent;
     border: 5px solid #222;
     color: #fff;
@@ -115,6 +116,7 @@
     outline: none;
     transition: 0.5s ease;
     letter-spacing: 0.25rem;
+    vertical-align: middle;
   }
 
   .input:focus {
@@ -122,11 +124,23 @@
   }
 
   .play {
-    padding: 0.5rem;
+    vertical-align: middle;
+    margin-left: 1rem;
+    padding: 0.6rem;
     border-radius: 1rem;
     border: none;
     cursor: pointer;
     color: #fff;
     background-color: #f66828;
+  }
+
+  @media screen and (max-width: 32rem) {
+    .play,
+    .input {
+      max-width: none;
+      display: block;
+      margin: 1rem auto;
+      width: 100%;
+    }
   }
 </style>

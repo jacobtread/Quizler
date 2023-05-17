@@ -77,23 +77,17 @@
     padding: 1rem;
   }
 
-  .actions {
-    display: grid;
-    gap: 1rem;
-  }
-
   .action {
     position: relative;
     overflow: hidden;
 
-    display: grid;
-    grid-template-columns: min-content auto;
+    width: 100%;
 
     align-items: center;
     gap: 1rem;
 
     padding: 1rem;
-    padding-right: 2rem;
+    margin-bottom: 1rem;
 
     border-radius: 1rem;
 
@@ -106,6 +100,8 @@
     transition: background-color 0.5s ease, color 0.2s linear;
 
     :global(> svg) {
+      float: left;
+      margin-right: 1rem;
       padding: 1rem;
       box-sizing: content-box;
       background-color: $surfaceLight;
@@ -173,15 +169,16 @@
   }
 
   @media screen and (max-width: 32rem) {
-    .action {
-      grid-template-columns: 1fr;
-      padding-right: 1rem;
+    .actions {
+      margin: 1rem;
+    }
 
-      :global(> svg) {
-        display: block;
-        width: calc(100% - 2rem);
-        max-height: 3rem;
-      }
+    .action :global(> svg) {
+      display: block;
+      float: none;
+      width: calc(100% - 2rem);
+      max-height: 3rem;
+      margin-bottom: 1rem;
     }
 
     .action__body {
@@ -191,16 +188,38 @@
   }
 
   @media screen and (max-width: 16rem) {
+    .logo {
+      width: 100%;
+      overflow: hidden;
+      padding: 0 1rem;
+      margin: 0 auto;
+
+      :global(> svg) {
+        width: 100%;
+      }
+    }
+
+    .actions {
+      text-align: center;
+      margin: 0;
+    }
+
     .action {
-      padding-right: 1rem;
+      width: auto;
 
       :global(> svg) {
         padding: 1rem;
         width: auto;
+        margin-bottom: 0;
+        margin-right: 0;
       }
     }
 
     .action__body {
+      display: none;
+    }
+
+    .github {
       display: none;
     }
   }

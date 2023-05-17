@@ -74,21 +74,20 @@
 
 <style lang="scss">
   @import "../../assets/scheme.scss";
-
-  .body {
-    gap: 1rem;
-    display: grid;
-    grid-template-columns: 1fr;
-    justify-content: space-between;
-  }
-
   .question {
     background-color: $surface;
     padding: 1rem;
     border-radius: 0.5rem;
-    display: grid;
-    grid-template-columns: min-content auto;
+    display: flex;
     gap: 1rem;
+  }
+
+  .body {
+    flex: auto;
+    gap: 1rem;
+    display: flex;
+    flex-flow: column;
+    justify-content: space-between;
   }
 
   .answers {
@@ -103,8 +102,8 @@
   }
 
   .actions {
-    display: grid;
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-flow: column;
     gap: 0.5rem;
   }
 

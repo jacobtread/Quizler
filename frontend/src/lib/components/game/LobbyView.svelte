@@ -139,25 +139,24 @@
   }
 
   .head {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
     justify-content: space-between;
-    align-items: center;
-    justify-content: center;
     width: 100%;
   }
 
-  .starting {
+  .timing {
+    display: flex;
+    flex: auto;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    text-align: right;
     font-size: 1rem;
-    margin: 0 1rem;
     color: #999;
   }
 
-  .timing {
-    text-align: right;
-  }
-
   .time {
+    float: right;
     font-weight: bold;
     color: $primary;
     font-size: 3rem;
