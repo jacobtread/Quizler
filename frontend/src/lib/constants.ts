@@ -1,8 +1,6 @@
 import { QuestionType, type Question, NameFiltering } from "$lib/socket/models";
 import type { CreateData } from "$stores/createStore";
 
-export const DEBUG: boolean = import.meta.env.DEV;
-
 export const TOKEN_LENGTH: number = 5;
 
 const DEFAULT_NAME = "Example Quiz";

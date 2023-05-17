@@ -1,6 +1,5 @@
 import { writable, type Unsubscriber } from "svelte/store";
 import { onDestroy, onMount } from "svelte";
-import { DEBUG } from "$lib/constants";
 import {
   ServerMessage,
   type ServerMessageOf as ServerMessageOf,
@@ -10,6 +9,7 @@ import {
   ServerError
 } from "$lib/socket/models";
 import { setHome } from "$stores/state";
+import { getServerURL } from "$lib/utils/utils";
 
 type MessageHandler<T> = (msg: ServerMessageOf<T>) => void;
 type MessageHandlers = {
@@ -115,7 +115,9 @@ function createSocket(): WebSocket {
   requestHandles = {};
   clearMessageQueue();
 
-  const socketUrl = getSocketURL();
+  const socketUrl = getServerURL("/api/quiz/socket");
+  // Replace the url protocol with the correct socket protocol
+  socketUrl.protocol = socketUrl.protocol === "https" ? "wss" : "ws";
 
   console.debug("Connecting to socket server " + socketUrl);
 
@@ -175,23 +177,6 @@ function queueReconnect() {
     // Try reconnect the socket
     socket = createSocket();
   }, 1000);
-}
-
-/**
- * Obtains a URL to the endpoint for connecting the WebSocket.
- * For debug mode this is a constant value otherwise the website
- * origin is used
- *
- * @returns The URL that the WebSocket should use
- */
-function getSocketURL(): URL {
-  const SOCKET_ENDPOINT = "/api/quiz/socket";
-
-  const host = DEBUG
-    ? "ws://localhost"
-    : window.location.origin.replace(/^https/, "wss").replace(/^http/, "ws");
-
-  return new URL(SOCKET_ENDPOINT, host);
 }
 
 /**

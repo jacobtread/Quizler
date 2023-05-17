@@ -11,7 +11,6 @@
   } from "$lib/socket/models";
   import * as socket from "$lib/socket";
   import {
-    DEBUG,
     MAX_MAX_PLAYERS,
     MAX_WAIT_TIME,
     MIN_MAX_PLAYERS,
@@ -38,6 +37,7 @@
     type CreateData,
     addQuestion
   } from "$stores/createStore";
+  import { getServerURL } from "$lib/utils/utils";
 
   async function doExport() {
     const data: CreateData = get(createData);
@@ -114,10 +114,7 @@
           () => reject(new Error("Failed to connect"));
 
       // Create the URL to the create endpoint
-      const url = new URL(
-        "/api/quiz",
-        DEBUG ? "http://localhost" : window.location.origin
-      );
+      const url = getServerURL("/api/quiz");
 
       // Set the request method and URL
       request.open("POST", url);

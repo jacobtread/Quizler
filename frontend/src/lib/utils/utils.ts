@@ -1,5 +1,4 @@
 import type { Question, TimerState } from "$lib/socket/models";
-import { DEBUG } from "$lib/constants";
 
 /**
  * Formats the provided timer as seconds
@@ -14,6 +13,22 @@ export function formatTime(timer: TimerState): string {
 }
 
 /**
+ * Obtains a server url for the provided path.
+ *
+ * (e.g. path = "/test" output = http://localhost/test)
+ *
+ * @param path The route path
+ * @returns The created URL
+ */
+export function getServerURL(path: string): URL {
+  return new URL(
+    path,
+    // Use localhost for dev environments otherwise extract from the origin
+    import.meta.env.DEV ? "http://localhost" : window.location.origin
+  );
+}
+
+/**
  * Creates a quiz image URL from the provided game
  * token and UUID to the image
  *
@@ -22,10 +37,7 @@ export function formatTime(timer: TimerState): string {
  * @returns     The URL to the image
  */
 export function formatImageUrl(token: string, uuid: string): string {
-  return new URL(
-    `/api/quiz/${token}/${uuid}`,
-    DEBUG ? "http://localhost" : window.location.origin
-  ).toString();
+  return getServerURL(`/api/quiz/${token}/${uuid}`).toString();
 }
 
 /**
