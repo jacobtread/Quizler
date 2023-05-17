@@ -1,9 +1,8 @@
 <script lang="ts">
-  import messages from "$lib/data/answeredMessages.json";
-  import { randomRange } from "$lib/utils/utils";
+  import { getRandomMessage } from "$lib/utils/messages";
   import { slide } from "svelte/transition";
 
-  const message = messages[randomRange(0, messages.length - 1)];
+  const message = getRandomMessage("Answered");
 </script>
 
 <main class="main" transition:slide>

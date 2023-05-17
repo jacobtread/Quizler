@@ -3,22 +3,11 @@
   import { tweened } from "svelte/motion";
 
   import { ScoreType, type Score } from "$lib/socket/models";
-
-  import { randomRange } from "$lib/utils/utils";
-
-  import correctMessages from "$lib/data/correctMessages.json";
-  import incorrectMessages from "$lib/data/incorrectMessages.json";
-  import partialMessages from "$lib/data/partialMessages.json";
+  import { getRandomMessage } from "$lib/utils/messages";
 
   export let score: Score;
 
-  const messages = {
-    [ScoreType.Correct]: correctMessages,
-    [ScoreType.Partial]: partialMessages,
-    [ScoreType.Incorrect]: incorrectMessages
-  }[score.ty];
-
-  const message: string = messages[randomRange(0, messages.length - 1)];
+  const message: string = getRandomMessage(score.ty);
   const value = tweened(0, {
     delay: 500
   });
