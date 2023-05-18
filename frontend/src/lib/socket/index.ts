@@ -99,7 +99,7 @@ function clearMessageQueue() {
 function createSocket(): WebSocket {
   const socketUrl = getServerURL("/api/quiz/socket");
   // Replace the url protocol with the correct socket protocol
-  socketUrl.protocol = socketUrl.protocol === "https" ? "wss" : "ws";
+  socketUrl.protocol = socketUrl.protocol.includes("https") ? "wss" : "ws";
 
   console.debug("Connecting to socket server " + socketUrl);
 
