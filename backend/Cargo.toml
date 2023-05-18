@@ -9,7 +9,6 @@ repository = "https://github.com/jacobtread/Quizler-v2"
 readme = "../README.md"
 keywords = ["quizler", "game"]
 
-
 [dependencies]
 # Actix async framework
 actix = "0.13"

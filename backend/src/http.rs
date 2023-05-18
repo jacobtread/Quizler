@@ -35,52 +35,42 @@ pub fn configure(cfg: &mut ServiceConfig) {
     cfg.service(create_quiz);
     cfg.service(quiz_image);
     cfg.service(quiz_socket);
-    cfg.service(index);
-    cfg.service(assets);
-}
-
-const INDEX_FILE: &[u8] = include_bytes!("../../frontend/dist/index.html");
-
-#[get("/")]
-async fn index() -> impl Responder {
-    HttpResponse::Ok()
-        .content_type("text/html")
-        .body(INDEX_FILE)
+    cfg.service(public);
 }
 
 /// Contains all the files stored in the "test" folder
 /// use the [`Embedded::get`] method to access the folders
 #[derive(Embedded)]
-#[folder = "../frontend/dist/assets"]
+#[folder = "public"]
 struct Assets;
 
-#[get("/assets/{path:.*}")]
-async fn assets(path: web::Path<String>) -> impl Responder {
-    use std::path::Path as StdPath;
-
+#[get("/{path:.*}")]
+async fn public(path: web::Path<String>) -> impl Responder {
     let path = path.into_inner();
+    let (file, content_type) = if let Some(file) = Assets::get(&path) {
+        let path = std::path::Path::new(&path);
+        // Find a matching content type or default to text/plain
+        let content_type = path
+            .extension()
+            .and_then(|ext| {
+                if ext == "js" {
+                    Some(mime::APPLICATION_JAVASCRIPT)
+                } else if ext == "css" {
+                    Some(mime::TEXT_CSS)
+                } else if ext == "html" {
+                    Some(mime::TEXT_HTML)
+                } else {
+                    None
+                }
+            })
+            .unwrap_or(mime::TEXT_PLAIN);
 
-    let Some(file) = Assets::get(&path) else {
-        return HttpResponse::NotFound()
-            .finish()
+        (file, content_type)
+    } else {
+        // Fallback to the index.html file for all unknown pages
+        let index = Assets::get("index.html").expect("Missing index.html from build");
+        (index, mime::TEXT_HTML)
     };
-
-    let path = StdPath::new(&path);
-
-    // Find a matching content type or default to text/plain
-    let content_type = path
-        .extension()
-        .and_then(|ext| {
-            if ext == "js" {
-                Some("text/javascript")
-            } else if ext == "css" {
-                Some("text/css")
-            } else {
-                None
-            }
-        })
-        .unwrap_or("text/plain");
-
     HttpResponse::Ok().content_type(content_type).body(file)
 }
 
