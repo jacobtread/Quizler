@@ -3,10 +3,11 @@ import { onDestroy, onMount } from "svelte";
 import {
   ServerMessage,
   type ServerMessageOf as ServerMessageOf,
-  type PairMessageType,
   type ServerMessageSchema,
-  type ClientMessageOf,
-  ServerError
+  ServerError,
+  type ResponseMessage,
+  ClientMessage,
+  type ClientMessageOf
 } from "$lib/socket/models";
 import { setHome } from "$stores/state";
 import { getServerURL } from "$lib/utils/utils";
@@ -186,9 +187,9 @@ function queueReconnect() {
  * @throws The server error or socket error
  * @param msg
  */
-export function send<T>(
+export function send<T extends ClientMessage>(
   msg: ClientMessageOf<T>
-): Promise<ServerMessageOf<PairMessageType<T>>> {
+): Promise<ResponseMessage<T>> {
   return new Promise((resolve, reject) => {
     console.debug("Sending message to server", msg);
 
@@ -208,7 +209,7 @@ export function send<T>(
       delete requestHandles[msg.rid];
       reject({
         ty: ServerMessage.Error,
-        error: ServerError.Unexpected
+        error: "Unexpected"
       });
     }
   });

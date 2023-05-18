@@ -1,5 +1,5 @@
 <script context="module" lang="ts">
-  import type { GameConfig } from "$lib/socket/models";
+  import type { GameConfig, Scores } from "$lib/socket/models";
 
   export interface GameData {
     // ID of the current player
@@ -62,7 +62,7 @@
   let question: Question | null = null;
 
   let score: Score = { ty: ScoreType.Incorrect };
-  let scores: Record<SessionId, number> = {};
+  let scores: Scores = {};
 
   let answered: boolean;
 

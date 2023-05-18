@@ -1,4 +1,4 @@
-import { ClientMessage, HostAction, ServerError } from "$lib/socket/models";
+import { ClientMessage, HostAction } from "$lib/socket/models";
 import * as socket from "$lib/socket";
 
 export async function doKick(id: number) {
@@ -8,8 +8,7 @@ export async function doKick(id: number) {
       id
     });
   } catch (e) {
-    const error = e as ServerError;
-    console.error("Error while attempting to kick", error);
+    console.error("Error while attempting to kick", e);
   }
 }
 
@@ -20,8 +19,7 @@ async function doHostAction(action: HostAction): Promise<void> {
       action
     });
   } catch (e) {
-    const error = e as ServerError;
-    console.error("Error while attempting host action", action, error);
+    console.error("Error while attempting host action", action, e);
   }
 }
 
@@ -45,7 +43,6 @@ export async function setReady() {
   try {
     await socket.send({ ty: ClientMessage.Ready });
   } catch (e) {
-    const error = e as ServerError;
-    console.error("Error while attempting to ready", error);
+    console.error("Error while attempting to ready", e);
   }
 }

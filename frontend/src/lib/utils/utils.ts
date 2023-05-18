@@ -109,7 +109,7 @@ export function tryFullscreen() {
 export async function preloadImage(token: string, question: Question) {
   const imageRef = question.image;
 
-  /// Question didn't have any images to load
+  // Question didn't have any images to load
   if (imageRef === null) return;
 
   const MAX_ATTEMPTS = 6;

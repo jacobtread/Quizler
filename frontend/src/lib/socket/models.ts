@@ -1,20 +1,29 @@
 import { z } from "zod";
 
+// Represents a unique ID of a session
 export type SessionId = number;
+
+// Represents a 5 character game token (e.g EAU32)
 export type GameToken = string;
+
+// State of the quiz timer
 export type TimerState = { total: number; elapsed: number };
+
+// Mapping between IDs and the scores
 export type Scores = Record<SessionId, number>;
+
+// UUID to an image on the server
 export type ImageRef = string;
-export type QuestionIndex = number;
 
 // Snapshot of the game state at completion
 // to keep around the scores and players
 export interface GameSummary {
+  /// Summary for each of the players in the game
   players: PlayerSummary[];
 }
 
 // Extended player data to include score
-type PlayerSummary = PlayerData & { score: number };
+export type PlayerSummary = PlayerData & { score: number };
 
 // Response structure for a created quiz
 export interface CreatedResponse {
@@ -22,20 +31,29 @@ export interface CreatedResponse {
   uuid: string;
 }
 
+// Basic player data
 export interface PlayerData {
+  // The ID of the player
   id: SessionId;
+  // The name of the player
   name: string;
 }
 
+// Quiz configuration
 export interface GameConfig {
+  // Name of the quiz
   name: string;
+  // Text description of the quiz
   text: string;
 }
 
+// Quiz timing configuration
 export interface TimingConfig {
+  // Time to wait between each question
   wait_time: number;
 }
 
+// Server error types
 export const enum ServerError {
   MalformedMessage = "MalformedMessage",
   InvalidToken = "InvalidToken",
@@ -50,6 +68,7 @@ export const enum ServerError {
   InvalidAnswer = "InvalidAnswer"
 }
 
+// Messages for different server errors
 export const errorText: Record<ServerError, string> = {
   [ServerError.MalformedMessage]: "Unknown client sent invalid message",
   [ServerError.InvalidToken]: "Invalid token provided",
@@ -65,17 +84,19 @@ export const errorText: Record<ServerError, string> = {
   [ServerError.InvalidAnswer]: "Invalid answer type"
 };
 
+// Name filtering modes
 export const enum NameFiltering {
-  /// Don't filter names anything goes
+  // Don't filter names anything goes
   None = "None",
-  /// Only stop the more severe names
+  // Only stop the more severe names
   Low = "Low",
-  /// Stop anything thats above mild
+  // Stop anything thats above mild
   Medium = "Medium",
-  /// Filter out any names that might be inappropriate
+  // Filter out any names that might be inappropriate
   High = "High"
 }
 
+// Possible game states
 export const enum GameState {
   Lobby = "Lobby",
   Starting = "Starting",
@@ -85,6 +106,7 @@ export const enum GameState {
   Finished = "Finished"
 }
 
+// Actions that hosts can send to the server
 export const enum HostAction {
   Start = "Start",
   Cancel = "Cancel",
@@ -92,6 +114,7 @@ export const enum HostAction {
   Reset = "Reset"
 }
 
+// Different remove reasons
 export const enum RemoveReason {
   RemovedByHost = "RemovedByHost",
   HostDisconnect = "HostDisconnect",
@@ -99,6 +122,7 @@ export const enum RemoveReason {
   Disconnected = "Disconnected"
 }
 
+// Messages for different removal reasons
 export const removeReasonText: Record<RemoveReason, string> = {
   [RemoveReason.RemovedByHost]: "Removed by host",
   [RemoveReason.HostDisconnect]: "Quiz host left",
@@ -106,19 +130,23 @@ export const removeReasonText: Record<RemoveReason, string> = {
   [RemoveReason.Disconnected]: "Disconnected"
 };
 
+// Question types
 export const enum QuestionType {
   Single = "Single",
   Multiple = "Multiple"
 }
 
+// Schema for question answers
 const answerValueSchema = z.object({
   id: z.number(),
   value: z.string(),
   correct: z.boolean()
 });
 
+// Answer value type inferred from its schema
 export type AnswerValue = z.infer<typeof answerValueSchema>;
 
+// Schema for questions
 export const questionSchema = z
   .object({
     id: z.number(),
@@ -149,22 +177,28 @@ export const questionSchema = z
     ])
   );
 
+// Question type inferred from its schema
 export type Question = z.infer<typeof questionSchema>;
 
+// Different answer types
 export const enum AnswerType {
   Single = "Single",
   Multiple = "Multiple"
 }
+
+// Answer schemas for each different type
 export type Answer =
   | { ty: AnswerType.Single; answer: number }
   | { ty: AnswerType.Multiple; answers: number[] };
 
+// Different score types
 export const enum ScoreType {
   Correct = "Correct",
   Incorrect = "Incorrect",
   Partial = "Partial"
 }
 
+// Score schemas for each different type
 export type Score =
   | { ty: ScoreType.Correct; value: number }
   | {
@@ -175,10 +209,7 @@ export type Score =
     }
   | { ty: ScoreType.Incorrect };
 
-/* 
-  CLIENT MESSAGES
-*/
-
+// Client message types
 export const enum ClientMessage {
   Initialize = "Initialize",
   Connect = "Connect",
@@ -189,6 +220,7 @@ export const enum ClientMessage {
   Kick = "Kick"
 }
 
+// Client message schema based on each message type
 export type ClientMessageSchema = {
   rid?: number;
 } & (
@@ -201,12 +233,10 @@ export type ClientMessageSchema = {
   | { ty: ClientMessage.Kick; id: SessionId }
 );
 
+// Client message type extractor
 export type ClientMessageOf<T> = Extract<ClientMessageSchema, { ty: T }>;
 
-/* 
-  SERVER MESSAGES
-*/
-
+// Server message types
 export const enum ServerMessage {
   Joined = "Joined",
   Ok = "Ok",
@@ -220,6 +250,7 @@ export const enum ServerMessage {
   Kicked = "Kicked"
 }
 
+// Server message schema based on each message type
 export type ServerMessageSchema = {
   rid?: number;
 } & (
@@ -235,18 +266,21 @@ export type ServerMessageSchema = {
   | { ty: ServerMessage.Ok }
 );
 
+// Server message type extractor
 export type ServerMessageOf<T> = Extract<ServerMessageSchema, { ty: T }>;
 
+// Mapping between client messages and the server message type
+export type MessagePairs =
+  | { left: ClientMessage.Initialize; right: ServerMessage.Joined }
+  | { left: ClientMessage.Join; right: ServerMessage.Joined }
+  | { left: ClientMessage.Connect; right: ServerMessage.Ok }
+  | { left: ClientMessage.Ready; right: ServerMessage.Ok }
+  | { left: ClientMessage.HostAction; right: ServerMessage.Ok }
+  | { left: ClientMessage.Answer; right: ServerMessage.Ok }
+  | { left: ClientMessage.Kick; right: ServerMessage.Ok };
+
 // Converts from client message to server message type
-export type PairMessageType<T> = T extends
-  | ClientMessage.Initialize
-  | ClientMessage.Join
-  ? ServerMessage.Joined
-  : T extends
-      | ClientMessage.Connect
-      | ClientMessage.Ready
-      | ClientMessage.HostAction
-      | ClientMessage.Answer
-      | ClientMessage.Kick
-  ? ServerMessage.Ok
-  : unknown;
+export type ServerResponseOf<T> = Extract<MessagePairs, { left: T }>["right"];
+
+// Response message type from the client message
+export type ResponseMessage<T> = ServerMessageOf<ServerResponseOf<T>>;

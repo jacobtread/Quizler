@@ -1,18 +1,23 @@
 import { writable } from "svelte/store";
-import type { GameConfig, Question, SessionId } from "$lib/socket/models";
+import type {
+  GameConfig,
+  GameToken,
+  Question,
+  SessionId
+} from "$lib/socket/models";
 
 export const enum AppStateType {
-  /// Home screen
+  // Home screen
   Home = 0,
-  /// Join Game Screen
+  // Join Game Screen
   Connect,
-  /// Join game name selection screen
+  // Join game name selection screen
   Join,
-  /// Create game screen
+  // Create game screen
   Create,
-  /// Editing question screen
+  // Editing question screen
   Editing,
-  /// App is in a game
+  // App is in a game
   Game
 }
 
@@ -20,7 +25,7 @@ export interface GameData {
   // ID of the current player
   id: SessionId;
   // Current game token
-  token: string;
+  token: GameToken;
   // Current game config
   config: GameConfig;
   // Whether we are the host
@@ -32,7 +37,7 @@ export interface GameData {
 export type AppState =
   | { ty: AppStateType.Home }
   | { ty: AppStateType.Connect }
-  | { ty: AppStateType.Join; token: string }
+  | { ty: AppStateType.Join; token: GameToken }
   | { ty: AppStateType.Create }
   | { ty: AppStateType.Editing; question: Question }
   | { ty: AppStateType.Game; gameData: GameData };
@@ -53,7 +58,7 @@ export function setConnect() {
   appState.set({ ty: AppStateType.Connect });
 }
 
-export function setJoin(token: string) {
+export function setJoin(token: GameToken) {
   appState.set({ ty: AppStateType.Join, token });
 }
 

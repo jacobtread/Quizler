@@ -15,7 +15,7 @@ import {
 } from "$lib/socket/models";
 import { z } from "zod";
 
-/// Schema used for parsing and validating the file format
+// Schema used for parsing and validating the file format
 const fileFormatSchema = z.object({
   name: z.string(),
   text: z.string(),

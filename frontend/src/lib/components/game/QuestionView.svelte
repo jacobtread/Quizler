@@ -5,8 +5,7 @@
     type Question,
     type TimerState,
     ClientMessage,
-    AnswerType,
-    ServerError
+    AnswerType
   } from "$lib/socket/models";
   import { formatImageUrl, formatTime } from "$lib/utils/utils";
   import type { GameData } from "$pages/Game.svelte";
@@ -30,8 +29,7 @@
         }
       });
     } catch (e) {
-      const error = e as ServerError;
-      console.error("Error while attempting to answer", error);
+      console.error("Error while attempting to answer", e);
     }
   }
 
@@ -46,8 +44,7 @@
         }
       });
     } catch (e) {
-      const error = e as ServerError;
-      console.error("Error while attempting to answer", error);
+      console.error("Error while attempting to answer", e);
     }
   }
 </script>

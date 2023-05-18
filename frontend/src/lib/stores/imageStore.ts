@@ -10,16 +10,13 @@ import { v4 as uuidv4 } from "uuid";
 import { MAX_IMAGE_BYTES } from "$lib/constants";
 
 export interface StoredImage {
-  /// The file UUID
+  // The file UUID
   uuid: ImageRef;
-
-  /// The name of the file
+  // The name of the file
   name: string;
-
-  /// The size of the file
+  // The size of the file
   size: number;
-
-  /// The actual file
+  // The actual file
   blob: Blob;
 }
 
