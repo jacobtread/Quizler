@@ -35,7 +35,7 @@
       name.length <= MAX_PLAYER_NAME_LENGTH;
   }
 
-  async function joinQuiz() {
+  function join() {
     socket
       .send({ ty: ClientMessage.Join, name })
       .then(({ id, token, config }) => {
@@ -69,7 +69,7 @@
 
     {#if !disabled}
       <button
-        on:click={joinQuiz}
+        on:click={join}
         class="play"
         transition:slide={{ axis: "x", duration: 200 }}
       >

@@ -172,16 +172,12 @@
       errorDialog("Failed to create", errorText[error]);
     }
   }
-
-  function back() {
-    setHome();
-  }
 </script>
 
 <main class="main">
   <div class="details">
     <header class="header">
-      <button on:click={back} class="btn btn--icon">
+      <button on:click={setHome} class="btn btn--icon">
         <Back />
         Back
       </button>
