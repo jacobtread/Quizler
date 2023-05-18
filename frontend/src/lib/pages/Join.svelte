@@ -31,8 +31,8 @@
   function updateName() {
     // Change the disabled state based on the name lengthh
     disabled =
-      name.length >= MIN_PLAYER_NAME_LENGTH &&
-      name.length <= MAX_PLAYER_NAME_LENGTH;
+      name.length < MIN_PLAYER_NAME_LENGTH ||
+      name.length > MAX_PLAYER_NAME_LENGTH;
   }
 
   function join() {
