@@ -1,6 +1,5 @@
 <script lang="ts">
   import { slide } from "svelte/transition";
-  import { z } from "zod";
 
   import { TOKEN_LENGTH } from "$lib/constants";
 
@@ -13,48 +12,41 @@
   import { setHome, setJoin } from "$stores/state";
   import { errorDialog } from "$stores/dialogStore";
 
-  let userToken: string = "";
+  // The user provided token
+  let token: string = "";
+
+  // Disabled state for the connect button
   let disabled: boolean = true;
 
-  const tokenSchema = z
-    .string()
-    .toUpperCase()
-    .length(TOKEN_LENGTH, "Invalid token length")
-    .regex(/^[A-Z0-9]+$/, "Token didn't match token charset");
-
-  function onTokenInput() {
-    userToken = userToken
+  /**
+   * Update called whenever the token input changes in
+   * order to normalize the casing of the input along
+   * with changing the disabled state based on the
+   * length requirement
+   */
+  function updateToken() {
+    token = token
       // Convert the value to uppercase format
       .toUpperCase()
       // Remove any invald values
       .replace(/[^A-Z0-9]/, "");
 
-    // Change the disabled state
-    disabled = !tokenSchema.safeParse(userToken).success;
+    // Change the disabled state based on the length requirement
+    disabled = token.length != TOKEN_LENGTH;
   }
 
-  async function connectQuiz() {
-    const parse = tokenSchema.safeParse(userToken);
-
-    if (!parse.success) {
-      console.error("Failed to parse token", parse.error);
-      return;
-    }
-
-    const token = parse.data;
-
-    try {
-      await socket.send({
-        ty: ClientMessage.Connect,
-        token
+  /**
+   * Handles attempting to connect to a quiz using the
+   * user provided token.
+   */
+  function connect() {
+    socket
+      .send({ ty: ClientMessage.Connect, token })
+      .then(() => setJoin(token))
+      .catch((error: ServerError) => {
+        console.error("Failed to connect", error);
+        errorDialog("Failed to connect", errorText[error]);
       });
-
-      setJoin(token);
-    } catch (e) {
-      const error = e as ServerError;
-      console.error("Failed to connect", error);
-      errorDialog("Failed to connect", errorText[error]);
-    }
   }
 </script>
 
@@ -69,8 +61,8 @@
     <input
       class="input"
       type="text"
-      bind:value={userToken}
-      on:input={onTokenInput}
+      bind:value={token}
+      on:input={updateToken}
       minlength={TOKEN_LENGTH}
       maxlength={TOKEN_LENGTH}
       placeholder={"X".repeat(TOKEN_LENGTH)}
@@ -78,7 +70,7 @@
 
     {#if !disabled}
       <button
-        on:click={connectQuiz}
+        on:click={connect}
         class="play"
         transition:slide={{ axis: "x", duration: 200 }}
       >
