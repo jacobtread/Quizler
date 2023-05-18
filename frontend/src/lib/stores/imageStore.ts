@@ -5,7 +5,7 @@
 
 import imageCompression from "browser-image-compression";
 import { writable, type Writable } from "svelte/store";
-import type { ImageRef } from "$lib/socket/models";
+import type { ImageRef } from "$api/models";
 import { v4 as uuidv4 } from "uuid";
 import { MAX_IMAGE_BYTES } from "$lib/constants";
 

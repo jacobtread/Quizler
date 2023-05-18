@@ -1,13 +1,14 @@
 <script lang="ts">
-  import * as socket from "$lib/socket";
+  import * as socket from "$api/socket";
   import {
     QuestionType,
     type Question,
     type TimerState,
     ClientMessage,
     AnswerType
-  } from "$lib/socket/models";
-  import { formatImageUrl, formatTime } from "$lib/utils/utils";
+  } from "$api/models";
+  import { formatTime } from "$lib/utils/utils";
+  import { formatImageUrl } from "$api/http";
   import type { GameData } from "$pages/Game.svelte";
 
   export let gameData: GameData;

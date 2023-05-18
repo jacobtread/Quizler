@@ -1,5 +1,5 @@
 <script context="module" lang="ts">
-  import type { GameConfig, Scores } from "$lib/socket/models";
+  import type { GameConfig, Scores } from "$api/models";
 
   export interface GameData {
     // ID of the current player
@@ -28,10 +28,11 @@
     removeReasonText,
     type GameSummary,
     RemoveReason
-  } from "$lib/socket/models";
+  } from "$api/models";
 
-  import * as socket from "$lib/socket";
-  import { setReady } from "$lib/socket/actions";
+  import * as socket from "$api/socket";
+  import { setReady } from "$api/actions";
+  import { preloadImage } from "$api/http";
 
   import { errorDialog } from "$stores/dialogStore";
   import { setHome } from "$stores/state";
@@ -44,7 +45,6 @@
   import LobbyView from "$components/game/LobbyView.svelte";
   import ScoreView from "$components/game/ScoreView.svelte";
 
-  import { preloadImage } from "$lib/utils/utils";
   import { onMount } from "svelte";
 
   export let gameData: GameData;

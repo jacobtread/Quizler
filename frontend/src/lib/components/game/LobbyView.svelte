@@ -3,18 +3,14 @@
   import { slide } from "svelte/transition";
   import { flip } from "svelte/animate";
 
-  import {
-    doHostCancel,
-    doHostSkip,
-    doHostStart,
-    doKick
-  } from "$lib/socket/actions";
+  import { doHostAction, doKick } from "$api/actions";
   import {
     type PlayerData,
     type SessionId,
     type TimerState,
-    GameState
-  } from "$lib/socket/models";
+    GameState,
+    HostAction
+  } from "$api/models";
 
   import { confirmDialog } from "$stores/dialogStore";
 
@@ -47,6 +43,10 @@
     // Take back to the home scren
     setHome();
   }
+
+  const doHostStart = () => doHostAction(HostAction.Start);
+  const doHostCancel = () => doHostAction(HostAction.Cancel);
+  const doHostSkip = () => doHostAction(HostAction.Skip);
 </script>
 
 <main class="main" transition:slide>

@@ -1,6 +1,6 @@
 import App from "./App.svelte";
 import "./assets/app.scss";
-import "$lib/socket";
+import "$api/socket";
 
 const app = new App({
   target: document.getElementById("app") as Element

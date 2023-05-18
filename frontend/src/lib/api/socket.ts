@@ -8,9 +8,9 @@ import {
   type ResponseMessage,
   ClientMessage,
   type ClientMessageOf
-} from "$lib/socket/models";
+} from "$api/models";
 import { setHome } from "$stores/state";
-import { getServerURL } from "$lib/utils/utils";
+import { getServerURL } from "$api/http";
 import type { PartialRecord } from "$lib/utils/types";
 
 // Handler function that expects a specific server message type

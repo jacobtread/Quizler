@@ -4,13 +4,12 @@
 
   import {
     ClientMessage,
-    type CreatedResponse,
     errorText,
     ServerError,
-    NameFiltering,
-    type Question
-  } from "$lib/socket/models";
-  import * as socket from "$lib/socket";
+    NameFiltering
+  } from "$api/models";
+  import * as socket from "$api/socket";
+  import { createHttp } from "$api/http";
   import {
     MAX_MAX_PLAYERS,
     MAX_WAIT_TIME,
@@ -30,7 +29,7 @@
   import { acceptUpload, startDownload } from "$lib/utils/file";
 
   import { setHome, setGame } from "$stores/state";
-  import { imageStore } from "$stores/imageStore";
+  import { imageStore, type StoredImage } from "$stores/imageStore";
   import { errorDialog } from "$stores/dialogStore";
   import {
     createData,
@@ -38,7 +37,6 @@
     type CreateData,
     addQuestion
   } from "$stores/createStore";
-  import { getServerURL } from "$lib/utils/utils";
 
   async function doExport() {
     const data: CreateData = get(createData);
@@ -79,73 +77,6 @@
     }
   }
 
-  /**
-   * Uses the HTTP API to create the Quiz returning the
-   * UUID of the quiz that was prepared for initialization
-   *
-   * @param config The quiz config
-   */
-  async function createHttp(config: CreateData): Promise<string> {
-    // Create the form to upload
-    const form = new FormData();
-    // Append the config
-    form.append("config", JSON.stringify(config));
-
-    // Load the images from the image store
-    const images = get(imageStore);
-
-    // Append the images to the form
-    for (const image of images) {
-      // Images require atleast 1 reference to be included
-      const usage: Question | undefined = config.questions.find(
-        (question) => question.image === image.uuid
-      );
-      if (usage === undefined) continue;
-
-      form.append(image.uuid, image.blob);
-    }
-
-    const request: XMLHttpRequest = new XMLHttpRequest();
-
-    // Listen to the upload progress
-    request.upload.onprogress = onUploadProgress;
-    // Accept JSON responses
-    request.responseType = "json";
-
-    // Await failure or response from request
-    await new Promise((resolve, reject) => {
-      // Handle success
-      request.onload = resolve;
-
-      // Handle all failure callbacks
-      request.onerror =
-        request.ontimeout =
-        request.onabort =
-          () => reject(new Error("Failed to connect"));
-
-      // Create the URL to the create endpoint
-      const url = getServerURL("/api/quiz");
-
-      // Set the request method and URL
-      request.open("POST", url);
-
-      // Send the multipart form body
-      request.send(form);
-    });
-
-    const statusType = Math.floor(request.status / 100);
-    if (statusType !== 2) {
-      console.error("Failed invalid request", request.response);
-
-      throw new Error(
-        "Invalid request try reloading the page or updating Quizler"
-      );
-    }
-
-    const response: CreatedResponse = request.response;
-    return response.uuid;
-  }
-
   function onUploadProgress(event: ProgressEvent) {
     if (event.lengthComputable) {
       const percentComplete = (event.loaded / event.total) * 100;
@@ -153,34 +84,29 @@
     }
   }
 
-  async function doPlay() {
+  function play() {
     const data: CreateData = $createData;
+    const images: StoredImage[] = $imageStore;
 
     console.debug("Creating quiz");
 
-    let uuid: string;
-    try {
-      uuid = await createHttp(data);
-    } catch (e) {
-      const error = e as Error;
-      errorDialog("Failed to create", error.message);
-      return;
-    }
-
-    console.debug("Quiz waiting for initialize", uuid);
-
-    try {
-      const { id, token, config } = await socket.send({
-        ty: ClientMessage.Initialize,
-        uuid
+    // Send the creation request to the HTTP API
+    createHttp(data, images, onUploadProgress)
+      // Initialize the created game
+      .then((uuid) => socket.send({ ty: ClientMessage.Initialize, uuid }))
+      // Switch to the game view
+      .then(({ id, token, config }) => {
+        setGame({ id, token, config, host: true });
+      })
+      // Handle errors
+      .catch((error: Error | ServerError) => {
+        console.error("Failed to create", error);
+        if (error instanceof Error) {
+          errorDialog("Failed to create", error.message);
+        } else {
+          errorDialog("Failed to create", errorText[error]);
+        }
       });
-
-      setGame({ id, token, config, host: true });
-    } catch (e) {
-      const error = e as ServerError;
-      console.error("Failed to initialize", error);
-      errorDialog("Failed to create", errorText[error]);
-    }
   }
 </script>
 
@@ -199,7 +125,7 @@
         <Export />
         Export
       </button>
-      <button on:click={doPlay} class="btn btn--icon">
+      <button on:click={play} class="btn btn--icon">
         <Play />
         Play
       </button>

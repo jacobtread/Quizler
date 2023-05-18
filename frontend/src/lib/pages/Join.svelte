@@ -6,8 +6,8 @@
     MIN_PLAYER_NAME_LENGTH
   } from "$lib/constants";
 
-  import * as socket from "$lib/socket";
-  import { ClientMessage, ServerError, errorText } from "$lib/socket/models";
+  import * as socket from "$api/socket";
+  import { ClientMessage, ServerError, errorText } from "$api/models";
 
   import { errorDialog } from "$stores/dialogStore";
   import { setGame, setConnect } from "$stores/state";

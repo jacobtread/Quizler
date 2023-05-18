@@ -11,7 +11,8 @@ export default defineConfig({
       $pages: path.resolve(__dirname, "./src/lib/pages"),
       $stores: path.resolve(__dirname, "./src/lib/stores"),
       $components: path.resolve(__dirname, "./src/lib/components"),
-      $assets: path.resolve(__dirname, "./src/lib/assets")
+      $assets: path.resolve(__dirname, "./src/lib/assets"),
+      $api: path.resolve(__dirname, "./src/lib/api")
     }
   }
 });

@@ -1,4 +1,4 @@
-import type { Question, TimerState } from "$lib/socket/models";
+import type { TimerState } from "$api/models";
 
 /**
  * Formats the provided timer as seconds
@@ -10,34 +10,6 @@ export function formatTime(timer: TimerState): string {
   const timeMs: number = timer.total - timer.elapsed;
   const seconds = timeMs / 1000;
   return seconds.toFixed(0);
-}
-
-/**
- * Obtains a server url for the provided path.
- *
- * (e.g. path = "/test" output = http://localhost/test)
- *
- * @param path The route path
- * @returns The created URL
- */
-export function getServerURL(path: string): URL {
-  return new URL(
-    path,
-    // Use localhost for dev environments otherwise extract from the origin
-    import.meta.env.DEV ? "http://localhost" : window.location.origin
-  );
-}
-
-/**
- * Creates a quiz image URL from the provided game
- * token and UUID to the image
- *
- * @param token The game token
- * @param uuid  The image UUID
- * @returns     The URL to the image
- */
-export function formatImageUrl(token: string, uuid: string): string {
-  return getServerURL(`/api/quiz/${token}/${uuid}`).toString();
 }
 
 /**
@@ -93,46 +65,4 @@ export function tryFullscreen() {
   }
 
   return tryFullscreen;
-}
-
-/**
- * Attempts to preload the image for the provided
- * question using the game token
- *
- * Will attempt 5 times before failing and will
- * continue to ready state regardless of failure
- *
- * @param token    The question game token
- * @param question The question itself
- * @returns        Promise to the preloading complete
- */
-export async function preloadImage(token: string, question: Question) {
-  const imageRef = question.image;
-
-  // Question didn't have any images to load
-  if (imageRef === null) return;
-
-  const MAX_ATTEMPTS = 6;
-
-  let attempts: number = 0;
-
-  const url: string = formatImageUrl(token, imageRef);
-
-  while (attempts < MAX_ATTEMPTS) {
-    try {
-      // Attempt to load the image
-      await new Promise((resolve, reject) => {
-        const img = new Image();
-        img.src = url;
-        img.onload = resolve;
-        img.onerror = reject;
-      });
-
-      console.debug("Preloaded question image", url);
-      break;
-    } catch (e) {
-      console.error("Failed to preload image trying again", url, e);
-      attempts += 1;
-    }
-  }
 }

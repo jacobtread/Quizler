@@ -12,7 +12,7 @@ import {
   type TimingConfig,
   questionSchema,
   NameFiltering
-} from "$lib/socket/models";
+} from "$api/models";
 import { z } from "zod";
 
 // Schema used for parsing and validating the file format

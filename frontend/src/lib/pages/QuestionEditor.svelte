@@ -3,11 +3,7 @@
 <script lang="ts">
   import { flip } from "svelte/animate";
 
-  import {
-    QuestionType,
-    type Question,
-    type AnswerValue
-  } from "$lib/socket/models";
+  import { QuestionType, type Question, type AnswerValue } from "$api/models";
 
   import { randomRange } from "$lib/utils/utils";
 

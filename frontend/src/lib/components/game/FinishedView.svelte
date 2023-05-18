@@ -2,8 +2,8 @@
   import { slide } from "svelte/transition";
   import { flip } from "svelte/animate";
 
-  import type { GameSummary } from "$lib/socket/models";
-  import { doHostReset, doKick } from "$lib/socket/actions";
+  import { HostAction, type GameSummary } from "$api/models";
+  import { doHostAction, doKick } from "$api/actions";
 
   import { confirmDialog } from "$stores/dialogStore";
   import { setHome } from "$stores/state";
@@ -35,6 +35,8 @@
     // Take back to the home scren
     setHome();
   }
+
+  const doHostReset = () => doHostAction(HostAction.Reset);
 </script>
 
 <main class="main" transition:slide>

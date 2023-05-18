@@ -1,4 +1,4 @@
-import { ScoreType } from "$lib/socket/models";
+import { ScoreType } from "$api/models";
 import { randomRange } from "./utils";
 
 const messages = {

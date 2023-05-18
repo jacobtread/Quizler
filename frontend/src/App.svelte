@@ -1,7 +1,7 @@
 <script lang="ts">
   import GlobalDialog from "$components/GlobalDialog.svelte";
   import Loading from "$pages/Loading.svelte";
-  import { socketReady } from "$lib/socket";
+  import { socketReady } from "$api/socket";
   import { AppStateType, appState } from "$stores/state";
   import Game from "$pages/Game.svelte";
   import QuestionEditor from "$pages/QuestionEditor.svelte";

@@ -3,8 +3,8 @@
 
   import { TOKEN_LENGTH } from "$lib/constants";
 
-  import * as socket from "$lib/socket";
-  import { ClientMessage, ServerError, errorText } from "$lib/socket/models";
+  import * as socket from "$api/socket";
+  import { ClientMessage, ServerError, errorText } from "$api/models";
 
   import Back from "$components/icons/Back.svelte";
   import Play from "$components/icons/Play.svelte";

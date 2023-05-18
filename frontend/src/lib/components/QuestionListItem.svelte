@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { QuestionType, type Question } from "$lib/socket/models";
+  import { QuestionType, type Question } from "$api/models";
 
   import { removeQuestion, swapQuestion } from "$stores/createStore";
   import { setEditing } from "$stores/state";

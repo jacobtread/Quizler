@@ -1,9 +1,5 @@
 import { defaultCreateData, defaultQuestion } from "$lib/constants";
-import {
-  NameFiltering,
-  type Question,
-  type TimingConfig
-} from "$lib/socket/models";
+import { NameFiltering, type Question, type TimingConfig } from "$api/models";
 import { randomRange } from "$lib/utils/utils";
 import { writable, type Writable } from "svelte/store";
 

@@ -1,4 +1,4 @@
-import { QuestionType, type Question, NameFiltering } from "$lib/socket/models";
+import { QuestionType, type Question, NameFiltering } from "$api/models";
 import type { CreateData } from "$stores/createStore";
 
 export const TOKEN_LENGTH: number = 5;

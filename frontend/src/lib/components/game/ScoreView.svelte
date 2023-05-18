@@ -2,7 +2,7 @@
   import { slide } from "svelte/transition";
   import { tweened } from "svelte/motion";
 
-  import { ScoreType, type Score } from "$lib/socket/models";
+  import { ScoreType, type Score } from "$api/models";
   import { getRandomMessage } from "$lib/utils/messages";
 
   export let score: Score;

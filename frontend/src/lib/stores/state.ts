@@ -1,10 +1,5 @@
 import { writable } from "svelte/store";
-import type {
-  GameConfig,
-  GameToken,
-  Question,
-  SessionId
-} from "$lib/socket/models";
+import type { GameConfig, GameToken, Question, SessionId } from "$api/models";
 
 export const enum AppStateType {
   /// Home screen
