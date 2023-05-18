@@ -7,7 +7,7 @@ import type {
 } from "$lib/socket/models";
 
 export const enum AppStateType {
-  // Home screen
+  /// Home screen
   Home = 0,
   // Join Game Screen
   Connect,

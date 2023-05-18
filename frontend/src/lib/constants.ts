@@ -3,6 +3,9 @@ import type { CreateData } from "$stores/createStore";
 
 export const TOKEN_LENGTH: number = 5;
 
+export const MIN_PLAYER_NAME_LENGTH: number = 1;
+export const MAX_PLAYER_NAME_LENGTH: number = 30;
+
 const DEFAULT_NAME = "Example Quiz";
 const DEFAULT_DESCRIPTION = "Small description about your quiz";
 

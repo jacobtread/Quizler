@@ -1,6 +1,10 @@
 <script lang="ts">
   import { slide } from "svelte/transition";
-  import { z } from "zod";
+
+  import {
+    MAX_PLAYER_NAME_LENGTH,
+    MIN_PLAYER_NAME_LENGTH
+  } from "$lib/constants";
 
   import * as socket from "$lib/socket";
   import { ClientMessage, ServerError, errorText } from "$lib/socket/models";
@@ -11,41 +15,36 @@
   import Back from "$components/icons/Back.svelte";
   import Play from "$components/icons/Play.svelte";
 
+  // The token of the game that is being joined
   export let token: string;
 
+  // The user provided name
   let name = "";
 
-  const nameSchema = z
-    .string()
-    .min(1, "Name cannot be empty")
-    .max(30, "Name cannot be more than 30 characters long");
+  // Disabled state for the join button
   let disabled: boolean = true;
 
-  function onNameInput() {
-    // Change the disabled state
-    disabled = !nameSchema.safeParse(name).success;
+  /**
+   * Updates the disabled state after validating the
+   * provided player name
+   */
+  function updateName() {
+    // Change the disabled state based on the name lengthh
+    disabled =
+      name.length >= MIN_PLAYER_NAME_LENGTH &&
+      name.length <= MAX_PLAYER_NAME_LENGTH;
   }
 
   async function joinQuiz() {
-    const parse = nameSchema.safeParse(name);
-
-    if (!parse.success) {
-      console.error("Failed to parse name", parse.error);
-      return;
-    }
-
-    try {
-      const { id, token, config } = await socket.send({
-        ty: ClientMessage.Join,
-        name
+    socket
+      .send({ ty: ClientMessage.Join, name })
+      .then(({ id, token, config }) => {
+        setGame({ id, token, config, host: false, name });
+      })
+      .catch((error: ServerError) => {
+        console.error("Failed to join", error);
+        errorDialog("Failed to join", errorText[error]);
       });
-
-      setGame({ id, token, config, host: false, name });
-    } catch (e) {
-      const error = e as ServerError;
-      console.error("Failed to join", error);
-      errorDialog("Failed to join", errorText[error]);
-    }
   }
 </script>
 
@@ -53,19 +52,19 @@
   <button on:click={setConnect} class="back back--floating">
     <Back />
   </button>
-  <h2>{token}</h2>
 
+  <p>{token}</p>
   <h1>Enter Name</h1>
-
   <p>Please enter your desired name</p>
+
   <div class="form">
     <input
       class="input"
       type="text"
       bind:value={name}
-      on:input={onNameInput}
-      minlength={1}
-      maxlength={30}
+      on:input={updateName}
+      minlength={MIN_PLAYER_NAME_LENGTH}
+      maxlength={MAX_PLAYER_NAME_LENGTH}
     />
 
     {#if !disabled}

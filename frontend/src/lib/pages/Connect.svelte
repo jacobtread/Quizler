@@ -57,6 +57,7 @@
 
   <h1>Enter Code</h1>
   <p>Please enter your quiz code below</p>
+
   <div class="form">
     <input
       class="input"
