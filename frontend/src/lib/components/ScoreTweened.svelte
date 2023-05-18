@@ -3,7 +3,9 @@
 
   export let value: number;
 
-  const valueTween = tweened(value);
+  const valueTween = tweened(0, {
+    delay: 500
+  });
 
   $: {
     valueTween.set(value);
