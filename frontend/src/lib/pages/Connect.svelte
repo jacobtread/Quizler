@@ -43,9 +43,6 @@
 
     const token = parse.data;
 
-    // Await the socket being alive
-    await socket.ready();
-
     try {
       await socket.send({
         ty: ClientMessage.Connect,

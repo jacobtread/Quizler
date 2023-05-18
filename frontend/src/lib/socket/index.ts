@@ -1,4 +1,4 @@
-import { writable, type Unsubscriber } from "svelte/store";
+import { writable } from "svelte/store";
 import { onDestroy, onMount } from "svelte";
 import {
   ServerMessage,
@@ -11,21 +11,23 @@ import {
 } from "$lib/socket/models";
 import { setHome } from "$stores/state";
 import { getServerURL } from "$lib/utils/utils";
+import type { PartialRecord } from "$lib/utils/types";
 
-type MessageHandler<T> = (msg: ServerMessageOf<T>) => void;
-type MessageHandlers = {
-  [T in ServerMessage]?: MessageHandler<T>;
-};
+// Handler function that expects a specific server message type
+type MessageHandler<Type> = (msg: ServerMessageOf<Type>) => void;
 
-type RequestHandler<T> = {
-  resolve: (msg: ServerMessageOf<T>) => void;
-  reject: (err: ServerError) => void;
-};
+// Type of a handler for handling a message response
+interface RequestHandler<T> {
+  // Handler resolve callback with the response
+  resolve: MessageHandler<T>;
+  // Handler reject callback with a server error
+  reject(err: ServerError): void;
+}
 
 // The next request ID to use
 let requestHandle: number = 0;
 // Handlers from requests awaiting responses
-let requestHandles: Record<number, RequestHandler<unknown> | undefined> = {};
+let requestHandles: PartialRecord<number, RequestHandler<unknown>> = {};
 // Queue of messages that haven't yet been handled
 let messageQueue: ServerMessageSchema[] = [];
 
@@ -33,7 +35,10 @@ let messageQueue: ServerMessageSchema[] = [];
 let socket: WebSocket = createSocket();
 
 // Currently set message handlers for handling messages
-const messageHandlers: MessageHandlers = {};
+const messageHandlers: PartialRecord<
+  ServerMessage,
+  MessageHandler<unknown>
+> = {};
 
 // Socket readiness state
 export const socketReady = writable<boolean>(false);
@@ -76,28 +81,9 @@ export function setHandler<T extends ServerMessage>(
 }
 
 /**
- * Creates a promise that subscribes to when
- * the socket connection is ready to be used
- *
- * @returns The ready promise
+ * Logs out all the unhandled messages in the queue
+ * then clears the queue
  */
-export function ready(): Promise<void> {
-  // Unsubscribe callback for cleaning up subscription
-  let unsub: Unsubscriber | undefined;
-
-  return (
-    new Promise<void>((resolve) => {
-      unsub = socketReady.subscribe((value) => {
-        if (value) {
-          resolve();
-        }
-      });
-    })
-      // Remove subscription
-      .finally(unsub)
-  );
-}
-
 function clearMessageQueue() {
   for (const msg of messageQueue) {
     console.warn("Message was not handled", msg);
@@ -111,11 +97,6 @@ function clearMessageQueue() {
  * the event handlers for the different events
  */
 function createSocket(): WebSocket {
-  // Reset request counter
-  requestHandle = 0;
-  requestHandles = {};
-  clearMessageQueue();
-
   const socketUrl = getServerURL("/api/quiz/socket");
   // Replace the url protocol with the correct socket protocol
   socketUrl.protocol = socketUrl.protocol === "https" ? "wss" : "ws";
@@ -158,6 +139,11 @@ function createSocket(): WebSocket {
 }
 
 function onDisconnected() {
+  // Reset the state
+  requestHandle = 0;
+  requestHandles = {};
+  clearMessageQueue();
+
   // Return to the home screen
   setHome();
   // Attempt to reconnect
@@ -193,9 +179,9 @@ export function send<T extends ClientMessage>(
   return new Promise((resolve, reject) => {
     console.debug("Sending message to server", msg);
 
-    msg.rid = requestHandle;
+    // Set the return ID and increase it for the next request
+    msg.rid = requestHandle++;
 
-    requestHandle++;
     requestHandles[msg.rid] = {
       resolve: resolve as MessageHandler<unknown>,
       reject
@@ -231,6 +217,7 @@ function onMessage({ data }: MessageEvent) {
     return;
   }
 
+  // Handle messages with return IDs
   const rid = msg.rid;
   if (rid !== undefined) {
     const handle = requestHandles[rid];

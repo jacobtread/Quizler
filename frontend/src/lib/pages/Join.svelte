@@ -34,9 +34,6 @@
       return;
     }
 
-    // Await the socket being alive
-    await socket.ready();
-
     try {
       const { id, token, config } = await socket.send({
         ty: ClientMessage.Join,
