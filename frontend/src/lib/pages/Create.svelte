@@ -7,7 +7,8 @@
     type CreatedResponse,
     errorText,
     ServerError,
-    NameFiltering
+    NameFiltering,
+    type Question
   } from "$lib/socket/models";
   import * as socket from "$lib/socket";
   import {
@@ -92,8 +93,17 @@
 
     // Load the images from the image store
     const images = get(imageStore);
+
     // Append the images to the form
-    images.forEach((image) => form.append(image.uuid, image.blob));
+    for (const image of images) {
+      // Images require atleast 1 reference to be included
+      const usage: Question | undefined = config.questions.find(
+        (question) => question.image === image.uuid
+      );
+      if (usage === undefined) continue;
+
+      form.append(image.uuid, image.blob);
+    }
 
     const request: XMLHttpRequest = new XMLHttpRequest();
 
