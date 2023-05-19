@@ -1,26 +1,18 @@
 <!-- Component represents a question that is being created -->
 
 <script lang="ts">
-  import { flip } from "svelte/animate";
-
   import { QuestionType, type Question } from "$api/models";
 
-  import { arraySwap, shuffleArray } from "$lib/utils/utils";
-
-  import { imagePreviewStore, selectImage } from "$stores/imageStore";
   import { normalizeQuestion, saveQuestion } from "$stores/createStore";
   import { confirmDialog } from "$stores/dialogStore";
   import { setCreate } from "$stores/state";
 
-  import ImageStorage from "$components/ImageStorage.svelte";
-  import ArrowDown from "$components/icons/ArrowDown.svelte";
-  import ArrowUp from "$components/icons/ArrowUp.svelte";
   import TimeInput from "$components/TimeInput.svelte";
-  import Checkbox from "$components/Checkbox.svelte";
   import Back from "$components/icons/Back.svelte";
-  import Delete from "$components/icons/Delete.svelte";
 
   import * as constants from "$lib/constants";
+  import Answers from "$lib/components/editor/Answers.svelte";
+  import ImageEditor from "$lib/components/editor/ImageEditor.svelte";
 
   export let question: Question;
 
@@ -50,75 +42,6 @@
     }
   }
 
-  function addAnswer() {
-    let nextId = 0;
-
-    for (const answer of question.answers) {
-      if (answer.id >= nextId) {
-        nextId = answer.id + 1;
-      }
-    }
-
-    question.answers.push({
-      id: nextId,
-      value: "",
-      correct: false
-    });
-    question.answers = question.answers;
-  }
-
-  const moveUp = (index: number) => {
-    question.answers = arraySwap(question.answers, index, index - 1);
-  };
-
-  const moveDown = (index: number) => {
-    question.answers = arraySwap(question.answers, index, index + 1);
-  };
-
-  let image: string | null = null;
-
-  $: {
-    // Handle displaying image previews
-    if (question.image !== null) {
-      let imagePreview = $imagePreviewStore[question.image];
-      if (imagePreview) {
-        image = imagePreview;
-      } else {
-        image = null;
-      }
-    }
-  }
-
-  async function pickImage() {
-    let res = await selectImage();
-    // Handle canceling select image
-    if (res === null) return;
-
-    question.image = res.uuid;
-  }
-
-  function removeImage(event: Event) {
-    event.stopPropagation();
-    question.image = null;
-    image = null;
-  }
-
-  function onImageKeyPress(event: KeyboardEvent) {
-    if (event.key === "Enter" || event.key === "NumpadEnter") {
-      pickImage();
-    }
-  }
-
-  function removeAnswer(index: number) {
-    question.answers = question.answers.filter(
-      (_, valueIndex) => valueIndex != index
-    );
-  }
-
-  function shuffleAnswers() {
-    question.answers = shuffleArray(question.answers);
-  }
-
   function save() {
     saveQuestion(question);
     setCreate();
@@ -134,21 +57,7 @@
     <button on:click={save} class="btn"> Save </button>
   </header>
 
-  <div
-    tabindex="0"
-    role="button"
-    class="question__img-wrapper"
-    on:click={pickImage}
-    on:keypress={onImageKeyPress}
-  >
-    {#if image}
-      <img class="question__img" src={image} alt="Uploaded Content" />
-
-      <button class="remove" on:click={removeImage}> Click to remove </button>
-    {:else}
-      <p>Pick Image</p>
-    {/if}
-  </div>
+  <ImageEditor {question} />
 
   <div class="field">
     <p class="field__name">Question</p>
@@ -203,65 +112,7 @@
     {/if}
   </div>
 
-  {#if question.ty == QuestionType.Single || question.ty == QuestionType.Multiple}
-    <div class="answers">
-      {#each question.answers as answer, index (answer.id)}
-        <div class="answer" animate:flip={{ duration: 500 }}>
-          <Checkbox bind:value={answer.correct} />
-
-          <div class="answer__actions">
-            <button
-              on:click={() => moveUp(index)}
-              disabled={index <= 0}
-              class="btn btn--icon-only btn--surface btn-small"
-            >
-              <ArrowUp />
-            </button>
-
-            <button
-              on:click={() => moveDown(index)}
-              disabled={index + 1 >= question.answers.length}
-              class="btn btn--icon-only btn--surface btn-small"
-            >
-              <ArrowDown />
-            </button>
-          </div>
-
-          <input
-            class="answer__question input"
-            type="text"
-            bind:value={answer.value}
-            maxlength={constants.MAX_ANSWER_LENGTH}
-          />
-
-          <button
-            disabled={question.answers.length == 1}
-            on:click={() => removeAnswer(index)}
-            class="btn btn--icon-only"
-          >
-            <Delete />
-          </button>
-        </div>
-      {/each}
-
-      <div class="field-group">
-        <button
-          class="btn"
-          on:click={addAnswer}
-          disabled={question.answers.length >= constants.MAX_ANSWERS}
-        >
-          Add Answer
-        </button>
-        <button
-          class="btn"
-          on:click={shuffleAnswers}
-          disabled={question.answers.length <= 1}
-        >
-          Shuffle
-        </button>
-      </div>
-    </div>
-  {/if}
+  <Answers bind:question />
 
   <div class="group">
     <h2 class="group__title">Timing</h2>
@@ -343,8 +194,6 @@
   </div>
 </main>
 
-<ImageStorage />
-
 <style lang="scss">
   @import "../../assets/scheme.scss";
 
@@ -392,69 +241,6 @@
     display: block;
     width: 100%;
     resize: vertical;
-  }
-
-  .answers {
-    display: flex;
-    flex-flow: column;
-    gap: 1rem;
-    margin-bottom: 1rem;
-  }
-
-  .answer {
-    display: flex;
-    align-items: stretch;
-    gap: 1rem;
-  }
-
-  .answer__actions {
-    display: flex;
-    flex-flow: column;
-    gap: 0.5rem;
-  }
-
-  .answer__question {
-    align-self: stretch;
-    flex: auto;
-  }
-
-  .question__img-wrapper {
-    max-height: 50vh;
-    width: 100%;
-    height: 50vh;
-    overflow: hidden;
-    position: relative;
-    margin-bottom: 1rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-
-  .remove {
-    position: absolute;
-    left: 0;
-    top: 0;
-    opacity: 0;
-    width: 100%;
-    height: 100%;
-    transition: opacity 0.15s ease;
-    font-size: 1rem;
-    background-color: rgba($color: #000000, $alpha: 0.7);
-    border: none;
-  }
-
-  .remove:hover {
-    opacity: 1;
-  }
-
-  .question__img {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    height: 100%;
-    aspect-ratio: auto;
-    z-index: -1;
   }
 
   .field {

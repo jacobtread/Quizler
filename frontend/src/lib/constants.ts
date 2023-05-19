@@ -12,7 +12,7 @@ const DEFAULT_DESCRIPTION = "Small description about your quiz";
 const DEFAULT_MIN_SCORE: number = 10;
 const DEFAULT_MAX_SCORE: number = 100;
 
-export const MAX_ANSWER_LENGTH: number = 50;
+export const MAX_ANSWER_LENGTH: number = 150;
 
 export const MAX_ANSWERS: number = 8;
 
