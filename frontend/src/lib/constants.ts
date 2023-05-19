@@ -12,6 +12,12 @@ const DEFAULT_DESCRIPTION = "Small description about your quiz";
 const DEFAULT_MIN_SCORE: number = 10;
 const DEFAULT_MAX_SCORE: number = 100;
 
+export const MAX_ANSWER_LENGTH: number = 50;
+
+export const MAX_ANSWERS: number = 8;
+
+export const MAX_QUESTIONS: number = 50;
+
 const DEFAULT_ANSWER_TIME: number = 1000 * 15; /* 15s */
 export const MIN_ANSWER_TIME: number = 1000; /* 1s */
 export const MAX_ANSWER_TIME: number = 1000 * 60 * 30; /* 30mins */

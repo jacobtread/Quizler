@@ -9,12 +9,7 @@
   } from "$api/models";
   import * as socket from "$api/socket";
   import { createHttp } from "$api/http";
-  import {
-    MAX_MAX_PLAYERS,
-    MAX_WAIT_TIME,
-    MIN_MAX_PLAYERS,
-    MIN_WAIT_TIME
-  } from "$lib/constants";
+  import * as constants from "$lib/constants";
 
   import QuestionListItem from "$components/QuestionListItem.svelte";
   import TimeInput from "$components/TimeInput.svelte";
@@ -145,8 +140,8 @@
       <p class="field__desc">Time to wait between each question</p>
       <TimeInput
         bind:value={$createData.timing.wait_time}
-        min={MIN_WAIT_TIME}
-        max={MAX_WAIT_TIME}
+        min={constants.MIN_WAIT_TIME}
+        max={constants.MAX_WAIT_TIME}
       />
     </div>
     <label class="field">
@@ -158,8 +153,8 @@
         class="input"
         type="number"
         bind:value={$createData.max_players}
-        min={MIN_MAX_PLAYERS}
-        max={MAX_MAX_PLAYERS}
+        min={constants.MIN_MAX_PLAYERS}
+        max={constants.MAX_MAX_PLAYERS}
       />
     </label>
     <label class="field">
@@ -187,7 +182,7 @@
     <div class="list__actions">
       <button
         on:click={addQuestion}
-        disabled={$createData.questions.length >= 50}
+        disabled={$createData.questions.length >= constants.MAX_QUESTIONS}
         class="btn btn--icon"
       >
         <Add />

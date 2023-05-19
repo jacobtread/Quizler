@@ -285,6 +285,7 @@
             class="answer__question input"
             type="text"
             bind:value={answer.value}
+            maxlength={constants.MAX_ANSWER_LENGTH}
           />
 
           <button
@@ -301,7 +302,7 @@
         <button
           class="btn"
           on:click={addAnswer}
-          disabled={question.answers.length >= 8}
+          disabled={question.answers.length >= constants.MAX_ANSWERS}
         >
           Add Answer
         </button>
