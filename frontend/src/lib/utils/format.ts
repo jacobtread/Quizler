@@ -1,18 +1,12 @@
 // Reading, writing and validation logic for the quizler file format
 
-import { get } from "svelte/store";
 import {
   imageStore,
   loadImagePreview,
   type StoredImage
 } from "$stores/imageStore";
 import type { CreateData } from "$stores/createStore";
-import {
-  type Question,
-  type TimingConfig,
-  questionSchema,
-  NameFiltering
-} from "$api/models";
+import { questionSchema, NameFiltering } from "$api/models";
 import { z } from "zod";
 
 // Schema used for parsing and validating the file format
@@ -61,33 +55,22 @@ async function serializeImage(image: StoredImage): Promise<SerializedImage> {
 /**
  * Serializes the provided quiz contents into a blob
  *
- * @param name      The quiz name (Also the file name)
- * @param text      The quiz text
- * @param timing    The quiz timing
- * @param questions The quiz questions
+ * @param data The quiz data
+ * @param storeImages The stored images
  * @returns Promise to the encoded quiz blob
  */
 export async function createQuizBlob(
-  name: string,
-  text: string,
-  max_players: number,
-  filtering: NameFiltering,
-  timing: TimingConfig,
-  questions: Question[]
+  data: CreateData,
+  storeImages: StoredImage[]
 ): Promise<Blob> {
   // Convert the stored images into a serializable form
   const images: SerializedImage[] = await Promise.all(
-    get(imageStore).map(serializeImage)
+    storeImages.map(serializeImage)
   );
 
   // Create the object to serialize as the quiz file
   const output: QuizFormat = {
-    name,
-    text,
-    max_players,
-    filtering,
-    timing,
-    questions,
+    ...data,
     images
   };
 

@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { get } from "svelte/store";
   import { flip } from "svelte/animate";
 
   import {
@@ -39,19 +38,13 @@
   } from "$stores/createStore";
 
   async function doExport() {
-    const data: CreateData = get(createData);
+    const data: CreateData = $createData;
+    const images: StoredImage[] = $imageStore;
 
     console.debug("Exporting quiz to file", data.name);
 
     // Create a blob from the quiz contents
-    const blob = await createQuizBlob(
-      data.name,
-      data.text,
-      data.max_players,
-      data.filtering,
-      data.timing,
-      data.questions
-    );
+    const blob = await createQuizBlob(data, images);
 
     // Start the file download
     const fileName = data.name + ".quizler";
