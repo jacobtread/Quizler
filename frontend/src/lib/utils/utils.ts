@@ -66,3 +66,30 @@ export function tryFullscreen() {
 
   return tryFullscreen;
 }
+
+export function shuffleArray<T>(array: T[]): T[] {
+  const shuffleCount = randomRange(1, array.length);
+  let changes = 0;
+  while (changes < shuffleCount) {
+    const first = randomRange(0, array.length - 1);
+    const second = randomRange(0, array.length - 1);
+    if (first !== second) {
+      arraySwap(array, first, second);
+      changes++;
+    }
+  }
+  return array;
+}
+
+export function arraySwap<T>(array: T[], aIndex: number, bIndex: number): T[] {
+  const a: T | undefined = array[aIndex];
+  const b: T | undefined = array[bIndex];
+
+  if (a !== undefined || b !== undefined) {
+    // Swap the questions
+    array[aIndex] = b;
+    array[bIndex] = a;
+  }
+
+  return array;
+}

@@ -3,12 +3,12 @@
 <script lang="ts">
   import { flip } from "svelte/animate";
 
-  import { QuestionType, type Question, type AnswerValue } from "$api/models";
+  import { QuestionType, type Question } from "$api/models";
 
-  import { randomRange } from "$lib/utils/utils";
+  import { arraySwap, shuffleArray } from "$lib/utils/utils";
 
   import { imagePreviewStore, selectImage } from "$stores/imageStore";
-  import { saveQuestion } from "$stores/createStore";
+  import { normalizeQuestion, saveQuestion } from "$stores/createStore";
   import { confirmDialog } from "$stores/dialogStore";
   import { setCreate } from "$stores/state";
 
@@ -38,52 +38,8 @@
    * Handle changes between types to ensure that the
    * question has the relevant fields for that type
    */
-  function onTypeChange(event: Event) {
-    const target: HTMLSelectElement = event.target as HTMLSelectElement;
-
-    const oldQuestion: Question = question;
-    const newValue = target.value as QuestionType;
-
-    if (newValue == QuestionType.Single) {
-      let answers: AnswerValue[] = [];
-
-      if (
-        oldQuestion.ty == QuestionType.Single ||
-        oldQuestion.ty == QuestionType.Multiple
-      ) {
-        answers = oldQuestion.answers;
-      }
-
-      question = {
-        ...oldQuestion,
-        ty: newValue,
-        answers
-      };
-    } else if (newValue == QuestionType.Multiple) {
-      let answers: AnswerValue[] = [];
-      let min = 1;
-      let max = 1;
-
-      if (
-        oldQuestion.ty == QuestionType.Single ||
-        oldQuestion.ty == QuestionType.Multiple
-      ) {
-        answers = oldQuestion.answers;
-
-        if (oldQuestion.ty == QuestionType.Multiple) {
-          min = oldQuestion.min;
-          max = oldQuestion.max;
-        }
-      }
-
-      question = {
-        ...oldQuestion,
-        ty: newValue,
-        answers,
-        min,
-        max
-      };
-    }
+  function onTypeChange() {
+    question = normalizeQuestion(question);
   }
 
   function onChangeMin() {
@@ -111,14 +67,13 @@
     question.answers = question.answers;
   }
 
-  function swapAnswer(aIndex: number, bIndex: number) {
-    let a = question.answers[aIndex];
-    let b = question.answers[bIndex];
+  const moveUp = (index: number) => {
+    question.answers = arraySwap(question.answers, index, index - 1);
+  };
 
-    // Swap the questions
-    question.answers[aIndex] = b;
-    question.answers[bIndex] = a;
-  }
+  const moveDown = (index: number) => {
+    question.answers = arraySwap(question.answers, index, index + 1);
+  };
 
   let image: string | null = null;
 
@@ -161,16 +116,7 @@
   }
 
   function shuffleAnswers() {
-    const shuffleCount = randomRange(1, question.answers.length);
-    let changes = 0;
-    while (changes < shuffleCount) {
-      const first = randomRange(0, question.answers.length - 1);
-      const second = randomRange(0, question.answers.length - 1);
-      if (first !== second) {
-        swapAnswer(first, second);
-        changes++;
-      }
-    }
+    question.answers = shuffleArray(question.answers);
   }
 
   function save() {
@@ -219,7 +165,7 @@
     <div class="field">
       <p class="field__name">Question Type</p>
       <p class="field__desc">The type of question to present</p>
-      <select on:change={onTypeChange} class="input">
+      <select bind:value={question.ty} on:change={onTypeChange} class="input">
         <option value={QuestionType.Single}>Single Choice</option>
         <option value={QuestionType.Multiple}>Multiple Choice</option>
       </select>
@@ -265,7 +211,7 @@
 
           <div class="answer__actions">
             <button
-              on:click={() => swapAnswer(index, index - 1)}
+              on:click={() => moveUp(index)}
               disabled={index <= 0}
               class="btn btn--icon-only btn--surface btn-small"
             >
@@ -273,7 +219,7 @@
             </button>
 
             <button
-              on:click={() => swapAnswer(index, index + 1)}
+              on:click={() => moveDown(index)}
               disabled={index + 1 >= question.answers.length}
               class="btn btn--icon-only btn--surface btn-small"
             >

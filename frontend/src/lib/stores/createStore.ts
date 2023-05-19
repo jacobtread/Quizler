@@ -1,6 +1,11 @@
 import { defaultCreateData, defaultQuestion } from "$lib/constants";
-import { NameFiltering, type Question, type TimingConfig } from "$api/models";
-import { randomRange } from "$lib/utils/utils";
+import {
+  NameFiltering,
+  QuestionType,
+  type Question,
+  type TimingConfig
+} from "$api/models";
+import { arraySwap, shuffleArray } from "$lib/utils/utils";
 import { writable, type Writable } from "svelte/store";
 
 export interface CreateData {
@@ -29,19 +34,7 @@ export function addQuestion() {
 
 export function swapQuestion(aIndex: number, bIndex: number) {
   createData.update((store) => {
-    const questions: Question[] = store.questions;
-
-    // Get the questions
-    const a: Question = questions[aIndex];
-    const b: Question = questions[bIndex];
-
-    // Handle the indexes not existing
-    if (a !== undefined || b !== undefined) {
-      // Swap the questions
-      questions[aIndex] = b;
-      questions[bIndex] = a;
-    }
-
+    arraySwap(store.questions, aIndex, bIndex);
     return store;
   });
 }
@@ -55,17 +48,7 @@ export function removeQuestion(index: number) {
 
 export function shuffleQuestions() {
   createData.update((store) => {
-    const questions: Question[] = store.questions;
-    const shuffleCount: number = randomRange(1, questions.length);
-    let changes = 0;
-    while (changes < shuffleCount) {
-      const first = randomRange(0, questions.length - 1);
-      const second = randomRange(0, questions.length - 1);
-      if (first !== second) {
-        swapQuestion(first, second);
-        changes++;
-      }
-    }
+    shuffleArray(store.questions);
     return store;
   });
 }
@@ -86,4 +69,17 @@ export function saveQuestion(question: Question) {
 
     return store;
   });
+}
+
+export function normalizeQuestion(question: Question): Question {
+  // Create answers if they are missing
+  question.answers = question.answers ?? [];
+
+  // Add min max fields if they are missing
+  if (question.ty === QuestionType.Multiple) {
+    question.min = question.min ?? 1;
+    question.max = question.max ?? question.answers.length;
+  }
+
+  return question;
 }
