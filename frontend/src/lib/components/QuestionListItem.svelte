@@ -23,12 +23,21 @@
     // Use a copy of the question for editing
     setEditing(deepCopy(question));
   }
+
+  // Move the question up
+  const moveUp = () => swapQuestion(index, index - 1);
+
+  // Move the question down
+  const moveDown = () => swapQuestion(index, index + 1);
+
+  // Remove the question
+  const remove = () => removeQuestion(index);
 </script>
 
 <div class="question">
   <div class="actions">
     <button
-      on:click={() => swapQuestion(index, index - 1)}
+      on:click={moveUp}
       disabled={index <= 0}
       class="btn btn--icon-only btn--surface"
     >
@@ -36,7 +45,7 @@
     </button>
 
     <button
-      on:click={() => swapQuestion(index, index + 1)}
+      on:click={moveDown}
       disabled={index + 1 >= length}
       class="btn btn--icon-only btn--surface"
     >
@@ -44,7 +53,7 @@
     </button>
 
     <button
-      on:click={() => removeQuestion(index)}
+      on:click={remove}
       disabled={length == 1}
       class="btn btn--icon-only btn--surface"
     >

@@ -15,10 +15,10 @@
   import { confirmDialog } from "$stores/dialogStore";
 
   import { setHome } from "$stores/state";
-  import ScoreTweened from "$components/ScoreTweened.svelte";
 
   import { formatTime } from "$lib/utils/utils";
 
+  import ScoreTweened from "$components/TweenedValue.svelte";
   import type { GameData } from "$pages/Game.svelte";
 
   export let timer: TimerState;
@@ -27,7 +27,7 @@
   export let scores: Record<SessionId, number>;
   export let gameState: GameState;
 
-  async function doLeave() {
+  async function leave() {
     if (gameData.host) {
       const result = await confirmDialog(
         "Confirm Leave",
@@ -44,9 +44,14 @@
     setHome();
   }
 
-  const doHostStart = () => doHostAction(HostAction.Start);
-  const doHostCancel = () => doHostAction(HostAction.Cancel);
-  const doHostSkip = () => doHostAction(HostAction.Skip);
+  // Sends the host start action
+  const start = () => doHostAction(HostAction.Start);
+
+  // Sends the host cancel action
+  const cancel = () => doHostAction(HostAction.Cancel);
+
+  // Sends the host skip action
+  const skip = () => doHostAction(HostAction.Skip);
 </script>
 
 <main class="main" transition:slide>
@@ -70,30 +75,26 @@
     <p class="desc">{gameData.config.text}</p>
 
     <div class="btn-row btn-row--fill">
-      <button class="btn" on:click={doLeave}>Leave</button>
+      <button class="btn" on:click={leave}>Leave</button>
 
       {#if gameData.host}
         <!-- Theres an active timer add skip button -->
         {#if timer.elapsed !== timer.total}
-          <button class="btn" on:click={doHostSkip}>Skip</button>
+          <button class="btn" on:click={skip}>Skip</button>
         {/if}
 
         {#if gameState === GameState.Starting}
           <!-- Cancel started button for starting games -->
-          <button class="btn" on:click={doHostCancel}>Cancel</button>
+          <button class="btn" on:click={cancel}>Cancel</button>
         {:else if players.length > 0 && gameState === GameState.Lobby}
           <!-- Start button if theres players in the game -->
-          <button class="btn" on:click={doHostStart}>Start</button>
+          <button class="btn" on:click={start}>Start</button>
         {/if}
       {/if}
     </div>
     <table class="players">
       <thead>
         <tr>
-          <!-- Game over placing  -->
-          {#if gameState === GameState.Finished}
-            <th>Place</th>
-          {/if}
           <th>Name</th>
           <th>Score</th>
           {#if gameData.host}

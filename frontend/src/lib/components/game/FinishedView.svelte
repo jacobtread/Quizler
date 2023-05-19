@@ -8,18 +8,17 @@
   import { confirmDialog } from "$stores/dialogStore";
   import { setHome } from "$stores/state";
 
-  import ScoreTweened from "$components/ScoreTweened.svelte";
+  import ScoreTweened from "$components/TweenedValue.svelte";
+  import Crown from "$components/icons/Crown.svelte";
 
   import type { GameData } from "$pages/Game.svelte";
-
-  import Crown from "$components/icons/Crown.svelte";
 
   import { getNumberWithOrdinal } from "$lib/utils/utils";
 
   export let summary: GameSummary;
   export let gameData: GameData;
 
-  async function doLeave() {
+  async function leave() {
     if (gameData.host) {
       const result = await confirmDialog(
         "Confirm Leave",
@@ -51,7 +50,7 @@
     <p class="desc">{gameData.config.text}</p>
 
     <div class="btn-row btn-row--fill">
-      <button class="btn" on:click={doLeave}>Leave</button>
+      <button class="btn" on:click={leave}>Leave</button>
 
       {#if gameData.host}
         <!-- Restart started button for restarting games -->
