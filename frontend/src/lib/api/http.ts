@@ -109,7 +109,7 @@ function createUploadForm(config: CreateData, images: StoredImage[]): FormData {
   for (const image of images) {
     // Images require atleast 1 reference to be included
     const usage: Question | undefined = config.questions.find(
-      (question) => question.image === image.uuid
+      (question) => question.image?.uuid === image.uuid
     );
     if (usage === undefined) continue;
 
@@ -140,7 +140,7 @@ export async function preloadImage(token: string, question: Question) {
 
   let attempts: number = 0;
 
-  const url: string = formatImageUrl(token, imageRef);
+  const url: string = formatImageUrl(token, imageRef.uuid);
 
   while (attempts < MAX_ATTEMPTS) {
     try {

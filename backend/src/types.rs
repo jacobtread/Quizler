@@ -108,8 +108,8 @@ pub struct Question {
     pub data: QuestionData,
     /// The text of the question
     pub text: String,
-    /// Optional UUID from created image
-    pub image: Option<ImageRef>,
+    /// Optional image
+    pub image: Option<QuestionImage>,
     /// The time given to answer the question
     pub answer_time: u64,
     /// The time that a bonus score will be granted within
@@ -117,6 +117,24 @@ pub struct Question {
     pub bonus_score_time: u32,
     /// The point scoring for the question
     pub scoring: Scoring,
+}
+
+/// Structure of a question image, contains the
+/// UUID of the image aswell as its fit mode
+#[derive(Serialize, Deserialize)]
+pub struct QuestionImage {
+    /// UUID from created image  
+    pub uuid: ImageRef,
+    /// Client side image fit mode
+    pub fit: ImageFit,
+}
+
+#[derive(Serialize, Deserialize)]
+pub enum ImageFit {
+    Contain,
+    Cover,
+    Width,
+    Height,
 }
 
 #[derive(Deserialize, Serialize)]

@@ -57,7 +57,8 @@
     <div class="image-wrapper">
       <img
         class="image"
-        src={formatImageUrl(gameData.token, question.image)}
+        src={formatImageUrl(gameData.token, question.image.uuid)}
+        data-fit={question.image.fit}
         alt={question.text}
       />
     </div>
@@ -136,9 +137,32 @@
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    height: 100%;
     aspect-ratio: auto;
     z-index: -1;
+
+    // Fit for width
+    &[data-fit="Width"] {
+      width: 100%;
+    }
+
+    // Fit for height
+    &[data-fit="Height"] {
+      height: 100%;
+    }
+
+    // Fit for containing whole image
+    &[data-fit="Contain"] {
+      height: 100%;
+      width: 100%;
+      object-fit: contain;
+    }
+
+    // Fit for covering available space
+    &[data-fit="Cover"] {
+      height: 100%;
+      width: 100%;
+      object-fit: cover;
+    }
   }
 
   .content {

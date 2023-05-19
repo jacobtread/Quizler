@@ -146,12 +146,24 @@ const answerValueSchema = z.object({
 // Answer value type inferred from its schema
 export type AnswerValue = z.infer<typeof answerValueSchema>;
 
+export const enum ImageFit {
+  Contain = "Contain",
+  Cover = "Cover",
+  Width = "Width",
+  Height = "Height"
+}
+
 // Schema for questions
 export const questionSchema = z
   .object({
     id: z.number(),
     text: z.string(),
-    image: z.string().uuid().nullable(),
+    image: z
+      .object({
+        uuid: z.string().uuid(),
+        fit: z.enum(["Contain", "Cover", "Width", "Height"])
+      })
+      .nullable(),
     answer_time: z.number(),
     bonus_score_time: z.number(),
     scoring: z.object({
