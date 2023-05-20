@@ -183,14 +183,14 @@
     gap: 1rem;
   }
 
-  .answer:nth-child(odd):last-child {
-    grid-column-start: 1;
-    grid-column-end: 3;
-  }
-
   .answer {
     padding: 1rem;
     word-wrap: break-word;
+
+    &:nth-child(odd):last-child {
+      grid-column-start: 1;
+      grid-column-end: 3;
+    }
   }
 
   .submit {

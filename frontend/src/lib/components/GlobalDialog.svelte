@@ -57,14 +57,14 @@
     max-width: 32rem;
     width: 100%;
     margin: 1rem;
-  }
 
-  .dialog__title {
-    margin-bottom: 0.5rem;
-    color: #ffffff;
-  }
+    &__title {
+      margin-bottom: 0.5rem;
+      color: #ffffff;
+    }
 
-  .dialog__msg {
-    margin-bottom: 1rem;
+    &__msg {
+      margin-bottom: 1rem;
+    }
   }
 </style>

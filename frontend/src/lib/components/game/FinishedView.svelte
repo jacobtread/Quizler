@@ -122,10 +122,10 @@
     background-color: $surface;
     border: 1px solid $surfaceLight;
     padding: 1rem;
-  }
 
-  th:first-child {
-    text-align: left;
+    &:first-child {
+      text-align: left;
+    }
   }
 
   td {
@@ -138,12 +138,17 @@
     position: relative;
     background-color: $surface;
     border: 1px solid $surfaceLight;
-  }
 
-  .player__place {
-    padding: 1rem;
-    color: #fff;
-    font-weight: bold;
+    &__place {
+      padding: 1rem;
+      color: #fff;
+      font-weight: bold;
+    }
+
+    &__name {
+      width: 100%;
+      padding: 1rem;
+    }
   }
 
   .crown > :global(svg) {
@@ -173,11 +178,6 @@
       opacity: 1;
       transform: translate(-30%, -50%) rotate(-30deg) scale(1);
     }
-  }
-
-  .player__name {
-    width: 100%;
-    padding: 1rem;
   }
 
   .token {

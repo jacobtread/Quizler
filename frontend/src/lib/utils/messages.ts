@@ -57,7 +57,7 @@ const messages = {
  * @param ty The type of message
  * @returns The random message
  */
-export function getRandomMessage(ty: "Answered" | ScoreType) {
+export function getRandomMessage(ty: keyof typeof messages) {
   const values: string[] = messages[ty];
   const message: string = values[randomRange(0, values.length - 1)];
   return message;

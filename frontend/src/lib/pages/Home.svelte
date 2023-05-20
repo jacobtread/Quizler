@@ -109,6 +109,17 @@
       transition: background-color 0.5s ease, color 0.2s linear;
     }
 
+    &__name {
+      font-size: 1.4rem;
+      margin-bottom: 0.25rem;
+      color: $textPrimary;
+    }
+
+    &__text {
+      color: $textSecondary;
+      font-size: 1.1rem;
+    }
+
     &:before {
       content: "";
 
@@ -139,17 +150,6 @@
         background-color: $primary;
       }
     }
-  }
-
-  .action__name {
-    font-size: 1.4rem;
-    margin-bottom: 0.25rem;
-    color: $textPrimary;
-  }
-
-  .action__text {
-    color: $textSecondary;
-    font-size: 1.1rem;
   }
 
   @media screen and (max-height: 48rem) and (max-width: 52rem) {
@@ -213,10 +213,10 @@
         margin-bottom: 0;
         margin-right: 0;
       }
-    }
 
-    .action__body {
-      display: none;
+      &__body {
+        display: none;
+      }
     }
 
     .github {

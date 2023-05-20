@@ -38,8 +38,21 @@
     if (question.ty === QuestionType.Multiple) {
       if (question.max < question.min) {
         question.max = question.min;
+      } else {
+        let max = maxCorrect();
+        if (question.max > max) question.max = max;
+
+        // TODO: This max must also be changed when the number of answers changes
       }
     }
+  }
+
+  function maxCorrect(): number {
+    let correct = 0;
+    for (const answer of question.answers) {
+      if (answer.correct) correct += 1;
+    }
+    return correct;
   }
 
   function save() {

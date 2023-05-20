@@ -126,24 +126,24 @@
     display: flex;
     align-items: stretch;
     gap: 1rem;
+
+    &__check {
+      align-self: center;
+    }
+
+    &__actions {
+      display: flex;
+      flex-flow: column;
+      gap: 0.5rem;
+    }
+
+    &__question {
+      align-self: stretch;
+      flex: auto;
+    }
   }
 
-  .answer__actions {
-    display: flex;
-    flex-flow: column;
-    gap: 0.5rem;
-  }
-
-  .answer__question {
-    align-self: stretch;
-    flex: auto;
-  }
-
-  .answer__check {
-    align-self: center;
-  }
-
-  .input {
+  .answer .input {
     display: block;
     width: 100%;
     padding: 1rem;

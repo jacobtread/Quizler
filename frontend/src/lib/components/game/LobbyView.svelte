@@ -181,10 +181,10 @@
     background-color: $surface;
     border: 1px solid $surfaceLight;
     padding: 1rem;
-  }
 
-  th:first-child {
-    text-align: left;
+    &:first-child {
+      text-align: left;
+    }
   }
 
   td {
@@ -197,11 +197,15 @@
     position: relative;
     background-color: $surface;
     border: 1px solid $surfaceLight;
-  }
 
-  .player__name {
-    width: 100%;
-    padding: 1rem;
+    &__name {
+      width: 100%;
+      padding: 1rem;
+    }
+
+    &__action {
+      padding: 0;
+    }
   }
 
   .token {
@@ -214,9 +218,5 @@
 
   .desc {
     margin-bottom: 1rem;
-  }
-
-  .player__action {
-    padding: 0;
   }
 </style>

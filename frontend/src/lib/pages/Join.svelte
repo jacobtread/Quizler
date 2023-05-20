@@ -113,10 +113,10 @@
     transition: 0.5s ease;
     letter-spacing: 0.25rem;
     vertical-align: middle;
-  }
 
-  .input:focus {
-    border-bottom-color: #f66828;
+    &:focus {
+      border-bottom-color: #f66828;
+    }
   }
 
   .play {

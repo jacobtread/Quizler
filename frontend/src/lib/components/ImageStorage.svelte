@@ -286,6 +286,7 @@
       grid-template-columns: 1fr 1fr;
     }
   }
+
   @media screen and (max-width: 32rem) {
     .images {
       grid-template-columns: 1fr;

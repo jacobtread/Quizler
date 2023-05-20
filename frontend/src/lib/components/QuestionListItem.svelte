@@ -83,6 +83,7 @@
 
 <style lang="scss">
   @import "../../assets/scheme.scss";
+
   .question {
     background-color: $surface;
     padding: 1rem;
@@ -108,17 +109,17 @@
 
   .answer {
     padding: 0.5rem;
+
+    &[data-correct="true"] {
+      border-radius: 0.5rem;
+      border-left: 5px solid $primary;
+      color: #fff;
+    }
   }
 
   .actions {
     display: flex;
     flex-flow: column;
     gap: 0.5rem;
-  }
-
-  .answer[data-correct="true"] {
-    border-radius: 0.5rem;
-    border-left: 5px solid $primary;
-    color: #fff;
   }
 </style>

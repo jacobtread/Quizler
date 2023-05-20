@@ -235,25 +235,25 @@
     height: 100%;
     display: flex;
     flex-flow: column;
-  }
 
-  .list__actions {
-    background-color: $appBackground;
-    padding: 1rem;
-    display: flex;
-    gap: 1rem;
+    &__actions {
+      background-color: $appBackground;
+      padding: 1rem;
+      display: flex;
+      gap: 1rem;
 
-    .btn {
-      flex: auto;
-      text-align: center;
-      justify-content: center;
+      .btn {
+        flex: auto;
+        text-align: center;
+        justify-content: center;
+      }
     }
-  }
 
-  .list__content {
-    flex: auto;
-    overflow: auto;
-    padding: 0 1rem 1rem;
+    &__content {
+      flex: auto;
+      overflow: auto;
+      padding: 0 1rem 1rem;
+    }
   }
 
   .questions {
@@ -323,22 +323,22 @@
 
     .list {
       overflow: visible;
+
+      &__actions {
+        position: sticky;
+        top: 0;
+        left: 0;
+        z-index: 1;
+      }
+
+      &__content {
+        padding: 1rem;
+      }
     }
 
     .details {
       overflow: visible;
       max-width: unset;
-      padding: 1rem;
-    }
-
-    .list__actions {
-      position: sticky;
-      top: 0;
-      left: 0;
-      z-index: 1;
-    }
-
-    .list__content {
       padding: 1rem;
     }
 

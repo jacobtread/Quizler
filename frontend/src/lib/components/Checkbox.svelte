@@ -32,14 +32,19 @@
 
     border-radius: 0.25rem;
     transition: transform 0.15s ease;
-  }
 
-  .wrapper:active {
-    transform: scale(1.1);
+    &:active {
+      transform: scale(1.1);
+    }
   }
 
   .input {
     display: none;
+
+    &:checked ~ .mark {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   .mark {
@@ -52,10 +57,5 @@
     transition: opacity 0.15s ease, transform 0.15s ease;
     opacity: 0;
     transform: translateY(15px);
-  }
-
-  input:checked ~ .mark {
-    opacity: 1;
-    transform: translateY(0);
   }
 </style>
