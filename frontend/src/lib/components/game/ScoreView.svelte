@@ -67,11 +67,11 @@
     background: linear-gradient(to bottom right, $correctStart, $correctEnd);
 
     .title {
-      text-shadow: 0 3px 1px darken($color: $correctEnd, $amount: 15);
+      text-shadow: 0 3px 1px darken($color: $correctEnd, $amount: 5);
     }
 
     .text {
-      text-shadow: 0 2px 1px darken($color: $correctEnd, $amount: 15);
+      text-shadow: 0 2px 1px darken($color: $correctEnd, $amount: 5);
     }
   }
 
@@ -95,10 +95,10 @@
     );
 
     .title {
-      text-shadow: 0 3px 1px darken($color: $incorrectEnd, $amount: 15);
+      text-shadow: 0 3px 1px darken($color: $incorrectEnd, $amount: 5);
     }
     .text {
-      text-shadow: 0 2px 1px darken($color: $incorrectEnd, $amount: 15);
+      text-shadow: 0 2px 1px darken($color: $incorrectEnd, $amount: 5);
     }
   }
 
