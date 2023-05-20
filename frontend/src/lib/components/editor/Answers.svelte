@@ -54,13 +54,15 @@
   <div class="answers">
     {#each question.answers as answer, index (answer.id)}
       <div class="answer" animate:flip={{ duration: 500 }}>
-        <Checkbox bind:value={answer.correct} />
+        <div class="answer__check">
+          <Checkbox bind:value={answer.correct} />
+        </div>
 
         <div class="answer__actions">
           <button
             on:click={() => moveUp(index)}
             disabled={index <= 0}
-            class="btn btn--icon-only btn--surface btn-small"
+            class="btn btn--icon-only btn--surface btn-small arrow"
           >
             <ArrowUp />
           </button>
@@ -68,7 +70,7 @@
           <button
             on:click={() => moveDown(index)}
             disabled={index + 1 >= question.answers.length}
-            class="btn btn--icon-only btn--surface btn-small"
+            class="btn btn--icon-only btn--surface btn-small arrow"
           >
             <ArrowDown />
           </button>
@@ -137,15 +139,17 @@
     flex: auto;
   }
 
+  .answer__check {
+    align-self: center;
+  }
+
   .input {
     display: block;
-    margin-top: 0.25rem;
     width: 100%;
-    padding: 0.5rem;
+    padding: 1rem;
     border: none;
     background-color: $surfaceLight;
     border-radius: 0.25rem;
-    margin-top: 0.5rem;
     font-size: 1rem;
     line-height: 1.5;
   }

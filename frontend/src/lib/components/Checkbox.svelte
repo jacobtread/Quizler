@@ -23,7 +23,9 @@
   @import "../../assets/scheme.scss";
 
   .wrapper {
-    background-color: $surface;
+    display: inline-block;
+
+    background-color: $surfaceLight;
 
     width: 2rem;
     height: 2rem;
