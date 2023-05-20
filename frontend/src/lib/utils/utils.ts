@@ -67,8 +67,15 @@ export function tryFullscreen() {
   return tryFullscreen;
 }
 
+/**
+ * Randomly suffles the array. Ensures that atleast length/2
+ * changes are made to the array
+ *
+ * @param array The array to suffle
+ * @returns The reference to the provided array
+ */
 export function shuffleArray<T>(array: T[]): T[] {
-  const shuffleCount = randomRange(1, array.length);
+  const shuffleCount = randomRange(1, array.length / 2);
   let changes = 0;
   while (changes < shuffleCount) {
     const first = randomRange(0, array.length - 1);
@@ -81,12 +88,22 @@ export function shuffleArray<T>(array: T[]): T[] {
   return array;
 }
 
+/**
+ * Swaps the two elements in the array at the provided
+ * indexes if both indexes exist
+ *
+ * @param array The array to swap within
+ * @param aIndex The first index
+ * @param bIndex The second index
+ * @returns The reference to the provided array
+ */
 export function arraySwap<T>(array: T[], aIndex: number, bIndex: number): T[] {
   const a: T | undefined = array[aIndex];
   const b: T | undefined = array[bIndex];
 
+  // Ensure both elements exist
   if (a !== undefined || b !== undefined) {
-    // Swap the questions
+    // Swap the elements
     array[aIndex] = b;
     array[bIndex] = a;
   }

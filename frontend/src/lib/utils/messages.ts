@@ -1,6 +1,7 @@
 import { ScoreType } from "$api/models";
 import { randomRange } from "./utils";
 
+// Map between categories and messages
 const messages = {
   Answered: [
     "Hmm I wonder if you got it right....",
