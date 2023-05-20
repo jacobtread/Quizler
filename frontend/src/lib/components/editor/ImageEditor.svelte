@@ -94,6 +94,10 @@
     overflow: hidden;
     position: relative;
     margin-bottom: 1rem;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 
   .image {
