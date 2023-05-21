@@ -7,12 +7,12 @@
   import { confirmDialog } from "$stores/dialogStore";
   import { setCreate } from "$stores/state";
 
+  import * as constants from "$lib/constants";
+
+  import ImageEditor from "$components/editor/ImageEditor.svelte";
+  import Answers from "$components/editor/Answers.svelte";
   import TimeInput from "$components/TimeInput.svelte";
   import Back from "$components/icons/Back.svelte";
-
-  import * as constants from "$lib/constants";
-  import Answers from "$lib/components/editor/Answers.svelte";
-  import ImageEditor from "$lib/components/editor/ImageEditor.svelte";
 
   export let question: Question;
 

@@ -45,14 +45,6 @@
     </button>
 
     <button
-      on:click={moveDown}
-      disabled={index + 1 >= length}
-      class="btn btn--icon-only btn--surface"
-    >
-      <ArrowDown />
-    </button>
-
-    <button
       on:click={remove}
       disabled={length == 1}
       class="btn btn--icon-only btn--surface"
@@ -62,6 +54,14 @@
 
     <button on:click={edit} class="btn btn--icon-only btn--surface">
       <Edit />
+    </button>
+
+    <button
+      on:click={moveDown}
+      disabled={index + 1 >= length}
+      class="btn btn--icon-only btn--surface"
+    >
+      <ArrowDown />
     </button>
   </div>
   <div class="body">
