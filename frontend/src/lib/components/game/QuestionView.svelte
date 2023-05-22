@@ -132,6 +132,8 @@
 
   .text {
     margin-bottom: 1rem;
+    color: #ffffff;
+    font-size: 1.25rem;
   }
 
   .image-wrapper {
@@ -180,6 +182,10 @@
 
     &[data-image="false"] {
       flex: auto;
+
+      .text {
+        margin-top: 4rem;
+      }
     }
   }
 
