@@ -1,11 +1,11 @@
 <script lang="ts">
-  import GlobalDialog from "$components/GlobalDialog.svelte";
-  import Loading from "$pages/Loading.svelte";
-  import { socketReady } from "$api/socket";
   import { AppStateType, appState } from "$stores/state";
-  import Game from "$pages/Game.svelte";
+  import GlobalDialog from "$components/GlobalDialog.svelte";
+  import { socketReady } from "$api/socket";
   import QuestionEditor from "$pages/QuestionEditor.svelte";
+  import Loading from "$pages/Loading.svelte";
   import Connect from "$pages/Connect.svelte";
+  import Game from "$pages/Game.svelte";
   import Create from "$pages/Create.svelte";
   import Home from "$pages/Home.svelte";
   import Join from "$pages/Join.svelte";

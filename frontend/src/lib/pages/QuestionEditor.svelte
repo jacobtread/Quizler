@@ -34,19 +34,6 @@
     question = normalizeQuestion(question);
   }
 
-  function onChangeMin() {
-    if (question.ty === QuestionType.Multiple) {
-      if (question.max < question.min) {
-        question.max = question.min;
-      } else {
-        let max = maxCorrect();
-        if (question.max > max) question.max = max;
-
-        // TODO: This max must also be changed when the number of answers changes
-      }
-    }
-  }
-
   function maxCorrect(): number {
     let correct = 0;
     for (const answer of question.answers) {
@@ -56,8 +43,18 @@
   }
 
   function save() {
+    // TODO: Precheck question
+
     saveQuestion(question);
     setCreate();
+  }
+
+  $: {
+    if (question.ty === QuestionType.Multiple) {
+      let max = maxCorrect();
+      if (question.max > max) question.max = max;
+      if (question.max < question.min) question.max = question.min;
+    }
   }
 </script>
 
@@ -104,7 +101,6 @@
           type="number"
           bind:value={question.min}
           min={1}
-          on:change={onChangeMin}
           max={question.answers.length}
         />
       </label>
