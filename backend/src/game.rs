@@ -180,7 +180,7 @@ impl Game {
             // Starting timer has completed we can now send
             // the first question to the players
             GameState::Starting => {
-                self.question(0);
+                self.question();
             }
 
             // Answers have been awaited
@@ -201,7 +201,7 @@ impl Game {
 
                 // Increase the question index
                 self.question_index += 1;
-                self.question(self.question_index);
+                self.question();
             }
         }
     }
@@ -315,12 +315,7 @@ impl Game {
         }
 
         self.set_state(GameState::AwaitingAnswers);
-        let question = self
-            .config
-            .questions
-            .get(self.question_index)
-            .expect("Attempted to access a question at an index that does not exist")
-            .clone();
+        let question = self.current_question();
         self.set_timer(Duration::from_millis(question.answer_time));
     }
 
@@ -335,14 +330,13 @@ impl Game {
         self.set_state(GameState::Finished);
     }
 
-    fn question(&mut self, index: usize) {
+    fn current_question(&self) -> Arc<Question> {
+        self.config.questions[self.question_index].clone()
+    }
+
+    fn question(&mut self) {
         // Obtain the current question
-        let question = self
-            .config
-            .questions
-            .get(index)
-            .cloned()
-            .expect("Server attempted to display out of bounds question");
+        let question = self.current_question();
 
         // Reset ready states for the players
         self.players
@@ -359,12 +353,7 @@ impl Game {
     /// Task for marking the answers
     fn mark_answers(&mut self) {
         // Get the current question
-        let question = self
-            .config
-            .questions
-            .get(self.question_index)
-            .expect("Attempted to access a question at an index that does not exist")
-            .clone();
+        let question = self.current_question();
 
         let mut scores = HashMap::with_capacity(self.players.len());
 
@@ -742,12 +731,7 @@ impl Handler<PlayerAnswerMessage> for Game {
             return Err(ServerError::UnexpectedMessage);
         }
 
-        let question = self
-            .config
-            .questions
-            .get(self.question_index)
-            .expect("Attempted to access a question at an index that does not exist")
-            .clone();
+        let question = self.current_question();
 
         // Find the player within the game
         let player = self
