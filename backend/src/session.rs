@@ -12,7 +12,7 @@ use actix::{
     Message, StreamHandler, WrapFuture,
 };
 use actix_web_actors::ws;
-use log::{debug, error, info};
+use log::{debug, error};
 use serde::Serialize;
 use std::{
     sync::Arc,
@@ -326,7 +326,6 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Session {
                 return;
             }
             ws::Message::Close(reason) => {
-                info!("Session connection closed: {:?}", reason);
                 ctx.close(reason);
                 ctx.stop();
                 return;
