@@ -74,6 +74,12 @@
 
   function play() {
     const data: CreateData = $createData;
+
+    // Trim name whitespace
+    data.name = data.name.trim();
+    // Trim text whitespace
+    data.text = data.text.trim();
+
     const images: StoredImage[] = $imageStore;
 
     console.debug("Creating quiz");
@@ -120,12 +126,16 @@
     </header>
     <label class="field">
       <span class="field__name">Title</span>
-      <p class="field__desc">Give your quiz a title</p>
+      <p class="field__desc">
+        Give your quiz a title <span class="optional">Optional</span>
+      </p>
       <input class="input" type="text" bind:value={$createData.name} />
     </label>
     <label class="field">
       <span class="field__name">Description</span>
-      <p class="field__desc">Describe your quiz</p>
+      <p class="field__desc">
+        Description of your Quiz <span class="optional">Optional</span>
+      </p>
       <textarea
         class="input input--desc"
         name=""
@@ -215,6 +225,11 @@
 
 <style lang="scss">
   @import "../../assets/scheme.scss";
+
+  .optional {
+    color: #777;
+    margin-left: 0.5rem;
+  }
 
   .main {
     height: 100%;
