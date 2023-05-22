@@ -435,7 +435,7 @@ impl Game {
                 // % correct out of total answers
                 let percent = correct as f32 / *max as f32;
 
-                if correct == *max {
+                if correct >= *max {
                     Score::Correct { value: base_score }
                 } else if correct < *min {
                     Score::Incorrect
