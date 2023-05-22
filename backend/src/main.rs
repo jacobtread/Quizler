@@ -1,8 +1,10 @@
+use std::process::exit;
+
 use crate::games::Games;
 use actix_cors::Cors;
 use actix_web::{App, HttpServer};
 use dotenvy::dotenv;
-use log::{info, LevelFilter};
+use log::{error, info, LevelFilter};
 
 mod game;
 mod games;
@@ -15,7 +17,7 @@ mod types;
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[actix::main]
-async fn main() -> std::io::Result<()> {
+async fn main() {
     // Load environment variables
     dotenv().ok();
 
@@ -37,12 +39,22 @@ async fn main() -> std::io::Result<()> {
 
     info!("Starting Quizler on port {} (v{})", port, VERSION);
 
-    HttpServer::new(move || {
+    let server = HttpServer::new(move || {
         // TODO: CORS is only required in development
         let cors = Cors::permissive();
         App::new().wrap(cors).configure(http::configure)
-    })
-    .bind(("0.0.0.0", port))?
-    .run()
-    .await
+    });
+
+    let server = match server.bind(("0.0.0.0", port)) {
+        Ok(value) => value,
+        Err(error) => {
+            error!("Failed to start server: {}", error);
+            exit(1);
+        }
+    };
+
+    if let Err(error) = server.run().await {
+        error!("Server error: {}", error);
+        exit(1);
+    }
 }

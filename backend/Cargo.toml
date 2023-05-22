@@ -58,10 +58,10 @@ rustrict = "0.7.6"
 version = "1.3.2"
 features = ["v4", "fast-rng", "macro-diagnostics", "serde"]
 
-# Optionally optimize for binary size
-# 
-# [profile.release]
-# strip = true
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1
+# Optionally optimize for binary size:
 # opt-level = "z"
-# lto = true
-# codegen-units = 1
