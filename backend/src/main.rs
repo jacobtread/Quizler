@@ -2,7 +2,7 @@ use crate::games::Games;
 use actix_cors::Cors;
 use actix_web::{App, HttpServer};
 use dotenvy::dotenv;
-use log::info;
+use log::{info, LevelFilter};
 
 mod game;
 mod games;
@@ -20,7 +20,10 @@ async fn main() -> std::io::Result<()> {
     dotenv().ok();
 
     // Initialize logger
-    env_logger::init();
+    env_logger::builder()
+        .filter_module("quizler", LevelFilter::Info)
+        .parse_default_env()
+        .init();
 
     // Create the games store
     Games::init();
