@@ -4,7 +4,7 @@
   import { QuestionType, type Question } from "$api/models";
 
   import { normalizeQuestion, saveQuestion } from "$stores/createStore";
-  import { confirmDialog } from "$stores/dialogStore";
+  import { confirmDialog, errorDialog } from "$stores/dialogStore";
   import { setCreate } from "$stores/state";
 
   import * as constants from "$lib/constants";
@@ -34,7 +34,11 @@
     question = normalizeQuestion(question);
   }
 
-  function maxCorrect(): number {
+  /**
+   * Returns the number of quesitons marked as
+   * correct
+   */
+  function correct(): number {
     let correct = 0;
     for (const answer of question.answers) {
       if (answer.correct) correct += 1;
@@ -43,7 +47,32 @@
   }
 
   function save() {
-    // TODO: Precheck question
+    if (correct() < 1) {
+      errorDialog(
+        "No answers",
+        "You must select atleast 1 answer as a correct answer"
+      );
+      return;
+    }
+
+    // Trim whitespace from the text
+    question.text = question.text.trim();
+
+    if (question.text.length < 1) {
+      errorDialog("Empty quesiton", "The question text must not be empty");
+      return;
+    }
+
+    // Trim answer whitespace
+    for (let i = 0; i < question.answers.length; i++) {
+      const answer = question.answers[i];
+      answer.value = answer.value.trim();
+
+      if (answer.value.length < 1) {
+        errorDialog("Empty answer", `Answer number ${i + 1} must not be blank`);
+        return;
+      }
+    }
 
     saveQuestion(question);
     setCreate();
@@ -51,7 +80,7 @@
 
   $: {
     if (question.ty === QuestionType.Multiple) {
-      let max = maxCorrect();
+      let max = correct();
       if (question.max > max) question.max = max;
       if (question.max < question.min) question.max = question.min;
     }
