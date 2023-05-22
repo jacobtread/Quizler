@@ -28,14 +28,13 @@
   export let gameState: GameState;
 
   async function leave() {
-    if (gameData.host) {
-      const result = await confirmDialog(
-        "Confirm Leave",
-        "Are you sure you want to leave? Leaving will remove all other players from the game"
-      );
+    const message = gameData.host
+      ? "Are you sure you want to leave? Leaving will remove all other players from the game"
+      : "Are you sure you want to leave?";
 
-      if (!result) return;
-    }
+    const result = await confirmDialog("Confirm Leave", message);
+
+    if (!result) return;
 
     // Kick self from game to leave
     await doKick(gameData.id);
