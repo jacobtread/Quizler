@@ -48,6 +48,15 @@
       console.error("Error while attempting to answer", e);
     }
   }
+
+  function select(index: number) {
+    if (answers.includes(index)) {
+      answers = answers.filter((value) => value != index);
+    } else {
+      answers.push(index);
+      answers = answers;
+    }
+  }
 </script>
 
 <p class="time">{formatTime(timer)}</p>
@@ -77,16 +86,15 @@
     {:else if question.ty === QuestionType.Multiple}
       <div class="answers">
         {#each question.answers as answer, index}
-          <label class="answer btn">
-            <input
-              type="checkbox"
-              value={index}
-              bind:group={answers}
-              disabled={answers.length >= question.max &&
-                !answers.includes(index)}
-            />
+          <button
+            class="answer btn"
+            class:answer--checked={answers.includes(index)}
+            disabled={answers.length >= question.max &&
+              !answers.includes(index)}
+            on:click={() => select(index)}
+          >
             {answer.value}
-          </label>
+          </button>
         {/each}
       </div>
       <button
@@ -190,6 +198,19 @@
     &:nth-child(odd):last-child {
       grid-column-start: 1;
       grid-column-end: 3;
+    }
+
+    &--checked {
+      background-color: $primary;
+
+      &:hover {
+        background-color: $primary;
+      }
+    }
+
+    &--disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
   }
 
