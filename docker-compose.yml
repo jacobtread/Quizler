@@ -1,0 +1,10 @@
+# Example docker file for running quizler
+version: "3"
+services:
+  quizler:
+    container_name: quizler
+    ports:
+      # Server port
+      - 80:80/tcp
+    # Quizler image
+    image: jacobtread/quizler:latest
