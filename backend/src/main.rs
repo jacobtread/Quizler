@@ -11,6 +11,9 @@ mod msg;
 mod session;
 mod types;
 
+// Cargo package version
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 #[actix::main]
 async fn main() -> std::io::Result<()> {
     // Load environment variables
@@ -29,7 +32,7 @@ async fn main() -> std::io::Result<()> {
         Err(_) => 80,
     };
 
-    info!("Starting Quizler on port {}", port);
+    info!("Starting Quizler on port {} (v{})", port, VERSION);
 
     HttpServer::new(move || {
         // TODO: CORS is only required in development
