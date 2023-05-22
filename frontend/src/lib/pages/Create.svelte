@@ -129,7 +129,12 @@
       <p class="field__desc">
         Give your quiz a title <span class="optional">Optional</span>
       </p>
-      <input class="input" type="text" bind:value={$createData.name} />
+      <input
+        class="input"
+        type="text"
+        bind:value={$createData.name}
+        maxlength={constants.MAX_TITLE_LENGTH}
+      />
     </label>
     <label class="field">
       <span class="field__name">Description</span>
@@ -143,6 +148,7 @@
         cols="30"
         rows="5"
         bind:value={$createData.text}
+        maxlength={constants.MAX_DESCRIPTION_LENGTH}
       />
     </label>
     <div class="field">
