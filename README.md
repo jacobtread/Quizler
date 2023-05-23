@@ -2,21 +2,88 @@
 
 # Quizler
 
+> Real time quiz application
+
+> **Info**
+> This project is in early alpha stages, currenlty it is fully functional however all of the features and logic may not be entirely polished yet, this project is under active development
+
+
+This is the improved version of my [Quizler](https://github.com/jacobtread/Quizler) app which is intended to be a real time quiz application similar to [Kahoot](https://kahoot.com/) but *OpenSource* and able to be played offline over LAN or self hosted.
+
+This version aims to improve upon the downfalls of the previous app (Written in Go) along with providing new features. I aim to make this version more stable and performant using my better understanding of the [Rust](https://www.rust-lang.org/) language.
+
+This new version makes use of [Rust](https://www.rust-lang.org/) for the backend with the [Actix](https://actix.rs) web framework and [Svelte](https://svelte.dev/) for the frontend. The previous version used [Go](https://go.dev/) for the backend and [VueJS](https://vuejs.org/) for the frontend.
+
+
+## Downloads
+
+Prebuilt binaries are available for download here
 
 > **Note**
-> This project is still in its very early stages of development so its not yet released or functional
+> This project is still in alpha so there may be unexpected bugs in these early releases
 
-This is the improved version of my [Quizler](https://github.com/jacobtread/Quizler) app which is intended to be a real time quiz application similar to [Kahoot](https://kahoot.com/) but *OpenSource* and able to be played offline over LAN.
+| Platform | Download                                                                                                 |
+| -------- | -------------------------------------------------------------------------------------------------------- |
+| Windows  | [Download](https://github.com/jacobtread/Quizler-v2/releases/download/v0.1.0-alpha1/quizler-windows.exe) |
+| Linux    | [Download](https://github.com/jacobtread/Quizler-v2/releases/download/v0.1.0-alpha1/quizler-linux)       |
+<!-- Uncomment when stable releases are out
+| Windows  | [Download](https://github.com/jacobtread/Quizler-v2/releases/latest/download/quizler-windows.exe) |
+| Linux    | [Download](https://github.com/jacobtread/Quizler-v2/releases/latest/download/quizler-linux)      | 
+-->
 
-This version aims to improve upon the downfalls of the previous app (Written in Go) along with providing new features. I aim to make this version more stable and performant using my better understanding of the **Rust** language.
 
-This new version makes use of **Rust** for the backend and **Svelte** for the frontend. The previous version used **Go** for the backend and **VueJS** for the frontend.
+## ⚙️ Features
+
+- [x] Different quesiton types
+    - Single: Can have multiple correct answer but only lets the players select one option
+    - Multiple: Can have many correct answers and lets the players select more than one answer
+- [x] Small and performant, the binary size is super small and is quick to download and move around. From manual testing games could easily handle 15 players
+    - Windows binary:  4.6mb 
+    - Linux binary: 4.5mb
+- [x] Name filtering levels
+    - You are able to select different levels of filtering for what usernames are allowed by the players on a quiz by quiz basis (None, Low, Medium, High)
+- [x] Image fitting
+    - Quiz images can have the fitting property adjusted in order to decide how
+    it will be shown on devices (Cover, Contain, Fit Width, Fit Height)
+- [x] Customizable timing
+    - You can customize the timing for inbetween each question and the time given for answering on a question by question basis
+- [x] Customizable scoring
+    - You can customize the min, max, and bonus score awarded for each question
+- [x] Easy shuffling
+    - There are shuffle buttons for both questions and answers to quickly and easily shuffle the order of questions and answers
+- [x] Readyiness and preloading (Automated)
+    - The quiz will wait for all the players to preload the images and be "ready" before starting the timer of the question to ensure that players arent at a disadvantage due to slower connections
+- [x] Fully portable
+  - The server doesn't store any files so its completely portable as a single executable. Quiz's are instead able to be exported and imported a .quizler files which can be shared
+  - In future a less portable version might be created that supports storing these files in some sort of database 
+- [x] Containerized
+  -  Quizler can run both as a single executable or within a Docker container using the `jacobtread/quizler` container image. 
+  -  There is an example docker-compose.yml file for starting a dockerized version. 
+  -  You can also run a containerize version of the server that builds itself using the Build.Dockerfile docker file
+- [x] Short and easy to share codes
+  - The quiz codes are short 5 character tokens that cosist of A-Z 0-9 (e.g AZ2ES)
+- [x] Cross platform
+  - The server can be run on both Windows or Linux, and can be connected to by any device with a web browser (Its recommended that a up to date browser be used as some older browsers might incorrectly render the page) 
+  - Any other platform can run the server within a Docker container
 
 
-## Planned New Features
+## 📸 Screenshots
 
-- Multiple question types, this new version aims to add multiple new question types to choose from:
-    - Question with multiple choice but only 1 is right
-    - Multiple choice question with multiple right answers
-- Customizable timings, you will be able to customize the time given for each question, the time between questions, the time available for bonus scoring.
-- Customizible scoring, you will be able to decide the minimum and maximum score that can be earned for a question based on the time it took to answer along with customizing the amount of score gained if answered within the bonus period.
+### Home screen
+
+This is the screen which allows the users to select between joining a quiz and
+creating their own
+
+![Home Screen](assets/home.png)
+
+### Create screen
+
+This is the screen for creating a new quiz
+
+![Create Screen](assets/create.png)
+
+### Join screen
+
+This is the screen for creating a new quiz
+
+![Join Screen](assets/join.png)
