@@ -8,13 +8,12 @@
     AnswerType
   } from "$api/models";
   import { formatTime } from "$lib/utils/utils";
-  import { formatImageUrl } from "$api/http";
-  import type { GameData } from "$pages/Game.svelte";
 
-  export let gameData: GameData;
   export let timer: TimerState;
   export let question: Question;
   export let answered: boolean;
+
+  export let preloadedImage: HTMLImageElement | null;
 
   let answers: number[] = [];
 
@@ -57,23 +56,20 @@
       answers = answers;
     }
   }
+
+  function preloadChild(target: HTMLElement, elm: HTMLImageElement) {
+    target.appendChild(elm);
+  }
 </script>
 
 <p class="time">{formatTime(timer)}</p>
 
 <main class="main">
-  {#if question.image !== null}
-    <div class="image-wrapper">
-      <img
-        class="image"
-        src={formatImageUrl(gameData.token, question.image.uuid)}
-        data-fit={question.image.fit}
-        alt={question.text}
-      />
-    </div>
+  {#if preloadedImage !== null}
+    <div class="image-wrapper" use:preloadChild={preloadedImage} />
   {/if}
 
-  <div class="content" data-image={question.image !== null}>
+  <div class="content">
     <p class="text">{question.text}</p>
     {#if question.ty === QuestionType.Single}
       <div class="answers">
@@ -142,36 +138,11 @@
     position: relative;
   }
 
-  .image {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    aspect-ratio: auto;
-    z-index: -1;
+  .image-wrapper ~ .content {
+    flex: none;
 
-    // Fit for width
-    &[data-fit="Width"] {
-      width: 100%;
-    }
-
-    // Fit for height
-    &[data-fit="Height"] {
-      height: 100%;
-    }
-
-    // Fit for containing whole image
-    &[data-fit="Contain"] {
-      height: 100%;
-      width: 100%;
-      object-fit: contain;
-    }
-
-    // Fit for covering available space
-    &[data-fit="Cover"] {
-      height: 100%;
-      width: 100%;
-      object-fit: cover;
+    .text {
+      margin-top: 0;
     }
   }
 
@@ -180,12 +151,10 @@
     flex-flow: column;
     min-height: 25vh;
 
-    &[data-image="false"] {
-      flex: auto;
+    flex: auto;
 
-      .text {
-        margin-top: 4rem;
-      }
+    .text {
+      margin-top: 4rem;
     }
   }
 

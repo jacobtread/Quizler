@@ -128,35 +128,47 @@ function createUploadForm(config: CreateData, images: StoredImage[]): FormData {
  *
  * @param token    The question game token
  * @param question The question itself
- * @returns        Promise to the preloading complete
+ * @returns        Promise to the preloaded image element
  */
-export async function preloadImage(token: string, question: Question) {
+export async function preloadImage(
+  token: string,
+  question: Question
+): Promise<HTMLImageElement | null> {
   const imageRef = question.image;
 
   // Question didn't have any images to load
-  if (imageRef === null) return;
+  if (imageRef === null) return null;
 
   const MAX_ATTEMPTS = 6;
 
   let attempts: number = 0;
 
-  const url: string = formatImageUrl(token, imageRef.uuid);
+  let url: string = formatImageUrl(token, imageRef.uuid);
+  let img: HTMLImageElement | null = null;
 
   while (attempts < MAX_ATTEMPTS) {
     try {
       // Attempt to load the image
       await new Promise((resolve, reject) => {
-        const img = new Image();
+        img = new Image();
         img.src = url;
         img.onload = resolve;
         img.onerror = reject;
       });
 
       console.debug("Preloaded question image", url);
+
       break;
     } catch (e) {
       console.error("Failed to preload image trying again", url, e);
       attempts += 1;
+
+      img = null;
+
+      // Append attempt query
+      url = formatImageUrl(token, imageRef.uuid) + `?attempt=${attempts}`;
     }
   }
+
+  return img;
 }
