@@ -1,8 +1,0 @@
-services:
-  # Quizler service
-  - type: web
-    name: quizler
-    env: image
-    image:
-      # Quizler prebuilt docker image
-      url: docker.io/jacobtread/quizler:latest
