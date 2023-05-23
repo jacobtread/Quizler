@@ -162,7 +162,7 @@
       {#if nameValid}
         <button
           on:click={join}
-          class="play play-small"
+          class="play play--small"
           transition:slide={{ axis: "x", duration: 200 }}
         >
           <Play />
