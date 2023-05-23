@@ -4,7 +4,7 @@
 
 > Real time quiz application
 
-> **Info**
+> **Note**
 > This project is in early alpha stages, currenlty it is fully functional however all of the features and logic may not be entirely polished yet, this project is under active development
 
 
