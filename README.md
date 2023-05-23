@@ -33,6 +33,12 @@ Prebuilt binaries are available for download here
 | Linux    | [Download](https://github.com/jacobtread/Quizler-v2/releases/latest/download/quizler-linux)      | 
 -->
 
+## Deploy render instance
+
+You can deploy a free render instance of Quizler using the following button
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/jacobtread/Quizler-v2/)
+
 
 ## ⚙️ Features
 
