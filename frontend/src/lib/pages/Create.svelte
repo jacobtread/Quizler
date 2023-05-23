@@ -12,6 +12,7 @@
   import * as constants from "$lib/constants";
 
   import QuestionListItem from "$components/QuestionListItem.svelte";
+  import FloatingLoader from "$components/FloatingLoader.svelte";
   import TimeInput from "$components/TimeInput.svelte";
   import Import from "$components/icons/Import.svelte";
   import Back from "$components/icons/Back.svelte";
@@ -31,6 +32,11 @@
     type CreateData,
     addQuestion
   } from "$stores/createStore";
+  import { tweened, type Tweened } from "svelte/motion";
+
+  let loading: boolean = false;
+  let loadingState: string = "";
+  let progress: Tweened<number> = tweened(0);
 
   async function doExport() {
     const data: CreateData = $createData;
@@ -68,11 +74,15 @@
   function onUploadProgress(event: ProgressEvent) {
     if (event.lengthComputable) {
       const percentComplete = (event.loaded / event.total) * 100;
-      console.debug(`Uploading content: ${percentComplete}%`);
+      console.debug(`Uploading content: ${percentComplete.toFixed(0)}%`);
+      progress.set(percentComplete);
     }
   }
 
   function play() {
+    loading = true;
+    loadingState = "Uploading";
+
     const data: CreateData = $createData;
 
     // Trim name whitespace
@@ -87,7 +97,12 @@
     // Send the creation request to the HTTP API
     createHttp(data, images, onUploadProgress)
       // Initialize the created game
-      .then((uuid) => socket.send({ ty: ClientMessage.Initialize, uuid }))
+      .then((uuid) => {
+        loadingState = "Initializing";
+        console.debug("Initializing game", uuid);
+
+        return socket.send({ ty: ClientMessage.Initialize, uuid });
+      })
       // Switch to the game view
       .then(({ id, token, config }) => {
         setGame({ id, token, config, host: true });
@@ -100,9 +115,18 @@
         } else {
           errorDialog("Failed to create", errorText[error]);
         }
-      });
+      })
+      .finally(() => (loading = false));
   }
 </script>
+
+{#if loading}
+  {#if loadingState === "Uploading"}
+    <FloatingLoader text={`Uploading ${$progress.toFixed(0)}%`} />
+  {:else}
+    <FloatingLoader text="Connecting..." />
+  {/if}
+{/if}
 
 <main class="main">
   <div class="details">

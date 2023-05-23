@@ -1,22 +1,43 @@
 <script lang="ts">
   import { slide } from "svelte/transition";
 
-  import { TOKEN_LENGTH } from "$lib/constants";
+  import {
+    MAX_PLAYER_NAME_LENGTH,
+    MIN_PLAYER_NAME_LENGTH,
+    TOKEN_LENGTH
+  } from "$lib/constants";
 
   import * as socket from "$api/socket";
   import { ClientMessage, ServerError, errorText } from "$api/models";
 
+  import FloatingLoader from "$components/FloatingLoader.svelte";
   import Back from "$components/icons/Back.svelte";
   import Play from "$components/icons/Play.svelte";
 
-  import { setHome, setJoin } from "$stores/state";
+  import { setGame, setHome } from "$stores/state";
   import { errorDialog } from "$stores/dialogStore";
+
+  const enum State {
+    Connect,
+    Join
+  }
+
+  let state = State.Connect;
 
   // The user provided token
   let token: string = "";
 
+  // The user provided name
+  let name = "";
+
   // Disabled state for the connect button
-  let disabled: boolean = true;
+  let tokenValid: boolean = false;
+
+  // Disabled state for the connect button
+  let nameValid: boolean = false;
+
+  // Loading screen state
+  let loading: boolean = false;
 
   /**
    * Update called whenever the token input changes in
@@ -32,7 +53,18 @@
       .replace(/[^A-Z0-9]/, "");
 
     // Change the disabled state based on the length requirement
-    disabled = token.length != TOKEN_LENGTH;
+    tokenValid = token.length === TOKEN_LENGTH;
+  }
+
+  /**
+   * Updates the disabled state after validating the
+   * provided player name
+   */
+  function updateName() {
+    // Change the disabled state based on the name lengthh
+    nameValid =
+      name.length >= MIN_PLAYER_NAME_LENGTH &&
+      name.length <= MAX_PLAYER_NAME_LENGTH;
   }
 
   /**
@@ -40,46 +72,105 @@
    * user provided token.
    */
   function connect() {
+    loading = true;
+
     socket
       .send({ ty: ClientMessage.Connect, token })
-      .then(() => setJoin(token))
+      .then(() => {
+        state = State.Join;
+      })
       .catch((error: ServerError) => {
         console.error("Failed to connect", error);
         errorDialog("Failed to connect", errorText[error]);
-      });
+      })
+      .finally(() => (loading = false));
+  }
+
+  function join() {
+    loading = true;
+
+    socket
+      .send({ ty: ClientMessage.Join, name })
+      .then(({ id, token, config }) => {
+        setGame({ id, token, config, host: false, name });
+      })
+      .catch((error: ServerError) => {
+        console.error("Failed to join", error);
+        errorDialog("Failed to join", errorText[error]);
+      })
+      .finally(() => (loading = false));
+  }
+
+  function back() {
+    if (state === State.Connect) {
+      setHome();
+    } else {
+      state = State.Connect;
+    }
   }
 </script>
 
-<main class="main" transition:slide>
-  <button on:click={setHome} class="back back--floating">
-    <Back />
-  </button>
+{#if loading} <FloatingLoader /> {/if}
 
-  <h1>Enter Code</h1>
-  <p>Please enter your quiz code below</p>
+<button on:click={back} class="back back--floating">
+  <Back />
+</button>
 
-  <div class="form">
-    <input
-      class="input"
-      type="text"
-      bind:value={token}
-      on:input={updateToken}
-      minlength={TOKEN_LENGTH}
-      maxlength={TOKEN_LENGTH}
-      placeholder={"X".repeat(TOKEN_LENGTH)}
-    />
+{#if state === State.Connect}
+  <main class="main" transition:slide>
+    <h1>Enter Code</h1>
+    <p>Please enter your quiz code below</p>
 
-    {#if !disabled}
-      <button
-        on:click={connect}
-        class="play"
-        transition:slide={{ axis: "x", duration: 200 }}
-      >
-        <Play />
-      </button>
-    {/if}
-  </div>
-</main>
+    <div class="form">
+      <input
+        class="input"
+        type="text"
+        bind:value={token}
+        on:input={updateToken}
+        minlength={TOKEN_LENGTH}
+        maxlength={TOKEN_LENGTH}
+        placeholder={"X".repeat(TOKEN_LENGTH)}
+      />
+
+      {#if tokenValid}
+        <button
+          on:click={connect}
+          class="play"
+          transition:slide={{ axis: "x", duration: 200 }}
+        >
+          <Play />
+        </button>
+      {/if}
+    </div>
+  </main>
+{:else}
+  <main class="main" transition:slide>
+    <p>{token}</p>
+    <h1>Enter Name</h1>
+    <p>Please enter your desired name</p>
+
+    <div class="form">
+      <input
+        class="input input--small"
+        type="text"
+        bind:value={name}
+        on:input={updateName}
+        minlength={MIN_PLAYER_NAME_LENGTH}
+        maxlength={MAX_PLAYER_NAME_LENGTH}
+      />
+
+      {#if nameValid}
+        <button
+          on:click={join}
+          class="play play-small"
+          transition:slide={{ axis: "x", duration: 200 }}
+        >
+          <Play />
+        </button>
+      {/if}
+    </div>
+  </main>
+{/if}
 
 <style lang="scss">
   @import "../../assets/scheme";
@@ -119,6 +210,10 @@
     &:focus {
       border-bottom-color: $primary;
     }
+
+    &--small {
+      font-size: 2rem;
+    }
   }
 
   .play {
@@ -130,6 +225,10 @@
     cursor: pointer;
     color: #fff;
     background-color: $primary;
+
+    &--small {
+      padding-inline-start: 0.6rem;
+    }
   }
 
   @media screen and (max-width: 32rem) {

@@ -6,8 +6,6 @@ export const enum AppStateType {
   Home = 0,
   // Join Game Screen
   Connect,
-  // Join game name selection screen
-  Join,
   // Create game screen
   Create,
   // Editing question screen
@@ -32,7 +30,6 @@ export interface GameData {
 export type AppState =
   | { ty: AppStateType.Home }
   | { ty: AppStateType.Connect }
-  | { ty: AppStateType.Join; token: GameToken }
   | { ty: AppStateType.Create }
   | { ty: AppStateType.Editing; question: Question }
   | { ty: AppStateType.Game; gameData: GameData };
@@ -51,10 +48,6 @@ export function setCreate() {
 
 export function setConnect() {
   appState.set({ ty: AppStateType.Connect });
-}
-
-export function setJoin(token: GameToken) {
-  appState.set({ ty: AppStateType.Join, token });
 }
 
 export function setGame(gameData: GameData) {

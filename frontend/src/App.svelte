@@ -8,7 +8,6 @@
   import Game from "$pages/Game.svelte";
   import Create from "$pages/Create.svelte";
   import Home from "$pages/Home.svelte";
-  import Join from "$pages/Join.svelte";
 </script>
 
 {#if $socketReady}
@@ -18,8 +17,6 @@
     <Create />
   {:else if $appState.ty === AppStateType.Connect}
     <Connect />
-  {:else if $appState.ty === AppStateType.Join}
-    <Join token={$appState.token} />
   {:else if $appState.ty === AppStateType.Editing}
     <QuestionEditor question={$appState.question} />
   {:else if $appState.ty === AppStateType.Game}
