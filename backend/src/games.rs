@@ -42,6 +42,8 @@ impl Games {
     }
 }
 
+/// Game state for a game thats been created from the HTTP
+/// API but hasn't yet been initialized by a host socket
 pub struct PreparingGame {
     /// The config being prepared
     config: GameConfig,
@@ -71,6 +73,9 @@ impl Actor for Games {
     }
 }
 
+/// Token abstraction to store tokens as fixed length byte
+/// slices rather than strings. This makes them easier to
+/// compare,generate, and serialize
 #[derive(Hash, PartialEq, Eq, Clone, Copy)]
 pub struct GameToken([u8; GameToken::LENGTH]);
 
@@ -80,6 +85,8 @@ impl GameToken {
     /// Set of chars that can be used as game tokens
     const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
+    /// Creates a unique random token that isn't present in the
+    /// provided collect of games
     fn unique_token(games: &HashMap<GameToken, Addr<Game>>) -> GameToken {
         /// Length of the charset
         const RANGE: usize = GameToken::CHARSET.len();
@@ -101,6 +108,7 @@ impl GameToken {
                 }
             }
 
+            // Check that the token isn't already taken
             if !games.contains_key(&token) {
                 return token;
             }
