@@ -39,11 +39,11 @@
 
   import Loading from "$pages/Loading.svelte";
 
-  import AnsweredView from "$components/game/AnsweredView.svelte";
-  import FinishedView from "$components/game/FinishedView.svelte";
-  import QuestionView from "$components/game/QuestionView.svelte";
-  import LobbyView from "$components/game/LobbyView.svelte";
-  import ScoreView from "$components/game/ScoreView.svelte";
+  import AnsweredView from "$pages/game/AnsweredView.svelte";
+  import FinishedView from "$pages/game/FinishedView.svelte";
+  import QuestionView from "$pages/game/QuestionView.svelte";
+  import LobbyView from "$pages/game/LobbyView.svelte";
+  import ScoreView from "$pages/game/ScoreView.svelte";
 
   import { onMount } from "svelte";
 
