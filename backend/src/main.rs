@@ -1,4 +1,4 @@
-use std::process::exit;
+use std::{net::Ipv4Addr, process::exit};
 
 use crate::games::Games;
 use actix_cors::Cors;
@@ -45,7 +45,7 @@ async fn main() {
         App::new().wrap(cors).configure(http::configure)
     });
 
-    let server = match server.bind(("0.0.0.0", port)) {
+    let server = match server.bind((Ipv4Addr::UNSPECIFIED, port)) {
         Ok(value) => value,
         Err(error) => {
             error!("Failed to start server: {}", error);
