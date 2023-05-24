@@ -117,7 +117,7 @@
 </button>
 
 {#if state === State.Connect}
-  <main class="main" transition:slide>
+  <main class="page page--center page--overflow" transition:slide>
     <h1>Enter Code</h1>
     <p>Please enter your quiz code below</p>
 
@@ -144,7 +144,7 @@
     </div>
   </main>
 {:else}
-  <main class="main" transition:slide>
+  <main class="page page--center page--overflow" transition:slide>
     <p>{token}</p>
     <h1>Enter Name</h1>
     <p>Please enter your desired name</p>
@@ -175,13 +175,8 @@
 <style lang="scss">
   @import "../../assets/scheme";
 
-  .main {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  .page {
     gap: 1rem;
-    flex-flow: column;
-    height: 100%;
   }
 
   .form {

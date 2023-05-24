@@ -33,7 +33,7 @@
   const skip = () => doHostAction(HostAction.Skip);
 </script>
 
-<main class="main" transition:slide>
+<main class="page page--middle page--overflow" transition:slide>
   <div class="quiz">
     <div class="head">
       <h1 class="token">
@@ -53,7 +53,7 @@
     <h2 class="name">{gameData.config.name}</h2>
     <p class="desc">{gameData.config.text}</p>
 
-    <div class="btn-row btn-row--fill">
+    <div class="btn-row btn-row--fill actions">
       <button class="btn" on:click={() => leave(gameData)}>Leave</button>
 
       {#if gameData.host}
@@ -71,7 +71,8 @@
         {/if}
       {/if}
     </div>
-    <table class="players">
+
+    <table>
       <thead>
         <tr>
           <th>Name</th>
@@ -108,14 +109,8 @@
 <style lang="scss">
   @import "../../../assets/scheme.scss";
 
-  .main {
-    position: relative;
-    display: flex;
-    flex-flow: column;
-    align-items: center;
+  .page {
     padding: 1rem;
-    overflow: auto;
-    height: 100%;
   }
 
   .head {
@@ -149,27 +144,8 @@
     max-width: 48rem;
   }
 
-  .players {
-    margin-top: 1rem;
-    width: 100%;
-    border-collapse: collapse;
-    border: 1px solid $surfaceLight;
-  }
-
-  th {
-    background-color: $surface;
-    border: 1px solid $surfaceLight;
-    padding: 1rem;
-
-    &:first-child {
-      text-align: left;
-    }
-  }
-
-  td {
-    background-color: $surface;
-    border: 1px solid $surfaceLight;
-    padding: 1rem;
+  .actions {
+    margin-bottom: 1rem;
   }
 
   .player {
