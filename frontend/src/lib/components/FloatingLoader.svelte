@@ -1,12 +1,12 @@
 <script lang="ts">
   import Spinner from "$components/Spinner.svelte";
 
-  import { blur } from "svelte/transition";
+  import { fade } from "svelte/transition";
 
   export let text: string = "";
 </script>
 
-<main class="main" transition:blur>
+<main class="main" transition:fade>
   <Spinner />
   <p class="text">{text}</p>
 </main>
