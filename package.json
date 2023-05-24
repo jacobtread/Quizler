@@ -1,0 +1,12 @@
+{
+  "name": "quizler",
+  "version": "0.1.0-alpha1",
+  "description": "Real-time quiz application",
+  "repository": "https://github.com/jacobtread/Quizler-v2.git",
+  "author": "Jacobtread <jacobtread@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "backend": "cd backend && cargo run",
+    "frontend": "cd frontend && yarn dev"
+  }
+}
