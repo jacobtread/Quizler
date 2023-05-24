@@ -3,10 +3,7 @@
   import { flip } from "svelte/animate";
 
   import { HostAction, type GameSummary } from "$api/models";
-  import { doHostAction, doKick } from "$api/actions";
-
-  import { confirmDialog } from "$stores/dialogStore";
-  import { setHome } from "$stores/state";
+  import { doHostAction, leave } from "$api/actions";
 
   import ScoreTweened from "$components/TweenedValue.svelte";
   import Crown from "$components/icons/Crown.svelte";
@@ -17,23 +14,6 @@
 
   export let summary: GameSummary;
   export let gameData: GameData;
-
-  async function leave() {
-    if (gameData.host) {
-      const result = await confirmDialog(
-        "Confirm Leave",
-        "Are you sure you want to leave? Leaving will remove all other players from the game"
-      );
-
-      if (!result) return;
-    }
-
-    // Kick self from game to leave
-    await doKick(gameData.id);
-
-    // Take back to the home scren
-    setHome();
-  }
 
   const doHostReset = () => doHostAction(HostAction.Reset);
 </script>
@@ -50,7 +30,7 @@
     <p class="desc">{gameData.config.text}</p>
 
     <div class="btn-row btn-row--fill">
-      <button class="btn" on:click={leave}>Leave</button>
+      <button class="btn" on:click={() => leave(gameData)}>Leave</button>
 
       {#if gameData.host}
         <!-- Restart started button for restarting games -->

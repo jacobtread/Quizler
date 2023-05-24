@@ -1,5 +1,8 @@
 import { ClientMessage, HostAction } from "$lib/api/models";
 import * as socket from "$lib/api/socket";
+import type { GameData } from "$lib/pages/Game.svelte";
+import { confirmDialog } from "$lib/stores/dialogStore";
+import { setHome } from "$lib/stores/state";
 
 export async function doKick(id: number) {
   try {
@@ -29,4 +32,20 @@ export async function setReady() {
   } catch (e) {
     console.error("Error while attempting to ready", e);
   }
+}
+
+export async function leave(gameData: GameData) {
+  const message = gameData.host
+    ? "Are you sure you want to leave? Leaving will remove all other players from the game"
+    : "Are you sure you want to leave?";
+
+  const result = await confirmDialog("Confirm Leave", message);
+
+  if (!result) return;
+
+  // Kick self from game to leave
+  doKick(gameData.id);
+
+  // Take back to the home scren
+  setHome();
 }

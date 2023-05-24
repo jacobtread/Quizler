@@ -3,7 +3,7 @@
   import { slide } from "svelte/transition";
   import { flip } from "svelte/animate";
 
-  import { doHostAction, doKick } from "$api/actions";
+  import { doHostAction, doKick, leave } from "$api/actions";
   import {
     type PlayerData,
     type SessionId,
@@ -11,10 +11,6 @@
     GameState,
     HostAction
   } from "$api/models";
-
-  import { confirmDialog } from "$stores/dialogStore";
-
-  import { setHome } from "$stores/state";
 
   import { formatTime } from "$lib/utils/utils";
 
@@ -26,22 +22,6 @@
   export let players: PlayerData[];
   export let scores: Record<SessionId, number>;
   export let gameState: GameState;
-
-  async function leave() {
-    const message = gameData.host
-      ? "Are you sure you want to leave? Leaving will remove all other players from the game"
-      : "Are you sure you want to leave?";
-
-    const result = await confirmDialog("Confirm Leave", message);
-
-    if (!result) return;
-
-    // Kick self from game to leave
-    await doKick(gameData.id);
-
-    // Take back to the home scren
-    setHome();
-  }
 
   // Sends the host start action
   const start = () => doHostAction(HostAction.Start);
@@ -74,7 +54,7 @@
     <p class="desc">{gameData.config.text}</p>
 
     <div class="btn-row btn-row--fill">
-      <button class="btn" on:click={leave}>Leave</button>
+      <button class="btn" on:click={() => leave(gameData)}>Leave</button>
 
       {#if gameData.host}
         <!-- Theres an active timer add skip button -->
