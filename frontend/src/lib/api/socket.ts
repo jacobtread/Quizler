@@ -11,7 +11,6 @@ import {
 } from "$api/models";
 import { setHome } from "$stores/state";
 import { getServerURL } from "$api/http";
-import type { PartialRecord } from "$lib/utils/types";
 
 // Handler function that expects a specific server message type
 type MessageHandler<Type> = (msg: ServerMessageOf<Type>) => void;
@@ -27,7 +26,7 @@ interface RequestHandler<T> {
 // The next request ID to use
 let requestHandle: number = 0;
 // Handlers from requests awaiting responses
-let requestHandles: PartialRecord<number, RequestHandler<unknown>> = {};
+let requestHandles: Partial<Record<number, RequestHandler<unknown>>> = {};
 // Queue of messages that haven't yet been handled
 let messageQueue: ServerMessageSchema[] = [];
 
@@ -35,10 +34,8 @@ let messageQueue: ServerMessageSchema[] = [];
 let socket: WebSocket = createSocket();
 
 // Currently set message handlers for handling messages
-const messageHandlers: PartialRecord<
-  ServerMessage,
-  MessageHandler<unknown>
-> = {};
+const messageHandlers: Partial<Record<ServerMessage, MessageHandler<unknown>>> =
+  {};
 
 // Socket readiness state
 export const socketReady = writable<boolean>(false);
