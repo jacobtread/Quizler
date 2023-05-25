@@ -23,6 +23,8 @@
   export let scores: Record<SessionId, number>;
   export let gameState: GameState;
 
+  let skipCooldown = false;
+
   // Sends the host start action
   const start = () => doHostAction(HostAction.Start);
 
@@ -30,7 +32,11 @@
   const cancel = () => doHostAction(HostAction.Cancel);
 
   // Sends the host skip action
-  const skip = () => doHostAction(HostAction.Skip);
+  const skip = () => {
+    skipCooldown = true;
+    doHostAction(HostAction.Skip);
+    setTimeout(() => (skipCooldown = false), 300);
+  };
 </script>
 
 <main class="page page--middle page--overflow" transition:slide>
@@ -58,8 +64,12 @@
 
       {#if gameData.host}
         <!-- Theres an active timer add skip button -->
-        {#if timer.elapsed !== timer.total}
-          <button class="btn" on:click={skip}>Skip</button>
+        {#if gameState !== GameState.Lobby}
+          <button
+            class="btn"
+            disabled={skipCooldown || timer.elapsed === timer.total}
+            on:click={skip}>Skip</button
+          >
         {/if}
 
         {#if gameState === GameState.Starting}
