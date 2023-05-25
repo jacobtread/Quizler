@@ -48,7 +48,7 @@ Prebuilt binaries are available for download here
     - Quiz images can have the fitting property adjusted in order to decide how
     it will be shown on devices (Cover, Contain, Fit Width, Fit Height)
 - [x] Customizable timing
-    - You can customize the timing for inbetween each question and the time given for answering on a question by question basis
+    - You can customize the time given for answering on a question by question basis
 - [x] Customizable scoring
     - You can customize the min, max, and bonus score awarded for each question
 - [x] Easy shuffling

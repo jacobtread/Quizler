@@ -1,14 +1,19 @@
 <!-- Game view when the state is in the "Lobby" -->
 <script lang="ts">
   import { slide } from "svelte/transition";
-  import { leave } from "$api/actions";
+  import { doHostAction } from "$api/actions";
 
   import type { GameData } from "$pages/Game.svelte";
-  import type { TimerState } from "$lib/api/models";
+  import { HostAction, type TimerState } from "$lib/api/models";
   import { formatTime } from "$lib/utils/utils";
 
   export let timer: TimerState;
   export let gameData: GameData;
+
+  // Sends the host skip action
+  const skip = () => doHostAction(HostAction.Skip);
+  // Sends the host cancel action
+  const cancel = () => doHostAction(HostAction.Cancel);
 </script>
 
 <main class="page page--overflow" transition:slide>
@@ -21,6 +26,11 @@
 
   <div class="bottom">
     <p class="token">{gameData.token}</p>
+
+    {#if gameData.host}
+      <button class="btn btn--surface" on:click={skip}>Skip</button>
+      <button class="btn btn--surface" on:click={cancel}>Cancel</button>
+    {/if}
   </div>
 </main>
 
@@ -36,6 +46,7 @@
     align-items: center;
     border-top: 5px solid $surfaceLight;
     padding-left: 1rem;
+    gap: 1rem;
   }
 
   .quiz {

@@ -1,10 +1,5 @@
 import { defaultCreateData, defaultQuestion } from "$lib/constants";
-import {
-  NameFiltering,
-  QuestionType,
-  type Question,
-  type TimingConfig
-} from "$api/models";
+import { NameFiltering, QuestionType, type Question } from "$api/models";
 import { arraySwap, shuffleArray } from "$lib/utils/utils";
 import { writable, type Writable } from "svelte/store";
 
@@ -13,7 +8,6 @@ export interface CreateData {
   text: string;
   max_players: number;
   filtering: NameFiltering;
-  timing: TimingConfig;
   questions: Question[];
 }
 

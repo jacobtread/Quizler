@@ -1,5 +1,5 @@
 use crate::{
-    game::{GameConfig, GameTiming, GetImageMessage},
+    game::{GameConfig, GetImageMessage},
     games::{Games, GetGameMessage, PrepareGameMessage},
     session::Session,
     types::{Image, NameFiltering, Question},
@@ -80,7 +80,6 @@ pub struct GameConfigUpload {
     pub text: String,
     pub max_players: usize,
     pub filtering: NameFiltering,
-    pub timing: GameTiming,
     pub questions: Vec<Arc<Question>>,
 }
 
@@ -171,7 +170,6 @@ async fn create_quiz(mut payload: Multipart) -> Result<impl Responder, CreateErr
         text: config.text,
         max_players: config.max_players,
         filtering: config.filtering,
-        timing: config.timing,
         questions: config.questions,
         images,
     };

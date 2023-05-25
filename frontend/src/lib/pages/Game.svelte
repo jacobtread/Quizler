@@ -138,10 +138,6 @@
   socket.setHandler(ServerMessage.Question, async (msg) => {
     console.debug("Question message", msg);
     question = msg.question;
-    score = { ty: ScoreType.Incorrect };
-
-    // Host doesn't need to load images
-    if (gameData.host) return;
 
     // Preload the image
     preloadedImage = await preloadImage(gameData.token, question);
@@ -207,17 +203,17 @@
 
 {#if gameState === GameState.Finished && summary != null}
   <FinishedView {gameData} {summary} />
-{:else if gameData.host}
-  <LobbyView {gameData} {gameState} {players} {timer} {scores} />
-{:else if gameState === GameState.Lobby}
-  <Waiting {gameData} />
 {:else if gameState === GameState.Starting}
   <Starting {gameData} {timer} />
-{:else if gameState === GameState.AwaitingReady}
-  <Loading text="Waiting for other players..." />
 {:else if gameState === GameState.AwaitingAnswers && question != null}
   {#if !answered}
-    <QuestionView {question} {timer} {preloadedImage} bind:answered />
+    <QuestionView
+      {gameData}
+      {question}
+      {timer}
+      {preloadedImage}
+      bind:answered
+    />
   {:else if players.length !== 1}
     <!-- 
       Don't bother showing answered screen if only one player 
@@ -225,13 +221,14 @@
     -->
     <AnsweredView />
   {/if}
+{:else if gameState === GameState.AwaitingReady}
+  <Loading text="Waiting for other players..." />
+{:else if gameData.host}
+  <LobbyView {gameData} {gameState} {players} {scores} />
+{:else if gameState === GameState.Lobby}
+  <Waiting {gameData} />
 {:else if gameState === GameState.Marked}
-  {#if timer.elapsed >= timer.total * 0.25}
-    <!--  If 1/4 of the wait timer has been elapsed show the lobby view -->
-    <LobbyView {gameData} {gameState} {players} {timer} {scores} />
-  {:else}
-    <ScoreView {score} />
-  {/if}
+  <ScoreView {score} />
 {:else}
   <!-- Just dot for the message while waiting for a state -->
   <Loading text="..." />

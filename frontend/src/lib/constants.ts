@@ -25,10 +25,6 @@ const DEFAULT_ANSWER_TIME: number = 1000 * 15; /* 15s */
 export const MIN_ANSWER_TIME: number = 1000; /* 1s */
 export const MAX_ANSWER_TIME: number = 1000 * 60 * 30; /* 30mins */
 
-export const DEFAULT_WAIT_TIME = 1000 * 10; /* 10s */
-export const MIN_WAIT_TIME = 1000; /* 1s */
-export const MAX_WAIT_TIME = 1000 * 60 * 30; /* 30mins */
-
 const DEFAULT_BONUS_SCORE: number = 150;
 const DEFAULT_BONUS_TIME: number = 1000 * 3; /* 3s */
 export const MIN_BONUS_TIME = 1000; /* 1s */
@@ -50,9 +46,6 @@ export function defaultCreateData(): CreateData {
     text: DEFAULT_DESCRIPTION,
     max_players: MAX_MAX_PLAYERS,
     filtering: NameFiltering.High,
-    timing: {
-      wait_time: DEFAULT_WAIT_TIME
-    },
     questions: [defaultQuestion()]
   };
 }

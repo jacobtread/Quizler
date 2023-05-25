@@ -70,6 +70,8 @@ pub enum HostAction {
     Cancel,
     /// Skip the current waiting timer state
     Skip,
+    /// Progress to the next state
+    Next,
     /// Reset the game and all its state back to lobby
     Reset,
 }

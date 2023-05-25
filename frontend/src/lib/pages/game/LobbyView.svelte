@@ -7,36 +7,23 @@
   import {
     type PlayerData,
     type SessionId,
-    type TimerState,
     GameState,
     HostAction
   } from "$api/models";
 
-  import { formatTime } from "$lib/utils/utils";
-
   import ScoreTweened from "$components/TweenedValue.svelte";
   import type { GameData } from "$pages/Game.svelte";
 
-  export let timer: TimerState;
   export let gameData: GameData;
   export let players: PlayerData[];
   export let scores: Record<SessionId, number>;
   export let gameState: GameState;
 
-  let skipCooldown = false;
-
   // Sends the host start action
   const start = () => doHostAction(HostAction.Start);
 
-  // Sends the host cancel action
-  const cancel = () => doHostAction(HostAction.Cancel);
-
-  // Sends the host skip action
-  const skip = () => {
-    skipCooldown = true;
-    doHostAction(HostAction.Skip);
-    setTimeout(() => (skipCooldown = false), 300);
-  };
+  // Sends the next question action
+  const next = () => doHostAction(HostAction.Next);
 </script>
 
 <main class="page page--middle page--overflow" transition:slide>
@@ -45,15 +32,6 @@
       <h1 class="token">
         {gameData.token}
       </h1>
-      <p class="timing">
-        {#if gameState === GameState.Starting}
-          <span class="starting">Starting</span>
-        {/if}
-
-        {#if timer.elapsed !== timer.total}
-          <span class="time">{formatTime(timer)}</span>
-        {/if}
-      </p>
     </div>
 
     <h2 class="name">{gameData.config.name}</h2>
@@ -62,23 +40,12 @@
     <div class="btn-row btn-row--fill actions">
       <button class="btn" on:click={() => leave(gameData)}>Leave</button>
 
-      {#if gameData.host}
-        <!-- Theres an active timer add skip button -->
-        {#if gameState !== GameState.Lobby}
-          <button
-            class="btn"
-            disabled={skipCooldown || timer.elapsed === timer.total}
-            on:click={skip}>Skip</button
-          >
-        {/if}
-
-        {#if gameState === GameState.Starting}
-          <!-- Cancel started button for starting games -->
-          <button class="btn" on:click={cancel}>Cancel</button>
-        {:else if players.length > 0 && gameState === GameState.Lobby}
-          <!-- Start button if theres players in the game -->
-          <button class="btn" on:click={start}>Start</button>
-        {/if}
+      {#if gameState === GameState.Marked}
+        <!-- Cancel started button for starting games -->
+        <button class="btn" on:click={next}>Next</button>
+      {:else if players.length > 0 && gameState === GameState.Lobby}
+        <!-- Start button if theres players in the game -->
+        <button class="btn" on:click={start}>Start</button>
       {/if}
     </div>
 
@@ -87,9 +54,7 @@
         <tr>
           <th>Name</th>
           <th>Score</th>
-          {#if gameData.host}
-            <th>Actions</th>
-          {/if}
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -102,13 +67,11 @@
               <ScoreTweened value={scores[player.id] ?? 0} />
             </td>
             <!-- Host privilleges -->
-            {#if gameData.host}
-              <td class="player__action">
-                <button class="btn" on:click={() => doKick(player.id)}>
-                  Kick
-                </button>
-              </td>
-            {/if}
+            <td class="player__action">
+              <button class="btn" on:click={() => doKick(player.id)}>
+                Kick
+              </button>
+            </td>
           </tr>
         {/each}
       </tbody>
@@ -127,17 +90,6 @@
     display: flex;
     justify-content: space-between;
     width: 100%;
-  }
-
-  .timing {
-    display: flex;
-    flex: auto;
-    align-items: center;
-    justify-content: center;
-    gap: 1rem;
-    text-align: right;
-    font-size: 1rem;
-    color: #999;
   }
 
   .time {

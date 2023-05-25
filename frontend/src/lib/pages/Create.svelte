@@ -13,7 +13,6 @@
 
   import QuestionListItem from "$components/QuestionListItem.svelte";
   import FloatingLoader from "$components/FloatingLoader.svelte";
-  import TimeInput from "$components/TimeInput.svelte";
   import Import from "$components/icons/Import.svelte";
   import Back from "$components/icons/Back.svelte";
   import Play from "$components/icons/Play.svelte";
@@ -175,15 +174,7 @@
         maxlength={constants.MAX_DESCRIPTION_LENGTH}
       />
     </label>
-    <div class="field">
-      <span class="field__name">Wait Time</span>
-      <p class="field__desc">Time to wait between each question</p>
-      <TimeInput
-        bind:value={$createData.timing.wait_time}
-        min={constants.MIN_WAIT_TIME}
-        max={constants.MAX_WAIT_TIME}
-      />
-    </div>
+
     <label class="field">
       <span class="field__name">Max Players</span>
       <p class="field__desc">

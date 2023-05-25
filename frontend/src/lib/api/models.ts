@@ -47,12 +47,6 @@ export interface GameConfig {
   text: string;
 }
 
-// Quiz timing configuration
-export interface TimingConfig {
-  // Time to wait between each question
-  wait_time: number;
-}
-
 // Server error types
 export const enum ServerError {
   MalformedMessage = "MalformedMessage",
@@ -111,6 +105,7 @@ export const enum HostAction {
   Start = "Start",
   Cancel = "Cancel",
   Skip = "Skip",
+  Next = "Next",
   Reset = "Reset"
 }
 

@@ -10,7 +10,7 @@ use crate::{
 use actix::{Actor, ActorContext, Addr, AsyncContext, Context, Handler, Message};
 use log::debug;
 use rustrict::CensorStr;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use std::{
     collections::HashMap,
     sync::Arc,
@@ -132,15 +132,6 @@ pub enum GameState {
     Finished,
 }
 
-impl GameState {
-    fn requires_timing(&self) -> bool {
-        matches!(
-            self,
-            GameState::Starting | GameState::AwaitingAnswers | GameState::Marked
-        )
-    }
-}
-
 impl Game {
     /// Creates a new game instance
     pub fn new(
@@ -163,46 +154,31 @@ impl Game {
     }
 
     fn tick(&mut self, _ctx: &mut Context<Self>) {
-        // Handle states that have timing requirements
-        if self.state.requires_timing() {
-            // Sync the timer and don't continue the tick until the
-            // timer is complete
-            let complete = self.sync_timer();
-            if !complete {
-                return;
-            }
-        }
-
         match self.state {
-            // Ticking empty states that have no time based actions
-            GameState::Lobby | GameState::AwaitingReady | GameState::Finished => {}
-
             // Starting timer has completed we can now send
             // the first question to the players
             GameState::Starting => {
+                // Sync the timer and don't continue the tick until the
+                // timer is complete
+                if !self.sync_timer() {
+                    return;
+                }
                 self.question();
             }
 
             // Answers have been awaited
             GameState::AwaitingAnswers => {
+                // Sync the timer and don't continue the tick until the
+                // timer is complete
+                if !self.sync_timer() {
+                    return;
+                }
                 self.mark_answers();
                 self.marked();
             }
 
-            // Question has been marked, the game can now move
-            // to the next question
-            GameState::Marked => {
-                // Handle reaching the end of the questions
-                if self.question_index + 1 >= self.config.questions.len() {
-                    // Move to the finished state
-                    self.finished();
-                    return;
-                }
-
-                // Increase the question index
-                self.question_index += 1;
-                self.question();
-            }
+            // Handle states that don't require ticking
+            _ => {}
         }
     }
 
@@ -323,7 +299,25 @@ impl Game {
     /// This is called once `mark_answers` has been completed
     fn marked(&mut self) {
         self.set_state(GameState::Marked);
-        self.set_timer(Duration::from_millis(self.config.timing.wait_time as u64));
+    }
+
+    /// Handles progressing to the next state
+    fn next(&mut self) {
+        // Move to the next question
+        self.next_question();
+    }
+
+    fn next_question(&mut self) {
+        // Handle reaching the end of the questions
+        if self.question_index + 1 >= self.config.questions.len() {
+            // Move to the finished state
+            self.finished();
+            return;
+        }
+
+        // Increase the question index
+        self.question_index += 1;
+        self.question();
     }
 
     fn finished(&mut self) {
@@ -602,6 +596,7 @@ impl Handler<HostActionMessage> for Game {
             HostAction::Cancel => self.reset_state(),
             HostAction::Skip => self.skip_timer(),
             HostAction::Reset => self.reset_completely(),
+            HostAction::Next => self.next(),
         };
 
         Ok(())
@@ -826,9 +821,6 @@ pub struct GameConfig {
     /// Filtering on names
     #[serde(skip)]
     pub filtering: NameFiltering,
-    /// Timing data for different game events
-    #[serde(skip)]
-    pub timing: GameTiming,
     /// The game questions
     #[serde(skip)]
     pub questions: Vec<Arc<Question>>,
@@ -836,10 +828,4 @@ pub struct GameConfig {
     /// image data
     #[serde(skip)]
     pub images: HashMap<ImageRef, Image>,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct GameTiming {
-    /// The time to wait before displaying each question (ms)
-    pub wait_time: u32,
 }

@@ -5,10 +5,14 @@
     type Question,
     type TimerState,
     ClientMessage,
-    AnswerType
+    AnswerType,
+    HostAction
   } from "$api/models";
   import { formatTime } from "$lib/utils/utils";
+  import type { GameData } from "$pages/Game.svelte";
+  import { doHostAction } from "$lib/api/actions";
 
+  export let gameData: GameData;
   export let timer: TimerState;
   export let question: Question;
   export let answered: boolean;
@@ -60,9 +64,10 @@
   function preloadChild(target: HTMLElement, elm: HTMLImageElement) {
     target.appendChild(elm);
   }
-</script>
 
-<p class="time">{formatTime(timer)}</p>
+  // Sends the skip timer action
+  const skip = () => doHostAction(HostAction.Skip);
+</script>
 
 <main class="main">
   {#if preloadedImage !== null}
@@ -74,7 +79,12 @@
     {#if question.ty === QuestionType.Single}
       <div class="answers">
         {#each question.answers as answer, index}
-          <button class="answer btn" on:click={() => doAnswer(index)}>
+          <button
+            data-host={gameData.host}
+            class="answer btn btn--surface"
+            disabled={gameData.host}
+            on:click={() => doAnswer(index)}
+          >
             {answer.value}
           </button>
         {/each}
@@ -83,10 +93,11 @@
       <div class="answers">
         {#each question.answers as answer, index}
           <button
-            class="answer btn"
+            data-host={gameData.host}
+            class="answer btn btn--surface"
             class:answer--checked={answers.includes(index)}
-            disabled={answers.length >= question.max &&
-              !answers.includes(index)}
+            disabled={gameData.host ||
+              (answers.length >= question.max && !answers.includes(index))}
             on:click={() => select(index)}
           >
             {answer.value}
@@ -102,25 +113,46 @@
       </button>
     {/if}
   </div>
+  <div class="bottom">
+    <p class="token">{gameData.token}</p>
+    {#if gameData.host}
+      <button class="btn btn--surface" on:click={skip}>Skip</button>
+    {/if}
+    <p class="time">{formatTime(timer)}</p>
+  </div>
 </main>
 
 <style lang="scss">
   @import "../../../assets/scheme.scss";
 
+  .bottom {
+    width: 100%;
+    background-color: $surface;
+    padding: 0.5rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 5px solid $surfaceLight;
+  }
+
+  .token {
+    color: #fff;
+    font-weight: bold;
+    font-size: 1.5rem;
+  }
+
   .main {
     display: flex;
     flex-flow: column;
 
+    padding-top: 1rem;
+
     gap: 1rem;
     height: 100%;
     overflow: hidden;
-    padding: 1rem;
   }
 
   .time {
-    position: fixed;
-    right: 1rem;
-    top: 1rem;
     color: $primary;
     font-weight: bold;
     font-size: 2rem;
@@ -147,15 +179,15 @@
   }
 
   .content {
+    padding: 1rem;
+    margin-bottom: 0;
     display: flex;
     flex-flow: column;
-    min-height: 25vh;
+    background-color: $surface;
+    border-radius: 0.5rem;
+    margin: 0 1rem;
 
     flex: auto;
-
-    .text {
-      margin-top: 4rem;
-    }
   }
 
   .answers {
@@ -185,6 +217,11 @@
 
     &:disabled {
       opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    &[data-host="true"]:disabled {
+      opacity: 1;
       cursor: not-allowed;
     }
   }

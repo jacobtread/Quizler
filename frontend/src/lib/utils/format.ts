@@ -15,9 +15,6 @@ const fileFormatSchema = z.object({
   text: z.string(),
   max_players: z.number(),
   filtering: z.string(),
-  timing: z.object({
-    wait_time: z.number()
-  }),
   questions: z.array(questionSchema).min(1),
   images: z.array(
     z.object({
@@ -129,7 +126,6 @@ export async function loadQuizBlob(file: Blob): Promise<CreateData> {
     text: obj.text,
     max_players: obj.max_players,
     filtering: obj.filtering as NameFiltering,
-    questions: obj.questions,
-    timing: obj.timing
+    questions: obj.questions
   };
 }
