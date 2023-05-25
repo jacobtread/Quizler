@@ -43,9 +43,9 @@ export async function leave(gameData: GameData) {
 
   if (!result) return;
 
-  // Kick self from game to leave
-  doKick(gameData.id);
-
   // Take back to the home scren
   setHome();
+
+  // Kick self from game to leave
+  doKick(gameData.id);
 }
