@@ -95,6 +95,7 @@ export const enum GameState {
   Lobby = "Lobby",
   Starting = "Starting",
   AwaitingReady = "AwaitingReady",
+  PreQuestion = "PreQuestion",
   AwaitingAnswers = "AwaitingAnswers",
   Marked = "Marked",
   Finished = "Finished"

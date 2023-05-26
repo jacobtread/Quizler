@@ -46,6 +46,7 @@
   import ScoreView from "$pages/game/ScoreView.svelte";
   import Waiting from "$pages/game/Waiting.svelte";
   import Starting from "$pages/game/Starting.svelte";
+  import QuestionStarting from "$pages/game/QuestionStarting.svelte";
 
   import { onMount } from "svelte";
 
@@ -223,6 +224,8 @@
   {/if}
 {:else if gameState === GameState.AwaitingReady}
   <Loading text="Waiting for other players..." />
+{:else if gameState === GameState.PreQuestion}
+  <QuestionStarting {gameData} {timer} />
 {:else if gameData.host}
   <LobbyView {gameData} {gameState} {players} {scores} />
 {:else if gameState === GameState.Lobby}

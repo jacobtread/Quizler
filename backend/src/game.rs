@@ -122,6 +122,9 @@ pub enum GameState {
     /// The game is waiting for ready from all the players
     AwaitingReady,
 
+    /// The question is about to start
+    PreQuestion,
+
     /// The game has started and is waiting for answers
     AwaitingAnswers,
 
@@ -164,6 +167,20 @@ impl Game {
                     return;
                 }
                 self.question();
+            }
+
+            // Question is about to start
+            GameState::PreQuestion => {
+                // Sync the timer and don't continue the tick until the
+                // timer is complete
+                if !self.sync_timer() {
+                    return;
+                }
+
+                // Await answers for the question
+                self.set_state(GameState::AwaitingAnswers);
+                let question = self.current_question();
+                self.set_timer(Duration::from_millis(question.answer_time));
             }
 
             // Answers have been awaited
@@ -289,10 +306,9 @@ impl Game {
         if !all_ready || !self.host.ready {
             return;
         }
-
-        self.set_state(GameState::AwaitingAnswers);
-        let question = self.current_question();
-        self.set_timer(Duration::from_millis(question.answer_time));
+        const START_DURATION: Duration = Duration::from_secs(5);
+        self.set_state(GameState::PreQuestion);
+        self.set_timer(START_DURATION);
     }
 
     /// Handles progresing the state to [`GameState::Marked`].
