@@ -286,7 +286,7 @@ impl Game {
 
         // Check all players are ready
         let all_ready = self.players.iter().all(|player| player.ready);
-        if !all_ready {
+        if !all_ready || !self.host.ready {
             return;
         }
 
@@ -336,6 +336,9 @@ impl Game {
         self.players
             .iter_mut()
             .for_each(|player| player.ready = false);
+
+        // Reset host ready state
+        self.host.ready = false;
 
         // Send the question contents to the clients
         self.send_all(ServerMessage::Question { question });
@@ -614,9 +617,13 @@ impl Handler<ReadyMessage> for Game {
     type Result = ();
 
     fn handle(&mut self, msg: ReadyMessage, _ctx: &mut Self::Context) -> Self::Result {
-        let player = self.players.iter_mut().find(|player| player.id == msg.id);
-        if let Some(player) = player {
-            player.ready = true;
+        if msg.id == self.host.id {
+            self.host.ready = true;
+        } else {
+            let player = self.players.iter_mut().find(|player| player.id == msg.id);
+            if let Some(player) = player {
+                player.ready = true;
+            }
         }
 
         self.update_ready();
@@ -765,11 +772,17 @@ pub struct HostSession {
     id: SessionId,
     /// The addr to the session
     addr: Addr<Session>,
+    /// The player ready state
+    ready: bool,
 }
 
 impl HostSession {
     pub fn new(id: SessionId, addr: Addr<Session>) -> Self {
-        Self { id, addr }
+        Self {
+            id,
+            addr,
+            ready: false,
+        }
     }
 }
 

@@ -28,11 +28,9 @@
 
 <main class="page page--middle page--overflow" transition:slide>
   <div class="quiz">
-    <div class="head">
-      <h1 class="token">
-        {gameData.token}
-      </h1>
-    </div>
+    <h1 class="token">
+      {gameData.token}
+    </h1>
 
     <h2 class="name">{gameData.config.name}</h2>
     <p class="desc">{gameData.config.text}</p>
@@ -84,21 +82,6 @@
 
   .page {
     padding: 1rem;
-  }
-
-  .head {
-    display: flex;
-    justify-content: space-between;
-    width: 100%;
-  }
-
-  .time {
-    float: right;
-    font-weight: bold;
-    color: $primary;
-    font-size: 3rem;
-    text-align: center;
-    vertical-align: middle;
   }
 
   .quiz {
