@@ -1,7 +1,7 @@
 //! Contains the definitions of the Client and Server packets
 
 use crate::{
-    game::{GameConfig, GameState, TimeSync},
+    game::{GameConfig, GameState},
     games::GameToken,
     session::SessionId,
     types::{Answer, HostAction, Question, RemoveReason, Score, ServerError},
@@ -87,8 +87,10 @@ pub enum ServerMessage {
     GameState {
         state: GameState,
     },
-    /// Message for syncing the time between the game and clients
-    TimeSync(TimeSync),
+    /// Message for telling clients the current countdown timer
+    Timer {
+        value: u32,
+    },
     /// Question data for the next question
     Question {
         question: Arc<Question>,

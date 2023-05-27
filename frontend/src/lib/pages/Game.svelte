@@ -81,8 +81,8 @@
     if (timer.elapsed === timer.total) return;
 
     const time = performance.now();
-    const elapsed = time - lastUpdateTime;
 
+    const elapsed = time - lastUpdateTime;
     timer.elapsed += elapsed;
     lastUpdateTime = time;
 
@@ -128,10 +128,14 @@
     }
   });
 
-  socket.setHandler(ServerMessage.TimeSync, (msg) => {
+  socket.setHandler(ServerMessage.Timer, (msg) => {
     console.debug("Time sync message", msg);
+
     lastUpdateTime = performance.now();
-    timer = { total: msg.total, elapsed: msg.elapsed };
+
+    timer.total = msg.value;
+    timer.elapsed = 0;
+
     updateTimer();
   });
 

@@ -11,10 +11,11 @@
   export let timer: TimerState;
   export let gameData: GameData;
 
-  // Sends the host skip action
-  const skip = () => doHostAction(HostAction.Skip);
+  // Sends the next state action
+  const next = () => doHostAction(HostAction.Next);
+
   // Sends the host cancel action
-  const cancel = () => doHostAction(HostAction.Cancel);
+  const reset = () => doHostAction(HostAction.Reset);
 </script>
 
 <main class="page page--overflow" transition:slide>
@@ -35,9 +36,9 @@
 
     {#if gameData.host}
       {#if gameState === GameState.Starting}
-        <button class="btn btn--surface" on:click={cancel}>Cancel</button>
+        <button class="btn btn--surface" on:click={reset}>Cancel</button>
       {/if}
-      <button class="btn btn--surface" on:click={skip}>Skip</button>
+      <button class="btn btn--surface" on:click={next}>Skip</button>
     {/if}
   </div>
 </main>

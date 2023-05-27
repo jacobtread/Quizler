@@ -104,8 +104,6 @@ export const enum GameState {
 // Actions that hosts can send to the server
 export const enum HostAction {
   Start = "Start",
-  Cancel = "Cancel",
-  Skip = "Skip",
   Next = "Next",
   Reset = "Reset"
 }
@@ -250,7 +248,7 @@ export const enum ServerMessage {
   Ok = "Ok",
   PlayerData = "PlayerData",
   GameState = "GameState",
-  TimeSync = "TimeSync",
+  Timer = "Timer",
   Question = "Question",
   Scores = "Scores",
   Score = "Score",
@@ -265,7 +263,10 @@ export type ServerMessageSchema = {
   | { ty: ServerMessage.Joined; id: number; token: string; config: GameConfig }
   | { ty: ServerMessage.PlayerData; id: number; name: string }
   | { ty: ServerMessage.GameState; state: GameState }
-  | { ty: ServerMessage.TimeSync; total: number; elapsed: number }
+  | {
+      ty: ServerMessage.Timer;
+      value: number;
+    }
   | { ty: ServerMessage.Question; question: Question }
   | { ty: ServerMessage.Scores; scores: Scores }
   | { ty: ServerMessage.Score; score: Score }

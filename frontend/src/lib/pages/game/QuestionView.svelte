@@ -65,8 +65,8 @@
     target.appendChild(elm);
   }
 
-  // Sends the skip timer action
-  const skip = () => doHostAction(HostAction.Skip);
+  // Sends the next state action
+  const next = () => doHostAction(HostAction.Next);
 </script>
 
 <main class="main">
@@ -116,7 +116,7 @@
   <div class="bottom">
     <p class="token">{gameData.token}</p>
     {#if gameData.host}
-      <button class="btn btn--surface" on:click={skip}>Skip</button>
+      <button class="btn btn--surface" on:click={next}>Skip</button>
     {/if}
     <p class="time">{formatTime(timer)}</p>
   </div>

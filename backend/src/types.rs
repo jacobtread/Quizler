@@ -66,10 +66,6 @@ impl NameFiltering {
 pub enum HostAction {
     /// Begin the starting process
     Start,
-    /// Cancel the starting process
-    Cancel,
-    /// Skip the current waiting timer state
-    Skip,
     /// Progress to the next state
     Next,
     /// Reset the game and all its state back to lobby

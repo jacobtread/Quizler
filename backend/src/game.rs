@@ -42,12 +42,8 @@ pub struct GameTimer {
     start: Instant,
     /// The duration of time the timer is waiting for
     length: Duration,
-    /// Whether the game timer has already emitted
-    /// completion
+    /// Fast forwarding to skip completion
     complete: bool,
-    /// The current number of ticks that have been processed
-    /// (We only produce sync messages every 5 ticks (500ms))
-    tick: u8,
 }
 
 impl GameTimer {
@@ -56,7 +52,6 @@ impl GameTimer {
             start: Instant::now(),
             length: Duration::from_millis(0),
             complete: false,
-            tick: 0,
         }
     }
 
@@ -64,7 +59,6 @@ impl GameTimer {
         self.start = Instant::now();
         self.length = want;
         self.complete = false;
-        self.tick = 0;
     }
 
     #[inline]
@@ -72,11 +66,9 @@ impl GameTimer {
         self.start.elapsed()
     }
 
-    pub fn sync(&mut self) -> Option<TimeSync> {
-        self.tick += 1;
-
+    pub fn is_complete(&mut self) -> bool {
         if self.complete {
-            return None;
+            return true;
         }
 
         let elapsed = self.start.elapsed();
@@ -84,31 +76,8 @@ impl GameTimer {
         let total_ms = self.length.as_millis() as u32;
         let elapsed_ms = (elapsed.as_millis() as u32).min(total_ms);
 
-        // Update the complete state
-        if total_ms == elapsed_ms {
-            self.complete = true;
-        }
-
-        // Only send a sync message if we are complete or we
-        // are on the 5th tick
-        if self.tick != 5 && !self.complete {
-            return None;
-        }
-
-        self.tick = 0;
-
-        // Create the time sync data
-        Some(TimeSync {
-            total: total_ms,
-            elapsed: elapsed_ms,
-        })
+        total_ms == elapsed_ms
     }
-}
-
-#[derive(Debug, Serialize)]
-pub struct TimeSync {
-    pub total: u32,
-    pub elapsed: u32,
 }
 
 #[derive(Serialize, Clone, Copy, PartialEq, Eq)]
@@ -157,44 +126,54 @@ impl Game {
     }
 
     fn tick(&mut self, _ctx: &mut Context<Self>) {
+        // Only continue ticking if the state requires time syncing
+        if !matches!(
+            self.state,
+            GameState::Starting | GameState::PreQuestion | GameState::AwaitingAnswers
+        ) {
+            return;
+        }
+
+        // Check if the timer is complete
+        if !self.timer.is_complete() {
+            return;
+        }
+
+        self.next_state();
+    }
+
+    fn next_state(&mut self) {
         match self.state {
-            // Starting timer has completed we can now send
-            // the first question to the players
+            // Next state after lobby is starting
+            GameState::Lobby => {
+                const START_DURATION: Duration = Duration::from_secs(5);
+                self.set_state(GameState::Starting);
+                self.set_timer(START_DURATION);
+            }
+
+            // Next state after starting is question
             GameState::Starting => {
-                // Sync the timer and don't continue the tick until the
-                // timer is complete
-                if !self.sync_timer() {
-                    return;
-                }
                 self.question();
             }
 
-            // Question is about to start
+            // Next state after pre-question is awaiting answers
             GameState::PreQuestion => {
-                // Sync the timer and don't continue the tick until the
-                // timer is complete
-                if !self.sync_timer() {
-                    return;
-                }
-
                 // Await answers for the question
                 self.set_state(GameState::AwaitingAnswers);
                 let question = self.current_question();
                 self.set_timer(Duration::from_millis(question.answer_time));
             }
 
-            // Answers have been awaited
+            // Next state after awaiting answers is marking
             GameState::AwaitingAnswers => {
-                // Sync the timer and don't continue the tick until the
-                // timer is complete
-                if !self.sync_timer() {
-                    return;
-                }
                 self.mark_answers();
-                self.marked();
             }
 
-            // Handle states that don't require ticking
+            // Next state after marking is the next question
+            GameState::Marked => {
+                // Move to the next question
+                self.next_question();
+            }
             _ => {}
         }
     }
@@ -213,35 +192,15 @@ impl Game {
         self.host.addr.do_send(message);
     }
 
-    /// Syncronizes the timers between the clients and the server
-    /// returnig whether the current timer is complete
-    fn sync_timer(&mut self) -> bool {
-        if let Some(sync) = self.timer.sync() {
-            self.send_all(ServerMessage::TimeSync(sync));
-        }
-        self.timer.complete
-    }
-
-    /// Skips the current timer ahead to the ending
-    fn skip_timer(&mut self) {
-        let total_ms = self.timer.length.as_millis() as u32;
-        self.send_all(ServerMessage::TimeSync(TimeSync {
-            total: total_ms,
-            elapsed: total_ms,
-        }));
-        self.timer.complete = true;
-    }
-
     /// Sets the current timer waiting duration
     fn set_timer(&mut self, duration: Duration) {
         // Set timer duration
         self.timer.set(duration);
 
         // Send initialize time sync message
-        self.send_all(ServerMessage::TimeSync(TimeSync {
-            total: duration.as_millis() as u32,
-            elapsed: 0,
-        }));
+        self.send_all(ServerMessage::Timer {
+            value: duration.as_millis() as u32,
+        });
     }
 
     /// Sets the current game state to the provided `state` and
@@ -250,13 +209,6 @@ impl Game {
     fn set_state(&mut self, state: GameState) {
         self.state = state;
         self.send_all(ServerMessage::GameState { state });
-    }
-
-    /// Resets the game state to lobby and resets the game timer
-    /// by skipping it to the end time
-    fn reset_state(&mut self) {
-        self.set_state(GameState::Lobby);
-        self.skip_timer();
     }
 
     /// Resets the game state and all the player data to its initial values
@@ -272,15 +224,7 @@ impl Game {
             player.score = 0;
         }
 
-        self.reset_state();
-    }
-
-    /// Handles progresing the state to [`GameState::Starting`].
-    /// This is called when the host starts the game
-    fn start(&mut self) {
-        const START_DURATION: Duration = Duration::from_secs(5);
-        self.set_state(GameState::Starting);
-        self.set_timer(START_DURATION);
+        self.set_state(GameState::Lobby);
     }
 
     /// Handles updating state post removing a player
@@ -311,33 +255,18 @@ impl Game {
         self.set_timer(START_DURATION);
     }
 
-    /// Handles progresing the state to [`GameState::Marked`].
-    /// This is called once `mark_answers` has been completed
-    fn marked(&mut self) {
-        self.set_state(GameState::Marked);
-    }
-
-    /// Handles progressing to the next state
-    fn next(&mut self) {
-        // Move to the next question
-        self.next_question();
-    }
-
     fn next_question(&mut self) {
         // Handle reaching the end of the questions
         if self.question_index + 1 >= self.config.questions.len() {
             // Move to the finished state
-            self.finished();
+            self.set_state(GameState::Finished);
+
             return;
         }
 
         // Increase the question index
         self.question_index += 1;
         self.question();
-    }
-
-    fn finished(&mut self) {
-        self.set_state(GameState::Finished);
     }
 
     fn current_question(&self) -> Arc<Question> {
@@ -386,7 +315,10 @@ impl Game {
         }
 
         // Update everyones scores
-        self.send_all(ServerMessage::Scores { scores })
+        self.send_all(ServerMessage::Scores { scores });
+
+        // Set state to marked
+        self.set_state(GameState::Marked);
     }
 
     fn mark_answer(player: &PlayerSession, question: &Question, question_index: usize) -> Score {
@@ -611,11 +543,9 @@ impl Handler<HostActionMessage> for Game {
         }
 
         match msg.action {
-            HostAction::Start => self.start(),
-            HostAction::Cancel => self.reset_state(),
-            HostAction::Skip => self.skip_timer(),
+            HostAction::Start => self.next_state(),
             HostAction::Reset => self.reset_completely(),
-            HostAction::Next => self.next(),
+            HostAction::Next => self.next_state(),
         };
 
         Ok(())
@@ -776,7 +706,7 @@ impl Handler<PlayerAnswerMessage> for Game {
             .all(|player| player.answers[self.question_index].is_some());
 
         if all_answered {
-            self.skip_timer();
+            self.next_state();
         }
 
         Ok(())
