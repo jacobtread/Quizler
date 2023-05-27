@@ -56,14 +56,6 @@
     text-shadow: 0 3px 1px darken($color: $partialStart, $amount: 25);
   }
 
-  .content {
-    padding: 1rem;
-    border-radius: 1rem;
-    width: 100%;
-    max-width: 32rem;
-    margin: 1rem auto;
-  }
-
   .text {
     font-size: 1.25rem;
 

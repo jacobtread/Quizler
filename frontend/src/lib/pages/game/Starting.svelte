@@ -4,9 +4,10 @@
   import { doHostAction } from "$api/actions";
 
   import type { GameData } from "$pages/Game.svelte";
-  import { HostAction, type TimerState } from "$lib/api/models";
+  import { GameState, HostAction, type TimerState } from "$lib/api/models";
   import { formatTime } from "$lib/utils/utils";
 
+  export let gameState: GameState;
   export let timer: TimerState;
   export let gameData: GameData;
 
@@ -21,7 +22,12 @@
     {#if timer.elapsed !== timer.total}
       <span class="time">{formatTime(timer)}</span>
     {/if}
-    <p class="text">Get ready, the quiz is about to start.</p>
+
+    {#if gameState === GameState.Starting}
+      <p class="text">Get ready, the quiz is about to start.</p>
+    {:else}
+      <p class="text">Get ready to answer</p>
+    {/if}
   </div>
 
   <div class="bottom">
@@ -29,7 +35,9 @@
 
     {#if gameData.host}
       <button class="btn btn--surface" on:click={skip}>Skip</button>
-      <button class="btn btn--surface" on:click={cancel}>Cancel</button>
+      {#if gameState === GameState.Starting}
+        <button class="btn btn--surface" on:click={cancel}>Cancel</button>
+      {/if}
     {/if}
   </div>
 </main>
@@ -61,7 +69,6 @@
     background: linear-gradient(to bottom right, $startingStart, $startingEnd);
   }
 
-  .title,
   .time {
     font-size: 3rem;
 
@@ -71,14 +78,6 @@
 
   .time {
     font-size: 5rem;
-  }
-
-  .content {
-    padding: 1rem;
-    border-radius: 1rem;
-    width: 100%;
-    max-width: 32rem;
-    margin: 1rem auto;
   }
 
   .text {
