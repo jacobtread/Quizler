@@ -223,4 +223,32 @@
       display: none;
     }
   }
+
+  @media screen and (max-height: 48rem) {
+    .github {
+      display: none;
+    }
+  }
+
+  @media screen and (max-height: 42rem) {
+    .logo :global(> svg) {
+      max-height: 6rem;
+      max-width: none;
+      padding: 1rem;
+    }
+
+    .logo {
+      margin: 0 auto;
+    }
+
+    .main {
+      gap: 0;
+    }
+  }
+
+  @media screen and (max-height: 35rem) {
+    .logo {
+      display: none;
+    }
+  }
 </style>
