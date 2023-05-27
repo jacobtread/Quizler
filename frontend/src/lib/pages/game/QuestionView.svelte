@@ -105,7 +105,7 @@
         {/each}
       </div>
       <button
-        class="btn submit"
+        class="btn btn btn--surface submit"
         on:click={doAnswers}
         disabled={answers.length < question.min}
       >
