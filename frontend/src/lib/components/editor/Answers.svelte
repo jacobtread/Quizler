@@ -3,12 +3,10 @@
 
   import { QuestionType, type Question } from "$lib/api/models";
 
-  import { arraySwap, shuffleArray } from "$lib/utils/utils";
+  import { shuffleArray } from "$lib/utils/utils";
 
   import Checkbox from "$components/Checkbox.svelte";
   import Delete from "$components/icons/Delete.svelte";
-  import ArrowUp from "$components/icons/ArrowUp.svelte";
-  import ArrowDown from "$components/icons/ArrowDown.svelte";
 
   import * as constants from "$lib/constants";
 
@@ -31,14 +29,6 @@
     question.answers = question.answers;
   }
 
-  const moveUp = (index: number) => {
-    question.answers = arraySwap(question.answers, index, index - 1);
-  };
-
-  const moveDown = (index: number) => {
-    question.answers = arraySwap(question.answers, index, index + 1);
-  };
-
   function removeAnswer(index: number) {
     question.answers = question.answers.filter(
       (_, valueIndex) => valueIndex != index
@@ -58,24 +48,6 @@
           <Checkbox bind:value={answer.correct} />
         </div>
 
-        <div class="answer__actions">
-          <button
-            on:click={() => moveUp(index)}
-            disabled={index <= 0}
-            class="btn btn--icon-only btn--surface btn-small arrow"
-          >
-            <ArrowUp />
-          </button>
-
-          <button
-            on:click={() => moveDown(index)}
-            disabled={index + 1 >= question.answers.length}
-            class="btn btn--icon-only btn--surface btn-small arrow"
-          >
-            <ArrowDown />
-          </button>
-        </div>
-
         <input
           class="answer__question input"
           type="text"
@@ -86,29 +58,29 @@
         <button
           disabled={question.answers.length == 1}
           on:click={() => removeAnswer(index)}
-          class="btn btn--icon-only"
+          class="btn btn--surface btn--icon-only"
         >
           <Delete />
         </button>
       </div>
     {/each}
+  </div>
 
-    <div class="field-group">
-      <button
-        class="btn"
-        on:click={addAnswer}
-        disabled={question.answers.length >= constants.MAX_ANSWERS}
-      >
-        Add Answer
-      </button>
-      <button
-        class="btn"
-        on:click={shuffleAnswers}
-        disabled={question.answers.length <= 1}
-      >
-        Shuffle
-      </button>
-    </div>
+  <div class="field-group">
+    <button
+      class="btn"
+      on:click={addAnswer}
+      disabled={question.answers.length >= constants.MAX_ANSWERS}
+    >
+      Add Answer
+    </button>
+    <button
+      class="btn"
+      on:click={shuffleAnswers}
+      disabled={question.answers.length <= 1}
+    >
+      Shuffle
+    </button>
   </div>
 {/if}
 
@@ -116,25 +88,29 @@
   @import "../../../assets/scheme.scss";
 
   .answers {
-    display: flex;
-    flex-flow: column;
-    gap: 1rem;
     margin-bottom: 1rem;
+
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
   }
 
   .answer {
+    background-color: $surface;
+    padding: 0.5rem 1rem;
     display: flex;
     align-items: stretch;
     gap: 1rem;
+    border-radius: 0.5rem;
+
+    &:nth-child(odd):last-child {
+      grid-column-start: 1;
+      grid-column-end: 3;
+    }
 
     &__check {
       align-self: center;
-    }
-
-    &__actions {
-      display: flex;
-      flex-flow: column;
-      gap: 0.5rem;
+      line-height: 0;
     }
 
     &__question {
@@ -151,6 +127,17 @@
     background-color: $surfaceLight;
     border-radius: 0.25rem;
     font-size: 1rem;
-    line-height: 1.5;
+    line-height: 1;
+  }
+
+  @media screen and (max-width: 48rem) {
+    .answers {
+      grid-template-columns: 1fr;
+    }
+
+    .answer:nth-child(odd):last-child {
+      grid-column-start: 1;
+      grid-column-end: 2;
+    }
   }
 </style>

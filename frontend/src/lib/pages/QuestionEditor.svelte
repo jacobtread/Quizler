@@ -104,7 +104,8 @@
     <textarea
       class="question__text input"
       cols="30"
-      rows="10"
+      rows="2"
+      maxlength={constants.MAX_QUESTION_LENGTH}
       bind:value={question.text}
     />
   </div>

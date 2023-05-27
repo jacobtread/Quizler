@@ -21,6 +21,8 @@ export const MAX_ANSWERS: number = 8;
 
 export const MAX_QUESTIONS: number = 50;
 
+export const MAX_QUESTION_LENGTH = 400;
+
 const DEFAULT_ANSWER_TIME: number = 1000 * 15; /* 15s */
 export const MIN_ANSWER_TIME: number = 1000; /* 1s */
 export const MAX_ANSWER_TIME: number = 1000 * 60 * 30; /* 30mins */
