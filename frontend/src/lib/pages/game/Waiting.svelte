@@ -68,4 +68,10 @@
     font-weight: bold;
     font-size: 1.5rem;
   }
+
+  @media screen and (max-width: 48rem) {
+    .title {
+      font-size: 2rem;
+    }
+  }
 </style>
