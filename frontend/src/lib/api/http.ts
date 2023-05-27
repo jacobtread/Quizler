@@ -11,11 +11,14 @@ import type { CreatedResponse, Question } from "./models";
  * @returns The created URL
  */
 export function getServerURL(path: string): URL {
-  return new URL(
-    path,
-    // Use localhost for dev environments otherwise extract from the origin
-    import.meta.env.DEV ? "http://localhost" : window.location.origin
-  );
+  const url = new URL(path, window.location.origin);
+
+  if (import.meta.env.DEV) {
+    // Replace the server port for dev environment
+    url.port = "80";
+  }
+
+  return url;
 }
 
 /**
