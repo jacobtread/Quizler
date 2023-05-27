@@ -19,9 +19,6 @@
   export let scores: Record<SessionId, number>;
   export let gameState: GameState;
 
-  // Sends the host start action
-  const start = () => doHostAction(HostAction.Start);
-
   // Sends the next question action
   const next = () => doHostAction(HostAction.Next);
 </script>
@@ -43,7 +40,7 @@
         <button class="btn" on:click={next}>Next</button>
       {:else if players.length > 0 && gameState === GameState.Lobby}
         <!-- Start button if theres players in the game -->
-        <button class="btn" on:click={start}>Start</button>
+        <button class="btn" on:click={next}>Start</button>
       {/if}
     </div>
 

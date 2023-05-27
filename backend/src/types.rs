@@ -64,8 +64,6 @@ impl NameFiltering {
 /// session of a game
 #[derive(Debug, Copy, Clone, Deserialize)]
 pub enum HostAction {
-    /// Begin the starting process
-    Start,
     /// Progress to the next state
     Next,
     /// Reset the game and all its state back to lobby

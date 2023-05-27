@@ -543,7 +543,6 @@ impl Handler<HostActionMessage> for Game {
         }
 
         match msg.action {
-            HostAction::Start => self.next_state(),
             HostAction::Reset => self.reset_completely(),
             HostAction::Next => self.next_state(),
         };
