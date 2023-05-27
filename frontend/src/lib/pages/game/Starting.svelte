@@ -34,10 +34,10 @@
     <p class="token">{gameData.token}</p>
 
     {#if gameData.host}
-      <button class="btn btn--surface" on:click={skip}>Skip</button>
       {#if gameState === GameState.Starting}
         <button class="btn btn--surface" on:click={cancel}>Cancel</button>
       {/if}
+      <button class="btn btn--surface" on:click={skip}>Skip</button>
     {/if}
   </div>
 </main>
