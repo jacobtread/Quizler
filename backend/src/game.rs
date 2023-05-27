@@ -7,7 +7,7 @@ use crate::{
         RemoveReason, Score, ServerError,
     },
 };
-use actix::{Actor, ActorContext, Addr, AsyncContext, Context, Handler, Message};
+use actix::{Actor, ActorContext, Addr, AsyncContext, Context, Handler, Message, SpawnHandle};
 use log::debug;
 use rustrict::CensorStr;
 use serde::Serialize;
@@ -31,53 +31,12 @@ pub struct Game {
     state: GameState,
     /// The index of the current question
     question_index: usize,
-    /// Game timer
-    timer: GameTimer,
-    /// Address to the games manager
-    games: Addr<Games>,
-}
 
-pub struct GameTimer {
-    /// The start time for the timer
-    start: Instant,
-    /// The duration of time the timer is waiting for
-    length: Duration,
-    /// Fast forwarding to skip completion
-    complete: bool,
-}
+    /// Spawn handle for delayed tasks
+    task_handle: Option<SpawnHandle>,
 
-impl GameTimer {
-    pub fn new() -> Self {
-        Self {
-            start: Instant::now(),
-            length: Duration::from_millis(0),
-            complete: false,
-        }
-    }
-
-    pub fn set(&mut self, want: Duration) {
-        self.start = Instant::now();
-        self.length = want;
-        self.complete = false;
-    }
-
-    #[inline]
-    pub fn elapsed(&self) -> Duration {
-        self.start.elapsed()
-    }
-
-    pub fn is_complete(&mut self) -> bool {
-        if self.complete {
-            return true;
-        }
-
-        let elapsed = self.start.elapsed();
-
-        let total_ms = self.length.as_millis() as u32;
-        let elapsed_ms = (elapsed.as_millis() as u32).min(total_ms);
-
-        total_ms == elapsed_ms
-    }
+    /// Start time updated for each question
+    start_time: Instant,
 }
 
 #[derive(Serialize, Clone, Copy, PartialEq, Eq)]
@@ -111,7 +70,6 @@ impl Game {
         host_id: SessionId,
         host_addr: Addr<Session>,
         config: Arc<GameConfig>,
-        games: Addr<Games>,
     ) -> Self {
         Self {
             token,
@@ -119,36 +77,46 @@ impl Game {
             players: Default::default(),
             config,
             state: GameState::Lobby,
-            timer: GameTimer::new(),
             question_index: 0,
-            games,
+            task_handle: None,
+            start_time: Instant::now(),
         }
     }
 
-    fn tick(&mut self, _ctx: &mut Context<Self>) {
-        // Only continue ticking if the state requires time syncing
-        if !matches!(
-            self.state,
-            GameState::Starting | GameState::PreQuestion | GameState::AwaitingAnswers
-        ) {
-            return;
-        }
+    /// Creates a new delayed task to move to the next state once the provided
+    /// duration has passed. This updates the timer state for clients aswell
+    ///
+    /// `duration` The duration to wait before moving states
+    /// `ctx`      The actor context
+    fn timed_next_state(&mut self, duration: Duration, ctx: &mut Context<Self>) {
+        self.task_handle = Some(ctx.run_later(duration, |act, ctx| {
+            // Clear the task handle
+            act.task_handle = None;
 
-        // Check if the timer is complete
-        if !self.timer.is_complete() {
-            return;
-        }
+            // Move to the next state
+            act.next_state(ctx);
+        }));
 
-        self.next_state();
+        // Send timer message with the duration time
+        self.send_all(ServerMessage::Timer {
+            value: duration.as_millis() as u32,
+        });
     }
 
-    fn next_state(&mut self) {
+    /// Moves the game to the next state based on its current state
+    fn next_state(&mut self, ctx: &mut Context<Self>) {
+        // If a task handle still exists cancel it
+        if let Some(task_handle) = self.task_handle.take() {
+            ctx.cancel_future(task_handle);
+        }
+
         match self.state {
             // Next state after lobby is starting
             GameState::Lobby => {
                 const START_DURATION: Duration = Duration::from_secs(5);
+
                 self.set_state(GameState::Starting);
-                self.set_timer(START_DURATION);
+                self.timed_next_state(START_DURATION, ctx);
             }
 
             // Next state after starting is question
@@ -156,12 +124,23 @@ impl Game {
                 self.question();
             }
 
+            // Next state after awaiting ready is pre question
+            GameState::AwaitingReady => {
+                const START_DURATION: Duration = Duration::from_secs(5);
+                self.set_state(GameState::PreQuestion);
+                self.timed_next_state(START_DURATION, ctx);
+            }
+
             // Next state after pre-question is awaiting answers
             GameState::PreQuestion => {
                 // Await answers for the question
                 self.set_state(GameState::AwaitingAnswers);
+
+                // Assign the question start time
+                self.start_time = Instant::now();
+
                 let question = self.current_question();
-                self.set_timer(Duration::from_millis(question.answer_time));
+                self.timed_next_state(Duration::from_millis(question.answer_time), ctx);
             }
 
             // Next state after awaiting answers is marking
@@ -174,7 +153,11 @@ impl Game {
                 // Move to the next question
                 self.next_question();
             }
-            _ => {}
+
+            // Next state after finished is a reset game
+            GameState::Finished => {
+                self.reset_completely();
+            }
         }
     }
 
@@ -190,17 +173,6 @@ impl Game {
 
         // Send the message to the host
         self.host.addr.do_send(message);
-    }
-
-    /// Sets the current timer waiting duration
-    fn set_timer(&mut self, duration: Duration) {
-        // Set timer duration
-        self.timer.set(duration);
-
-        // Send initialize time sync message
-        self.send_all(ServerMessage::Timer {
-            value: duration.as_millis() as u32,
-        });
     }
 
     /// Sets the current game state to the provided `state` and
@@ -227,8 +199,8 @@ impl Game {
     }
 
     /// Handles updating state post removing a player
-    fn on_remove(&mut self) {
-        self.update_ready();
+    fn on_remove(&mut self, ctx: &mut Context<Self>) {
+        self.update_ready(ctx);
 
         // Reset the game if everyone disconected while in progress
         if self.state != GameState::Finished && self.players.is_empty() {
@@ -238,7 +210,7 @@ impl Game {
 
     /// Updates the current state checking if all the players are ready
     /// then if they are progresses the state to [`GameState::AwaitingAnswers`]
-    fn update_ready(&mut self) {
+    fn update_ready(&mut self, ctx: &mut Context<Self>) {
         // Ignore if we aren't expecting ready states
         if self.state != GameState::AwaitingReady {
             return;
@@ -249,9 +221,8 @@ impl Game {
         if !all_ready || !self.host.ready {
             return;
         }
-        const START_DURATION: Duration = Duration::from_secs(5);
-        self.set_state(GameState::PreQuestion);
-        self.set_timer(START_DURATION);
+
+        self.next_state(ctx)
     }
 
     fn next_question(&mut self) {
@@ -259,7 +230,6 @@ impl Game {
         if self.question_index + 1 >= self.config.questions.len() {
             // Move to the finished state
             self.set_state(GameState::Finished);
-
             return;
         }
 
@@ -321,19 +291,12 @@ impl Game {
 impl Actor for Game {
     type Context = Context<Self>;
 
-    fn started(&mut self, ctx: &mut Self::Context) {
-        const TICK_INTERVAL: Duration = Duration::from_millis(100);
-
-        // Run the tick function every 100ms
-        ctx.run_interval(TICK_INTERVAL, Self::tick);
-    }
-
     /// Handle stopping of a game actor
     fn stopped(&mut self, _ctx: &mut Self::Context) {
         debug!("Game stopped: {}", self.token);
 
         // Remove the game from the list of games
-        self.games.do_send(RemoveGameMessage { token: self.token });
+        Games::get().do_send(RemoveGameMessage { token: self.token });
 
         // Tell all the players they've been kicked
         for player in &self.players {
@@ -453,7 +416,7 @@ pub struct HostActionMessage {
 impl Handler<HostActionMessage> for Game {
     type Result = Result<(), ServerError>;
 
-    fn handle(&mut self, msg: HostActionMessage, _ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: HostActionMessage, ctx: &mut Self::Context) -> Self::Result {
         // Handle messages that aren't from the game host
         if self.host.id != msg.id {
             return Err(ServerError::InvalidPermission);
@@ -461,7 +424,7 @@ impl Handler<HostActionMessage> for Game {
 
         match msg.action {
             HostAction::Reset => self.reset_completely(),
-            HostAction::Next => self.next_state(),
+            HostAction::Next => self.next_state(ctx),
         };
 
         Ok(())
@@ -478,7 +441,7 @@ pub struct ReadyMessage {
 impl Handler<ReadyMessage> for Game {
     type Result = ();
 
-    fn handle(&mut self, msg: ReadyMessage, _ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: ReadyMessage, ctx: &mut Self::Context) -> Self::Result {
         if msg.id == self.host.id {
             self.host.ready = true;
         } else {
@@ -488,7 +451,7 @@ impl Handler<ReadyMessage> for Game {
             }
         }
 
-        self.update_ready();
+        self.update_ready(ctx);
     }
 }
 
@@ -568,7 +531,7 @@ impl Handler<RemovePlayerMessage> for Game {
         // Tell the session itself that its been kicked
         target.addr.do_send(ClearGameMessage);
 
-        self.on_remove();
+        self.on_remove(ctx);
 
         Ok(())
     }
@@ -587,8 +550,8 @@ pub struct PlayerAnswerMessage {
 impl Handler<PlayerAnswerMessage> for Game {
     type Result = Result<(), ServerError>;
 
-    fn handle(&mut self, msg: PlayerAnswerMessage, _ctx: &mut Self::Context) -> Self::Result {
-        let elapsed = self.timer.elapsed();
+    fn handle(&mut self, msg: PlayerAnswerMessage, ctx: &mut Self::Context) -> Self::Result {
+        let elapsed = self.start_time.elapsed();
 
         // Answers are not being accepted at the current time
         if self.state != GameState::AwaitingAnswers {
@@ -622,7 +585,7 @@ impl Handler<PlayerAnswerMessage> for Game {
             .all(|player| player.answers[self.question_index].has_answer());
 
         if all_answered {
-            self.next_state();
+            self.next_state(ctx);
         }
 
         Ok(())

@@ -214,7 +214,7 @@ pub struct InitializedMessage {
 impl Handler<InitializeMessage> for Games {
     type Result = Result<InitializedMessage, ServerError>;
 
-    fn handle(&mut self, msg: InitializeMessage, ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: InitializeMessage, _ctx: &mut Self::Context) -> Self::Result {
         // Find the config data from the pre init list
         let prep = self
             .preparing
@@ -228,7 +228,7 @@ impl Handler<InitializeMessage> for Games {
         // Create a new game token
         let token = GameToken::unique_token(&self.games);
 
-        let game = Game::new(token, msg.id, msg.addr, config.clone(), ctx.address()).start();
+        let game = Game::new(token, msg.id, msg.addr, config.clone()).start();
         self.games.insert(token, game.clone());
 
         Ok(InitializedMessage {
