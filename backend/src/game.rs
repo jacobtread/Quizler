@@ -217,8 +217,7 @@ impl Game {
 
         for player in self.players.iter_mut() {
             // Fill the answers and scores with None
-            player.answers.fill(None);
-            player.results.fill(None);
+            player.answers.fill(PlayerAnswer::default());
 
             // Reset the player score
             player.score = 0;
@@ -300,14 +299,11 @@ impl Game {
         let mut scores = HashMap::with_capacity(self.players.len());
 
         for player in &mut self.players {
-            // Mark the player question
-            let score: Score = Self::mark_answer(player, &question, self.question_index);
+            let answer = &mut player.answers[self.question_index];
+            let score = answer.mark(&question);
 
             // Increase the player score
             player.score += score.value();
-
-            // Set the stored result
-            player.results[self.question_index] = Some(score);
 
             player.addr.do_send(ServerMessage::Score { score });
 
@@ -319,85 +315,6 @@ impl Game {
 
         // Set state to marked
         self.set_state(GameState::Marked);
-    }
-
-    fn mark_answer(player: &PlayerSession, question: &Question, question_index: usize) -> Score {
-        let answer = match &player.answers[question_index] {
-            // Player answered the question
-            Some(value) => value,
-            // Player didn't answer the question
-            None => return Score::Incorrect,
-        };
-
-        let elapsed_ms = answer.elapsed.as_millis() as u32;
-        let is_bonus = elapsed_ms <= question.bonus_score_time;
-
-        // Calculate the % amount between the min and max answer times
-        let answer_time_percent = 1.0 - ((elapsed_ms as f32) / (question.answer_time as f32));
-
-        let scoring = &question.scoring;
-
-        // The base score from the answer time and the bonus
-        let mut base_score = scoring.min_score
-            + ((scoring.max_score - scoring.min_score) as f32 * answer_time_percent) as u32;
-
-        // Append bonus score amount
-        if is_bonus {
-            base_score += scoring.bonus_score;
-        }
-
-        use Answer as A;
-        use QuestionData as Q;
-
-        match (&answer.answer, &question.data) {
-            (A::Single { answer }, Q::Single { answers, .. }) => {
-                let is_valid = answers
-                    .get(*answer)
-                    .map(|value| value.correct)
-                    .unwrap_or(false);
-
-                if is_valid {
-                    Score::Correct { value: base_score }
-                } else {
-                    Score::Incorrect
-                }
-            }
-            (
-                A::Multiple {
-                    answers: answer_indexes,
-                },
-                Q::Multiple { answers, max, min },
-            ) => {
-                let mut correct = 0;
-                for answer in answer_indexes {
-                    if let Some(answer) = answers.get(*answer) {
-                        if answer.correct {
-                            correct += 1;
-                        }
-                    }
-                }
-
-                // % correct out of total answers
-                let percent = correct as f32 / *max as f32;
-
-                if correct >= *max {
-                    Score::Correct { value: base_score }
-                } else if correct < *min {
-                    Score::Incorrect
-                } else {
-                    let score = ((base_score as f32) * percent).round() as u32;
-                    Score::Partial {
-                        value: score,
-                        count: correct as u32,
-                        total: *max as u32,
-                    }
-                }
-            }
-
-            // Mismatched types shouldn't be possible but
-            // will be marked as incorrect
-            _ => Score::Incorrect,
-        }
     }
 }
 
@@ -693,7 +610,7 @@ impl Handler<PlayerAnswerMessage> for Game {
         }
 
         // Set the player answer
-        player.answers[self.question_index] = Some(AnswerData {
+        player.answers[self.question_index].answer(AnswerData {
             answer: msg.answer,
             elapsed,
         });
@@ -702,7 +619,7 @@ impl Handler<PlayerAnswerMessage> for Game {
         let all_answered = self
             .players
             .iter()
-            .all(|player| player.answers[self.question_index].is_some());
+            .all(|player| player.answers[self.question_index].has_answer());
 
         if all_answered {
             self.next_state();
@@ -736,32 +653,130 @@ pub struct PlayerSession {
     id: SessionId,
     /// The addr to the session
     addr: Addr<Session>,
+    /// The player ready state
+    ready: bool,
 
     /// The player name
     name: String,
-    /// The player ready state
-    ready: bool,
     /// The players answers and the score they got for them
-    answers: Vec<Option<AnswerData>>,
-    /// Marked version of each question answer
-    results: Vec<Option<Score>>,
+    answers: Vec<PlayerAnswer>,
     /// The player total score
     score: u32,
+}
+
+#[derive(Default, Clone)]
+struct PlayerAnswer {
+    /// The answer provided by the player
+    data: Option<AnswerData>,
+    /// The score provided by the server
+    score: Option<Score>,
+}
+
+impl PlayerAnswer {
+    #[inline]
+    fn has_answer(&self) -> bool {
+        self.data.is_some()
+    }
+
+    #[inline]
+    fn answer(&mut self, answer: AnswerData) {
+        self.data = Some(answer);
+    }
+
+    fn mark(&mut self, question: &Question) -> Score {
+        let score = self.get_score(question);
+        self.score = Some(score);
+        score
+    }
+
+    fn get_score(&self, question: &Question) -> Score {
+        let answer = match &self.data {
+            Some(value) => value,
+            None => return Score::Incorrect,
+        };
+
+        let elapsed_ms = answer.elapsed.as_millis() as u32;
+        let is_bonus = elapsed_ms <= question.bonus_score_time;
+
+        // Calculate the % amount between the min and max answer times
+        let answer_time_percent = 1.0 - ((elapsed_ms as f32) / (question.answer_time as f32));
+
+        let scoring = &question.scoring;
+
+        // The base score from the answer time and the bonus
+        let mut base_score = scoring.min_score
+            + ((scoring.max_score - scoring.min_score) as f32 * answer_time_percent) as u32;
+
+        // Append bonus score amount
+        if is_bonus {
+            base_score += scoring.bonus_score;
+        }
+
+        use Answer as A;
+        use QuestionData as Q;
+
+        match (&answer.answer, &question.data) {
+            (A::Single { answer }, Q::Single { answers, .. }) => {
+                let is_valid = answers
+                    .get(*answer)
+                    .map(|value| value.correct)
+                    .unwrap_or(false);
+
+                if is_valid {
+                    Score::Correct { value: base_score }
+                } else {
+                    Score::Incorrect
+                }
+            }
+            (
+                A::Multiple {
+                    answers: answer_indexes,
+                },
+                Q::Multiple { answers, max, min },
+            ) => {
+                let mut correct = 0;
+                for answer in answer_indexes {
+                    if let Some(answer) = answers.get(*answer) {
+                        if answer.correct {
+                            correct += 1;
+                        }
+                    }
+                }
+
+                // % correct out of total answers
+                let percent = correct as f32 / *max as f32;
+
+                if correct >= *max {
+                    Score::Correct { value: base_score }
+                } else if correct < *min {
+                    Score::Incorrect
+                } else {
+                    let score = ((base_score as f32) * percent).round() as u32;
+                    Score::Partial {
+                        value: score,
+                        count: correct as u32,
+                        total: *max as u32,
+                    }
+                }
+            }
+
+            // Mismatched types shouldn't be possible but
+            // will be marked as incorrect
+            _ => Score::Incorrect,
+        }
+    }
 }
 
 impl PlayerSession {
     pub fn new(id: SessionId, addr: Addr<Session>, name: String, question_len: usize) -> Self {
         // Initialize the empty answers list
-        let answers = vec![None; question_len];
-        let results = vec![None; question_len];
-
+        let answers = vec![PlayerAnswer::default(); question_len];
         Self {
             id,
             addr,
             name,
             ready: false,
             answers,
-            results,
             score: 0,
         }
     }

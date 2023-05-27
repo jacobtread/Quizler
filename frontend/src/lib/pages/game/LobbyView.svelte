@@ -19,7 +19,7 @@
   export let scores: Record<SessionId, number>;
   export let gameState: GameState;
 
-  // Sends the next question action
+  // Sends the next state action
   const next = () => doHostAction(HostAction.Next);
 </script>
 
