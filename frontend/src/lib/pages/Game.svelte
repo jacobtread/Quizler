@@ -203,7 +203,7 @@
 
 {#if gameState === GameState.Finished && summary != null}
   <FinishedView {gameData} {summary} />
-{:else if gameState === GameState.Starting || gameState === GameState.PreQuestion}
+{:else if gameState === GameState.Starting || gameState === GameState.PreQuestion || gameState === GameState.AwaitingReady}
   <Starting {gameState} {gameData} {timer} />
 {:else if gameState === GameState.AwaitingAnswers && question != null}
   {#if !answered}
@@ -221,8 +221,6 @@
     -->
     <AnsweredView />
   {/if}
-{:else if gameState === GameState.AwaitingReady}
-  <Loading text="Waiting for other players..." />
 {:else if gameData.host}
   <LobbyView {gameData} {gameState} {players} {scores} />
 {:else if gameState === GameState.Lobby}
