@@ -29,6 +29,11 @@ export const MAX_ANSWER_TIME: number = 1000 * 60 * 30; /* 30mins */
 
 const DEFAULT_BONUS_SCORE: number = 150;
 const DEFAULT_BONUS_TIME: number = 1000 * 3; /* 3s */
+
+export const MIN_SCORE: number = 0;
+export const MAX_MAX_SCORE: number = 10_000;
+export const MAX_BONUS_SCORE: number = 10_000;
+
 export const MIN_BONUS_TIME = 1000; /* 1s */
 export const MAX_BONUS_TIME = 1000 * 60 * 30; /* 30mins */
 

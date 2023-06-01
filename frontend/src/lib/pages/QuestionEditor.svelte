@@ -198,7 +198,7 @@
         <input
           class="input"
           type="number"
-          min={0}
+          min={constants.MIN_SCORE}
           max={question.scoring.max_score}
           bind:value={question.scoring.min_score}
         />
@@ -212,7 +212,7 @@
           class="input"
           type="number"
           min={question.scoring.min_score}
-          max={1000}
+          max={constants.MAX_MAX_SCORE}
           bind:value={question.scoring.max_score}
         />
       </label>
@@ -224,8 +224,8 @@
         <input
           class="input"
           type="number"
-          min={0}
-          max={1000}
+          min={constants.MIN_SCORE}
+          max={constants.MAX_BONUS_SCORE}
           bind:value={question.scoring.bonus_score}
         />
       </label>
