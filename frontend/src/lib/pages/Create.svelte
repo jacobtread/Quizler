@@ -1,12 +1,7 @@
 <script lang="ts">
   import { flip } from "svelte/animate";
 
-  import {
-    ClientMessage,
-    errorText,
-    ServerError,
-    NameFiltering
-  } from "$api/models";
+  import { ClientMessage, errorText, ServerError } from "$api/models";
   import * as socket from "$api/socket";
   import { createHttp } from "$api/http";
   import * as constants from "$lib/constants";
@@ -32,6 +27,8 @@
     addQuestion
   } from "$stores/createStore";
   import { tweened, type Tweened } from "svelte/motion";
+  import Cog from "$lib/components/icons/Cog.svelte";
+  import Settings from "$lib/components/editor/Settings.svelte";
 
   let loading: boolean = false;
   let loadingState: string = "";
@@ -117,6 +114,8 @@
       })
       .finally(() => (loading = false));
   }
+
+  let settings: boolean = false;
 </script>
 
 {#if loading}
@@ -127,107 +126,50 @@
   {/if}
 {/if}
 
-<main class="main">
-  <div class="details">
-    <header class="header">
-      <button on:click={setHome} class="btn btn--icon">
-        <Back />
-        Back
-      </button>
-      <button on:click={doImport} class="btn btn--icon">
-        <Import />
-        Import
-      </button>
-      <button on:click={doExport} class="btn btn--icon">
-        <Export />
-        Export
-      </button>
-      <button on:click={play} class="btn btn--icon">
-        <Play />
-        Play
-      </button>
-    </header>
-    <label class="field">
-      <span class="field__name">Title</span>
-      <p class="field__desc">
-        Give your quiz a title <span class="optional">Optional</span>
-      </p>
-      <input
-        class="input"
-        type="text"
-        bind:value={$createData.name}
-        maxlength={constants.MAX_TITLE_LENGTH}
-      />
-    </label>
-    <label class="field">
-      <span class="field__name">Description</span>
-      <p class="field__desc">
-        Description of your Quiz <span class="optional">Optional</span>
-      </p>
-      <textarea
-        class="input input--desc"
-        name=""
-        id=""
-        cols="30"
-        rows="5"
-        bind:value={$createData.text}
-        maxlength={constants.MAX_DESCRIPTION_LENGTH}
-      />
-    </label>
+{#if settings}
+  <Settings bind:visible={settings} />
+{/if}
 
-    <label class="field">
-      <span class="field__name">Max Players</span>
-      <p class="field__desc">
-        Maximum number of players allowed to join this quiz
-      </p>
-      <input
-        class="input"
-        type="number"
-        bind:value={$createData.max_players}
-        min={constants.MIN_MAX_PLAYERS}
-        max={constants.MAX_MAX_PLAYERS}
-      />
-    </label>
-    <label class="field">
-      <span class="field__name">Name Filtering</span>
-      <p class="field__desc">
-        Level of filtering on profane/inappropriate naming. Its recommended that
-        you leave this on Medium or High
-      </p>
-      <select bind:value={$createData.filtering} class="input">
-        <option value={NameFiltering.None}>None: Don't filter names</option>
-        <option value={NameFiltering.Low}
-          >Low: Filter out more severe names</option
-        >
-        <option value={NameFiltering.Medium}>
-          Medium: Filter out anything thats not mild
-        </option>
-        <option value={NameFiltering.High}>
-          High: Filter out as much as possible
-        </option>
-      </select>
-    </label>
-  </div>
+<main class="main">
+  <aside class="sidebar">
+    <button on:click={setHome} class="btn btn--icon btn--l">
+      <Back />
+      <span>Back</span>
+    </button>
+    <button on:click={doImport} class="btn btn--icon btn--l">
+      <Import />
+      <span>Import</span>
+    </button>
+    <button on:click={doExport} class="btn btn--icon btn--l">
+      <Export />
+      <span>Export</span>
+    </button>
+    <button on:click={() => (settings = true)} class="btn btn--icon btn--l">
+      <Cog />
+      <span>Settings</span>
+    </button>
+    <button on:click={play} class="btn btn--icon btn--l">
+      <Play />
+      <span>Play</span>
+    </button>
+    <button
+      on:click={shuffleQuestions}
+      disabled={$createData.questions.length <= 1}
+      class="btn btn--l"
+    >
+      Shuffle
+    </button>
+    <button
+      on:click={addQuestion}
+      disabled={$createData.questions.length >= constants.MAX_QUESTIONS}
+      class="btn btn--icon btn--l"
+    >
+      <Add />
+      Add Question
+    </button>
+  </aside>
 
   <div class="list">
-    <div class="list__actions">
-      <button
-        on:click={addQuestion}
-        disabled={$createData.questions.length >= constants.MAX_QUESTIONS}
-        class="btn btn--icon"
-      >
-        <Add />
-        Add Question
-      </button>
-      <button
-        on:click={shuffleQuestions}
-        disabled={$createData.questions.length <= 1}
-        class="btn btn--sm"
-      >
-        Shuffle
-      </button>
-    </div>
-
     <div class="list__content">
       <ol class="questions">
         {#each $createData.questions as question, index (question.id)}
@@ -247,49 +189,25 @@
 <style lang="scss">
   @import "../../assets/scheme.scss";
 
-  .optional {
-    color: #777;
-    margin-left: 0.5rem;
-  }
-
   .main {
     height: 100%;
     width: 100%;
 
-    display: grid;
-    grid-template-columns: 1fr 1.75fr;
-    grid-template-rows: 100%;
+    display: flex;
+    flex-flow: row;
+    padding: 1rem;
+    gap: 1rem;
   }
 
-  .details {
-    overflow: auto;
-    height: 100%;
-    padding: 1rem 0 0 1rem;
+  .sidebar {
+    display: flex;
+    flex-flow: column;
+    gap: 1rem;
   }
 
   .list {
-    height: 100%;
-    display: flex;
-    flex-flow: column;
-
-    &__actions {
-      background-color: $appBackground;
-      padding: 1rem;
-      display: flex;
-      gap: 1rem;
-
-      .btn {
-        flex: auto;
-        text-align: center;
-        justify-content: center;
-      }
-    }
-
-    &__content {
-      flex: auto;
-      overflow: auto;
-      padding: 0 1rem 1rem;
-    }
+    flex: auto;
+    overflow: auto;
   }
 
   .questions {

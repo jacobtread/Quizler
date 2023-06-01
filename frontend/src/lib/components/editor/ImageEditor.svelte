@@ -106,7 +106,7 @@
     top: 50%;
     transform: translate(-50%, -50%);
     aspect-ratio: auto;
-    z-index: -1;
+    z-index: 0;
 
     // Fit for width
     &[data-fit="Width"] {

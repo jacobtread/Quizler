@@ -391,7 +391,7 @@ impl Handler<JoinMessage> for Game {
         }
 
         // Notify the host of the join
-        self.host.addr.do_send(joiner_message.clone());
+        self.host.addr.do_send(joiner_message);
 
         self.players.push(game_player);
 

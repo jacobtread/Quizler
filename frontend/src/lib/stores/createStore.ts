@@ -15,7 +15,7 @@ export interface CreateData {
 export const createData: Writable<CreateData> = writable(defaultCreateData());
 
 // The ID for the next question
-let nextQuestionId: number = 1;
+export let nextQuestionId: number = 1;
 
 /**
  * Creates a new default question and inserts it into

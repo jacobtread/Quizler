@@ -10,10 +10,24 @@
   import Edit from "$components/icons/Edit.svelte";
 
   import { deepCopy } from "$lib/utils/utils";
+  import ImageEditor from "./editor/ImageEditor.svelte";
+  import { imagePreviewStore } from "$lib/stores/imageStore";
 
   export let question: Question;
   export let index: number;
   export let length: number;
+
+  let image: string | null = null;
+
+  $: if (question.image !== null) {
+    // Handle displaying image previews
+    let imagePreview = $imagePreviewStore[question.image.uuid];
+    if (imagePreview !== undefined) {
+      image = imagePreview;
+    } else {
+      image = null;
+    }
+  }
 
   /**
    * Updates the route to the editing route
@@ -43,7 +57,13 @@
     >
       <ArrowUp />
     </button>
-
+    <button
+      on:click={moveDown}
+      disabled={index + 1 >= length}
+      class="btn btn--icon-only btn--surface"
+    >
+      <ArrowDown />
+    </button>
     <button
       on:click={remove}
       disabled={length == 1}
@@ -55,71 +75,100 @@
     <button on:click={edit} class="btn btn--icon-only btn--surface">
       <Edit />
     </button>
-
-    <button
-      on:click={moveDown}
-      disabled={index + 1 >= length}
-      class="btn btn--icon-only btn--surface"
-    >
-      <ArrowDown />
-    </button>
   </div>
-  <div class="body">
-    <p>
-      {question.text}
-    </p>
+  {#if question.image !== null && image !== null}
+    <div class="image-wrapper">
+      <img
+        class="image"
+        data-fit={"Cover"}
+        src={image}
+        alt="Uploaded Content"
+      />
+    </div>
+  {/if}
+  <p class="text">
+    {question.text}
+  </p>
 
-    {#if question.ty == QuestionType.Single || question.ty == QuestionType.Multiple}
-      <ul class="answers">
-        {#each question.answers as answer}
-          <li class="answer" data-correct={answer.correct}>
-            {answer.value}
-          </li>
-        {/each}
-      </ul>
-    {/if}
-  </div>
+  {#if question.ty == QuestionType.Single || question.ty == QuestionType.Multiple}
+    <div class="answers">
+      {#each question.answers as answer}
+        <p class="answer" data-correct={answer.correct} />
+      {/each}
+    </div>
+  {/if}
 </div>
 
 <style lang="scss">
   @import "../../assets/scheme.scss";
+
+  .image-wrapper {
+    max-height: 50vh;
+    width: 100%;
+    height: 5rem;
+    overflow: hidden;
+    position: relative;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .image {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    aspect-ratio: auto;
+
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+  }
 
   .question {
     background-color: $surface;
     padding: 1rem;
     border-radius: 0.5rem;
     display: flex;
+    flex-flow: column;
     gap: 1rem;
+    max-width: 16rem;
   }
 
-  .body {
-    flex: auto;
-    gap: 1rem;
-    display: flex;
-    flex-flow: column;
-    justify-content: space-between;
+  .text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .answers {
-    list-style-position: inside;
-    border-radius: 0.5rem;
     overflow: hidden;
-    background-color: $surfaceLight;
+    text-align: center;
+
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
   }
 
   .answer {
-    padding: 0.5rem;
+    padding: 0.575rem;
+    border-radius: 0.25rem;
+    background-color: $surfaceLight;
+
+    &:nth-child(odd):last-child {
+      grid-column-start: 1;
+      grid-column-end: 3;
+    }
 
     &[data-correct="true"] {
-      border-radius: 0.5rem;
-      border-left: 5px solid $primary;
+      background-color: $primary;
       color: #fff;
     }
   }
 
   .actions {
     display: flex;
-    flex-flow: column;
     gap: 0.5rem;
   }
 </style>

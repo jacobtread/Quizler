@@ -6,7 +6,7 @@
 </script>
 
 {#if $dialogStore}
-  <div class="dialog-wrapper" transition:fade={{ duration: 200 }}>
+  <div class="floating-wrapper" transition:fade={{ duration: 200 }}>
     <div class="dialog" transition:slide={{ duration: 200 }}>
       <h1 class="dialog__title">{$dialogStore.title}</h1>
       <p class="dialog__msg">{$dialogStore.message}</p>
@@ -34,21 +34,6 @@
 
 <style lang="scss">
   @import "../../assets/scheme.scss";
-
-  .dialog-wrapper {
-    z-index: 2;
-    position: fixed;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-  }
 
   .dialog {
     background-color: $surface;
