@@ -25,11 +25,13 @@
     shuffleQuestions,
     type CreateData,
     addQuestion,
-    setCreateData
+    setCreateData,
+    activeIndex
   } from "$stores/createStore";
   import { tweened, type Tweened } from "svelte/motion";
   import Cog from "$lib/components/icons/Cog.svelte";
   import Settings from "$lib/components/editor/Settings.svelte";
+  import QuestionEditor from "./QuestionEditor.svelte";
 
   let loading: boolean = false;
   let loadingState: string = "";
@@ -76,11 +78,45 @@
     }
   }
 
+  function validate(data: CreateData): boolean {
+    // TODO: Visual validation failure hints instead of dialog
+    for (let i = 0; i < data.questions.length; i++) {
+      const question = data.questions[i];
+
+      // Trim whitespace from the text
+      question.text = question.text.trim();
+
+      if (question.text.length < 1) {
+        errorDialog(
+          "Empty quesiton",
+          `Question ${i + 1} text must not be empty`
+        );
+        return false;
+      }
+
+      for (let j = 0; j < question.answers.length; j++) {
+        const answer = question.answers[j];
+        answer.value = answer.value.trim();
+
+        if (answer.value.length < 1) {
+          errorDialog(
+            "Empty answer",
+            `Answer number ${j + 1} of question ${i + 1} must not be blank`
+          );
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
   function play() {
+    const data: CreateData = $createData;
+
+    if (!validate(data)) return;
+
     loading = true;
     loadingState = "Uploading";
-
-    const data: CreateData = $createData;
 
     // Trim name whitespace
     data.name = data.name.trim();
@@ -132,57 +168,61 @@
 {/if}
 
 <main class="main">
-  <aside class="sidebar">
-    <button on:click={setHome} class="btn btn--icon btn--l">
+  <header class="header btn-row btn-row--fill">
+    <button on:click={setHome} class="btn btn--icon">
       <Back />
       <span>Back</span>
     </button>
-    <button on:click={doImport} class="btn btn--icon btn--l">
+    <button on:click={doImport} class="btn btn--icon">
       <Import />
       <span>Import</span>
     </button>
-    <button on:click={doExport} class="btn btn--icon btn--l">
+    <button on:click={doExport} class="btn btn--icon">
       <Export />
       <span>Export</span>
     </button>
-    <button on:click={() => (settings = true)} class="btn btn--icon btn--l">
+    <button on:click={() => (settings = true)} class="btn btn--icon">
       <Cog />
-      <span>Settings</span>
+      <span>Quiz Settings</span>
     </button>
-    <button on:click={play} class="btn btn--icon btn--l">
+    <button on:click={play} class="btn btn--icon">
       <Play />
       <span>Play</span>
     </button>
-    <button
-      on:click={shuffleQuestions}
-      disabled={$createData.questions.length <= 1}
-      class="btn btn--l"
-    >
-      Shuffle
-    </button>
-    <button
-      on:click={addQuestion}
-      disabled={$createData.questions.length >= constants.MAX_QUESTIONS}
-      class="btn btn--icon btn--l"
-    >
-      <Add />
-      Add Question
-    </button>
-  </aside>
+  </header>
 
-  <div class="list">
-    <div class="list__content">
-      <ol class="questions">
-        {#each $createData.questions as question, index (question.id)}
-          <li animate:flip={{ duration: 500 }}>
-            <QuestionListItem
-              bind:question
-              {index}
-              length={$createData.questions.length}
-            />
-          </li>
-        {/each}
-      </ol>
+  <div class="wrapper">
+    <div class="list">
+      <button
+        on:click={shuffleQuestions}
+        disabled={$createData.questions.length <= 1}
+        class="btn btn--l"
+      >
+        Shuffle
+      </button>
+      <div class="list__content">
+        <ol class="questions">
+          {#each $createData.questions as question, index (question.id)}
+            <li animate:flip={{ duration: 250 }}>
+              <QuestionListItem
+                bind:question
+                {index}
+                length={$createData.questions.length}
+              />
+            </li>
+          {/each}
+        </ol>
+      </div>
+      <button
+        on:click={addQuestion}
+        disabled={$createData.questions.length >= constants.MAX_QUESTIONS}
+        class="btn add btn--icon-only"
+      >
+        <Add />
+      </button>
+    </div>
+    <div class="editor">
+      <QuestionEditor bind:question={$createData.questions[$activeIndex]} />
     </div>
   </div>
 </main>
@@ -195,23 +235,40 @@
     width: 100%;
 
     display: flex;
-    flex-flow: row;
+    flex-flow: column;
     padding: 1rem;
     gap: 1rem;
   }
 
-  .sidebar {
+  .editor {
+    flex: auto;
+    overflow: auto;
+  }
+
+  .wrapper {
+    flex: auto;
+    display: flex;
+    overflow: hidden;
+    gap: 1rem;
+  }
+
+  .list {
     display: flex;
     flex-flow: column;
     gap: 1rem;
   }
 
-  .list {
-    flex: auto;
+  .list__content {
+    padding: 1rem;
     overflow: auto;
+    flex: auto;
+    border: 0.1rem solid $surface;
+    border-radius: 0.25rem;
   }
 
   .questions {
+    flex: auto;
+
     display: flex;
     gap: 1rem;
     flex-flow: column;
@@ -222,84 +279,5 @@
     display: flex;
     flex-wrap: wrap;
     gap: 1rem;
-    padding-bottom: 1rem;
-
-    .btn {
-      flex: auto;
-      text-align: center;
-      justify-content: center;
-    }
-  }
-
-  .field {
-    display: block;
-    margin-bottom: 1rem;
-    background-color: $surface;
-    padding: 1rem;
-    border-radius: 0.55rem;
-
-    &__name {
-      font-weight: bold;
-      color: #ffffff;
-    }
-
-    &__desc {
-      color: #cccccc;
-      margin-bottom: 0.25rem;
-    }
-  }
-
-  .input {
-    display: block;
-    margin-top: 0.25rem;
-    width: 100%;
-    padding: 0.5rem;
-    border: none;
-    background-color: $surfaceLight;
-    border-radius: 0.25rem;
-    margin-top: 0.5rem;
-    font-size: 1rem;
-    line-height: 1.5;
-  }
-
-  @media screen and (max-width: 86rem) {
-    .main {
-      grid-template-columns: 1fr 1fr;
-    }
-  }
-
-  @media screen and (max-width: 64rem) {
-    .main {
-      grid-template-columns: 1fr;
-      grid-template-rows: 1fr;
-      gap: 0;
-      overflow: auto;
-    }
-
-    .list {
-      overflow: visible;
-
-      &__actions {
-        position: sticky;
-        top: 0;
-        left: 0;
-        z-index: 1;
-      }
-
-      &__content {
-        padding: 1rem;
-      }
-    }
-
-    .details {
-      overflow: visible;
-      max-width: unset;
-      padding: 1rem;
-    }
-
-    .header,
-    .list__actions {
-      flex-wrap: wrap;
-    }
   }
 </style>

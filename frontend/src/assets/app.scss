@@ -1,3 +1,4 @@
+@use "sass:color";
 @import "scheme";
 
 :root {
@@ -12,6 +13,16 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
+}
+
+*::-webkit-scrollbar {
+  background-color: $surface;
+  max-width: 8px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: #666;
+  border-radius: 0.5rem;
 }
 
 #app {

@@ -1,6 +1,6 @@
 import { defaultCreateData, defaultQuestion } from "$lib/constants";
 import { NameFiltering, QuestionType, type Question } from "$api/models";
-import { arraySwap, shuffleArray } from "$lib/utils/utils";
+import { arraySwap, randomRange, shuffleArray } from "$lib/utils/utils";
 import { writable, type Writable } from "svelte/store";
 
 export interface CreateData {
@@ -14,6 +14,8 @@ export interface CreateData {
 // Store for the current creation data
 export const createData: Writable<CreateData> = writable(defaultCreateData());
 
+export const activeIndex: Writable<number> = writable(0);
+
 // The ID for the next question
 export let nextQuestionId: number = 1;
 
@@ -21,6 +23,16 @@ export function setCreateData(data: CreateData) {
   createData.set(data);
 
   nextQuestionId = 0;
+
+  // TODO: Intial data if no question
+
+  activeIndex.update((value) => {
+    if (value >= data.questions.length) {
+      return 0;
+    } else {
+      return value;
+    }
+  });
 
   for (let i = 0; i < data.questions.length; i++) {
     const question = data.questions[i];
@@ -53,6 +65,17 @@ export function addQuestion() {
 export function swapQuestion(aIndex: number, bIndex: number) {
   createData.update((store) => {
     arraySwap(store.questions, aIndex, bIndex);
+
+    activeIndex.update((value) => {
+      if (aIndex === value) {
+        return bIndex;
+      } else if (bIndex === value) {
+        return aIndex;
+      } else {
+        return value;
+      }
+    });
+
     return store;
   });
 }
@@ -64,6 +87,14 @@ export function swapQuestion(aIndex: number, bIndex: number) {
  */
 export function removeQuestion(index: number) {
   createData.update((store) => {
+    activeIndex.update((value) => {
+      if (index === value) {
+        return 0;
+      } else {
+        return value;
+      }
+    });
+
     store.questions.splice(index, 1);
     return store;
   });
@@ -74,7 +105,16 @@ export function removeQuestion(index: number) {
  */
 export function shuffleQuestions() {
   createData.update((store) => {
-    shuffleArray(store.questions);
+    const shuffleCount = randomRange(1, store.questions.length / 2);
+    let changes = 0;
+    while (changes < shuffleCount) {
+      const first = randomRange(0, store.questions.length - 1);
+      const second = randomRange(0, store.questions.length - 1);
+      if (first !== second) {
+        swapQuestion(first, second);
+        changes++;
+      }
+    }
     return store;
   });
 }

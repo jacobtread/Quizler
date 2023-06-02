@@ -41,9 +41,17 @@
 </script>
 
 {#if question.ty == QuestionType.Single || question.ty == QuestionType.Multiple}
+  <button
+    class="btn"
+    on:click={shuffleAnswers}
+    disabled={question.answers.length <= 1}
+  >
+    Shuffle Answers
+  </button>
+
   <div class="answers">
     {#each question.answers as answer, index (answer.id)}
-      <div class="answer" animate:flip={{ duration: 500 }}>
+      <div class="answer" animate:flip={{ duration: 200 }}>
         <div class="answer__check">
           <Checkbox bind:value={answer.correct} />
         </div>
@@ -64,23 +72,9 @@
         </button>
       </div>
     {/each}
-  </div>
-
-  <div class="field-group">
-    <button
-      class="btn"
-      on:click={addAnswer}
-      disabled={question.answers.length >= constants.MAX_ANSWERS}
-    >
-      Add Answer
-    </button>
-    <button
-      class="btn"
-      on:click={shuffleAnswers}
-      disabled={question.answers.length <= 1}
-    >
-      Shuffle
-    </button>
+    {#if question.answers.length < constants.MAX_ANSWERS}
+      <button class="btn add" on:click={addAnswer}> Add Answer </button>
+    {/if}
   </div>
 {/if}
 
@@ -88,11 +82,16 @@
   @import "../../../assets/scheme.scss";
 
   .answers {
-    margin-bottom: 1rem;
+    overflow: hidden;
 
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1rem;
+  }
+
+  .add:nth-child(odd):last-child {
+    grid-column-start: 1;
+    grid-column-end: 3;
   }
 
   .answer {

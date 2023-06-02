@@ -1,17 +1,19 @@
 <script lang="ts">
   import { QuestionType, type Question } from "$api/models";
 
-  import { removeQuestion, swapQuestion } from "$stores/createStore";
-  import { setEditing } from "$stores/state";
+  import {
+    activeIndex,
+    removeQuestion,
+    swapQuestion
+  } from "$stores/createStore";
 
   import ArrowUp from "$components/icons/ArrowUp.svelte";
   import ArrowDown from "$components/icons/ArrowDown.svelte";
   import Delete from "$components/icons/Delete.svelte";
   import Edit from "$components/icons/Edit.svelte";
 
-  import { deepCopy } from "$lib/utils/utils";
-  import ImageEditor from "./editor/ImageEditor.svelte";
   import { imagePreviewStore } from "$lib/stores/imageStore";
+  import { flip } from "svelte/animate";
 
   export let question: Question;
   export let index: number;
@@ -34,8 +36,7 @@
    * for the current question.
    */
   function edit() {
-    // Use a copy of the question for editing
-    setEditing(deepCopy(question));
+    activeIndex.set(index);
   }
 
   // Move the question up
@@ -48,8 +49,9 @@
   const remove = () => removeQuestion(index);
 </script>
 
-<div class="question">
+<div class="question" class:question--active={$activeIndex === index}>
   <div class="actions">
+    <p class="question__index">{index + 1}</p>
     <button
       on:click={moveUp}
       disabled={index <= 0}
@@ -72,7 +74,11 @@
       <Delete />
     </button>
 
-    <button on:click={edit} class="btn btn--icon-only btn--surface">
+    <button
+      on:click={edit}
+      class="btn btn--icon-only btn--surface"
+      disabled={$activeIndex === index}
+    >
       <Edit />
     </button>
   </div>
@@ -92,8 +98,12 @@
 
   {#if question.ty == QuestionType.Single || question.ty == QuestionType.Multiple}
     <div class="answers">
-      {#each question.answers as answer}
-        <p class="answer" data-correct={answer.correct} />
+      {#each question.answers as answer (answer.id)}
+        <p
+          animate:flip={{ duration: 250 }}
+          class="answer"
+          data-correct={answer.correct}
+        />
       {/each}
     </div>
   {/if}
@@ -127,13 +137,30 @@
   }
 
   .question {
+    position: relative;
     background-color: $surface;
     padding: 1rem;
     border-radius: 0.5rem;
     display: flex;
     flex-flow: column;
     gap: 1rem;
-    max-width: 16rem;
+    max-width: 18rem;
+    border: 3px solid $surface;
+
+    &--active {
+      border: 3px solid $primary;
+    }
+
+    &__index {
+      display: inline-block;
+
+      color: #fff;
+      padding: 0.5rem;
+
+      font-weight: bold;
+      line-height: 1rem;
+      border-radius: 1rem;
+    }
   }
 
   .text {
@@ -155,6 +182,7 @@
     padding: 0.575rem;
     border-radius: 0.25rem;
     background-color: $surfaceLight;
+    transition: background-color 0.1s linear;
 
     &:nth-child(odd):last-child {
       grid-column-start: 1;
