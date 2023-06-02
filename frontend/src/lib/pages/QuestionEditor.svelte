@@ -44,73 +44,71 @@
   }
 </script>
 
+<ImageEditor bind:question />
+
+<button on:click={() => (settings = true)} class="btn btn--icon">
+  <Cog />
+  <span>Settings</span>
+</button>
+
+<div class="field">
+  <p class="field__name">Question</p>
+  <p class="field__desc">Enter the question to ask the players</p>
+  <textarea
+    class="question__text input"
+    cols="30"
+    rows="2"
+    maxlength={constants.MAX_QUESTION_LENGTH}
+    bind:value={question.text}
+  />
+</div>
+
+<div class="field-group">
+  <div class="field">
+    <p class="field__name">Question Type</p>
+    <p class="field__desc">The type of question to present</p>
+    <select bind:value={question.ty} on:change={onTypeChange} class="input">
+      <option value={QuestionType.Single}>Single Choice</option>
+      <option value={QuestionType.Multiple}>Multiple Choice</option>
+    </select>
+  </div>
+  <!-- Min/max choice decision for multiple choice -->
+  {#if question.ty == QuestionType.Multiple}
+    <label class="field">
+      <span class="field__name">Min Choices</span>
+      <p class="field__desc">
+        The minimum number of answers that must be selected to get a pass
+      </p>
+      <input
+        class="input"
+        type="number"
+        bind:value={question.min}
+        min={1}
+        max={question.answers.length}
+      />
+    </label>
+    <label class="field">
+      <span class="field__name">Desired Choices</span>
+      <p class="field__desc">
+        The total number of answers the player must choose to get a full score.
+        Can be the same as the minimum choices
+      </p>
+      <input
+        class="input"
+        type="number"
+        bind:value={question.max}
+        min={question.min}
+        max={question.answers.length}
+      />
+    </label>
+  {/if}
+</div>
+
+<Answers bind:question />
+
 {#if settings}
   <QuestionSettings bind:question bind:visible={settings} />
 {/if}
-
-<div class="main" transition:slide>
-  <ImageEditor bind:question />
-
-  <button on:click={() => (settings = true)} class="btn btn--icon">
-    <Cog />
-    <span>Settings</span>
-  </button>
-
-  <div class="field">
-    <p class="field__name">Question</p>
-    <p class="field__desc">Enter the question to ask the players</p>
-    <textarea
-      class="question__text input"
-      cols="30"
-      rows="2"
-      maxlength={constants.MAX_QUESTION_LENGTH}
-      bind:value={question.text}
-    />
-  </div>
-
-  <div class="field-group">
-    <div class="field">
-      <p class="field__name">Question Type</p>
-      <p class="field__desc">The type of question to present</p>
-      <select bind:value={question.ty} on:change={onTypeChange} class="input">
-        <option value={QuestionType.Single}>Single Choice</option>
-        <option value={QuestionType.Multiple}>Multiple Choice</option>
-      </select>
-    </div>
-    <!-- Min/max choice decision for multiple choice -->
-    {#if question.ty == QuestionType.Multiple}
-      <label class="field">
-        <span class="field__name">Min Choices</span>
-        <p class="field__desc">
-          The minimum number of answers that must be selected to get a pass
-        </p>
-        <input
-          class="input"
-          type="number"
-          bind:value={question.min}
-          min={1}
-          max={question.answers.length}
-        />
-      </label>
-      <label class="field">
-        <span class="field__name">Desired Choices</span>
-        <p class="field__desc">
-          The total number of answers the player must choose to get a full
-          score. Can be the same as the minimum choices
-        </p>
-        <input
-          class="input"
-          type="number"
-          bind:value={question.max}
-          min={question.min}
-          max={question.answers.length}
-        />
-      </label>
-    {/if}
-  </div>
-
-  <Answers bind:question />
-</div>
 
 <style lang="scss">
   @import "../../assets/scheme.scss";
