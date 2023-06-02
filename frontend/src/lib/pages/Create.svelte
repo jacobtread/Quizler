@@ -24,7 +24,8 @@
     createData,
     shuffleQuestions,
     type CreateData,
-    addQuestion
+    addQuestion,
+    setCreateData
   } from "$stores/createStore";
   import { tweened, type Tweened } from "svelte/motion";
   import Cog from "$lib/components/icons/Cog.svelte";
@@ -58,7 +59,7 @@
       const imported: CreateData = await loadQuizBlob(file);
 
       // Update the store
-      createData.set(imported);
+      setCreateData(imported);
 
       console.debug("Imported quiz file", imported);
     } catch (e) {

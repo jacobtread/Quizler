@@ -17,6 +17,18 @@ export const createData: Writable<CreateData> = writable(defaultCreateData());
 // The ID for the next question
 export let nextQuestionId: number = 1;
 
+export function setCreateData(data: CreateData) {
+  createData.set(data);
+
+  nextQuestionId = 0;
+
+  for (let i = 0; i < data.questions.length; i++) {
+    const question = data.questions[i];
+    question.id = nextQuestionId;
+    nextQuestionId++;
+  }
+}
+
 /**
  * Creates a new default question and inserts it into
  * the questions list
