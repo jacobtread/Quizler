@@ -56,7 +56,7 @@ Prebuilt binaries are available for download here
 - [x] Readyiness and preloading (Automated)
     - The quiz will wait for all the players to preload the images and be "ready" before starting the timer of the question to ensure that players arent at a disadvantage due to slower connections
 - [x] Fully portable
-  - The server doesn't store any files so its completely portable as a single executable. Quiz's are instead able to be exported and imported a .quizler files which can be shared
+  - The server doesn't store any files so its completely portable as a single executable. Quiz's are instead able to be exported and imported as .quizler files which can be shared
   - In future a less portable version might be created that supports storing these files in some sort of database 
 - [x] Containerized
   -  Quizler can run both as a single executable or within a Docker container using the `jacobtread/quizler` container image. 
