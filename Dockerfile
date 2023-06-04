@@ -6,7 +6,7 @@ RUN apk update && apk upgrade
 RUN apk add curl
 
 # Download release
-RUN curl -LJ -o quizler https://github.com/jacobtread/Quizler-v2/releases/download/v0.1.0-alpha1/quizler-linux
+RUN curl -LJ -o quizler https://github.com/jacobtread/Quizler-v2/releases/download/v0.1.0-alpha2/quizler-linux
 
 # Make the server executable
 RUN chmod +x ./quizler
