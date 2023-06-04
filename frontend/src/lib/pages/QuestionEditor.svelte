@@ -3,115 +3,200 @@
 <script lang="ts">
   import { QuestionType, type Question } from "$api/models";
 
-  import { normalizeQuestion } from "$stores/createStore";
-
   import * as constants from "$lib/constants";
 
   import ImageEditor from "$components/editor/ImageEditor.svelte";
-  import Answers from "$components/editor/Answers.svelte";
-  import { slide } from "svelte/transition";
   import Cog from "$lib/components/icons/Cog.svelte";
   import QuestionSettings from "$lib/components/editor/QuestionSettings.svelte";
+  import { shuffleArray } from "$lib/utils/utils";
+  import { flip } from "svelte/animate";
+
+  import Shuffle from "$components/icons/Shuffle.svelte";
+
+  import Checkbox from "$components/Checkbox.svelte";
+  import Delete from "$components/icons/Delete.svelte";
+  import QuestionTypeSelect from "$lib/components/editor/QuestionTypeSelect.svelte";
 
   export let question: Question;
   let settings: boolean = false;
-  /**
-   * Handle changes between types to ensure that the
-   * question has the relevant fields for that type
-   */
-  function onTypeChange() {
-    question = normalizeQuestion(question);
-  }
+  let type: boolean = false;
 
-  /**
-   * Returns the number of quesitons marked as
-   * correct
-   */
-  function correct(): number {
-    let correct = 0;
+  function addAnswer() {
+    let nextId = 0;
+
     for (const answer of question.answers) {
-      if (answer.correct) correct += 1;
+      if (answer.id >= nextId) {
+        nextId = answer.id + 1;
+      }
     }
-    return correct;
+
+    question.answers.push({
+      id: nextId,
+      value: "",
+      correct: false
+    });
+    question.answers = question.answers;
   }
 
-  $: {
-    if (question.ty === QuestionType.Multiple) {
-      let max = correct();
-      if (question.max > max) question.max = max;
-      if (question.max < question.min) question.max = question.min;
-    }
+  function removeAnswer(index: number) {
+    question.answers = question.answers.filter(
+      (_, valueIndex) => valueIndex != index
+    );
+  }
+
+  function shuffleAnswers() {
+    question.answers = shuffleArray(question.answers);
   }
 </script>
 
 <ImageEditor bind:question />
 
-<button on:click={() => (settings = true)} class="btn btn--icon">
-  <Cog />
-  <span>Settings</span>
-</button>
+<div class="actions btn-row">
+  <button on:click={() => (settings = true)} class="btn btn--icon">
+    <Cog />
+    <span>Settings</span>
+  </button>
 
-<div class="field">
-  <p class="field__name">Question</p>
-  <p class="field__desc">Enter the question to ask the players</p>
-  <textarea
-    class="question__text input"
-    cols="30"
-    rows="2"
-    maxlength={constants.MAX_QUESTION_LENGTH}
-    bind:value={question.text}
-  />
-</div>
-
-<div class="field-group">
-  <div class="field">
-    <p class="field__name">Question Type</p>
-    <p class="field__desc">The type of question to present</p>
-    <select bind:value={question.ty} on:change={onTypeChange} class="input">
-      <option value={QuestionType.Single}>Single Choice</option>
-      <option value={QuestionType.Multiple}>Multiple Choice</option>
-    </select>
-  </div>
-  <!-- Min/max choice decision for multiple choice -->
-  {#if question.ty == QuestionType.Multiple}
-    <label class="field">
-      <span class="field__name">Min Choices</span>
-      <p class="field__desc">
-        The minimum number of answers that must be selected to get a pass
-      </p>
-      <input
-        class="input"
-        type="number"
-        bind:value={question.min}
-        min={1}
-        max={question.answers.length}
-      />
-    </label>
-    <label class="field">
-      <span class="field__name">Desired Choices</span>
-      <p class="field__desc">
-        The total number of answers the player must choose to get a full score.
-        Can be the same as the minimum choices
-      </p>
-      <input
-        class="input"
-        type="number"
-        bind:value={question.max}
-        min={question.min}
-        max={question.answers.length}
-      />
-    </label>
+  {#if question.answers !== undefined}
+    <button
+      class="btn btn--icon"
+      on:click={shuffleAnswers}
+      disabled={question.answers.length <= 1}
+    >
+      <Shuffle />
+      Shuffle Answers
+    </button>
   {/if}
+
+  <button class="btn btn--icon qt" on:click={() => (type = true)}>
+    <Cog />
+    Change Type
+
+    <span class="qt__type">{question.ty}</span>
+  </button>
 </div>
 
-<Answers bind:question />
+<textarea
+  class="question__text input"
+  cols="30"
+  rows="2"
+  maxlength={constants.MAX_QUESTION_LENGTH}
+  bind:value={question.text}
+/>
+
+{#if question.ty == QuestionType.Single || question.ty == QuestionType.Multiple}
+  <div class="answers">
+    {#each question.answers as answer, index (answer.id)}
+      <div class="answer" animate:flip={{ duration: 200 }}>
+        <div class="answer__check">
+          <Checkbox bind:value={answer.correct} />
+        </div>
+
+        <input
+          class="answer__question input"
+          type="text"
+          bind:value={answer.value}
+          maxlength={constants.MAX_ANSWER_LENGTH}
+        />
+
+        <button
+          disabled={question.answers.length == 1}
+          on:click={() => removeAnswer(index)}
+          class="btn btn--surface btn--icon-only"
+        >
+          <Delete />
+        </button>
+      </div>
+    {/each}
+    {#if question.answers.length < constants.MAX_ANSWERS}
+      <button class="btn add" on:click={addAnswer}> Add Answer </button>
+    {/if}
+  </div>
+{/if}
 
 {#if settings}
   <QuestionSettings bind:question bind:visible={settings} />
 {/if}
 
+{#if type}
+  <QuestionTypeSelect bind:question bind:visible={type} />
+{/if}
+
 <style lang="scss">
   @import "../../assets/scheme.scss";
+
+  .qt {
+    padding: 0.5rem;
+
+    &__type {
+      background-color: $surfaceLight;
+      padding: 0.5rem;
+      border-radius: 0.5rem;
+      margin-left: 0.5rem;
+    }
+  }
+  .actions {
+    margin-bottom: 0.5rem;
+  }
+
+  .answers {
+    overflow: hidden;
+
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .add:nth-child(odd):last-child {
+    grid-column-start: 1;
+    grid-column-end: 3;
+  }
+
+  .answer {
+    background-color: $surface;
+    padding: 0.5rem 1rem;
+    display: flex;
+    align-items: stretch;
+    gap: 1rem;
+    border-radius: 0.5rem;
+
+    &:nth-child(odd):last-child {
+      grid-column-start: 1;
+      grid-column-end: 3;
+    }
+
+    &__check {
+      align-self: center;
+      line-height: 0;
+    }
+
+    &__question {
+      align-self: stretch;
+      flex: auto;
+    }
+  }
+
+  .answer .input {
+    display: block;
+    width: 100%;
+    padding: 1rem;
+    border: none;
+    background-color: $surfaceLight;
+    border-radius: 0.25rem;
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  @media screen and (max-width: 48rem) {
+    .answers {
+      grid-template-columns: 1fr;
+    }
+
+    .answer:nth-child(odd):last-child {
+      grid-column-start: 1;
+      grid-column-end: 2;
+    }
+  }
 
   .main {
     width: 100%;
@@ -136,6 +221,7 @@
     display: block;
     width: 100%;
     resize: vertical;
+    margin-bottom: 1rem;
   }
 
   .field {

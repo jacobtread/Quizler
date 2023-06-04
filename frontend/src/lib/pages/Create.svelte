@@ -13,6 +13,7 @@
   import Play from "$components/icons/Play.svelte";
   import Export from "$components/icons/Export.svelte";
   import Add from "$components/icons/Add.svelte";
+  import Shuffle from "$components/icons/Shuffle.svelte";
 
   import { loadQuizBlob, createQuizBlob } from "$lib/utils/format";
   import { acceptUpload, startDownload } from "$lib/utils/file";
@@ -196,8 +197,9 @@
       <button
         on:click={shuffleQuestions}
         disabled={$createData.questions.length <= 1}
-        class="btn btn--l"
+        class="btn btn--icon"
       >
+        <Shuffle />
         Shuffle
       </button>
       <div class="list__content">

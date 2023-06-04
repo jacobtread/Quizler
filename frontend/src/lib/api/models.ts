@@ -130,6 +130,13 @@ export const enum QuestionType {
   Multiple = "Multiple"
 }
 
+export const questionTypeText: Record<QuestionType, string> = {
+  [QuestionType.Single]:
+    "There can be multiple correct answers but the user can only choose 1",
+  [QuestionType.Multiple]:
+    "There can be 1 or more correct answers and the user can select many"
+};
+
 // Schema for question answers
 const answerValueSchema = z.object({
   id: z.number(),
