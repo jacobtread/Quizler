@@ -717,7 +717,10 @@ impl PlayerAnswer {
                         }
                     }
                     MultipleMarking::Exact => {
-                        if count == answers.len() {
+                        // The total number of correct answers
+                        let count_correct = answers.iter().filter(|value| value.correct).count();
+
+                        if count == count_correct {
                             Score::Correct { value: base_score }
                         } else {
                             Score::Incorrect
