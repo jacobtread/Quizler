@@ -136,6 +136,17 @@
 
   .floating-wrapper {
     z-index: 1;
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
   }
 
   .dialog {
@@ -172,6 +183,12 @@
     &__desc {
       color: #cccccc;
       margin-bottom: 0.25rem;
+    }
+  }
+
+  @media screen and (max-width: 48rem), (max-height: 48em) {
+    .floating-wrapper {
+      align-items: flex-start;
     }
   }
 

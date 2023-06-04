@@ -122,6 +122,12 @@
     z-index: 1;
   }
 
+  @media screen and (max-width: 48rem), (max-height: 48em) {
+    .floating-wrapper {
+      align-items: flex-start;
+    }
+  }
+
   .dialog {
     background-color: $surface;
 
