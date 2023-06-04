@@ -1,5 +1,10 @@
 import { defaultCreateData, defaultQuestion } from "$lib/constants";
-import { NameFiltering, QuestionType, type Question } from "$api/models";
+import {
+  NameFiltering,
+  QuestionType,
+  type Question,
+  MultipleMarking
+} from "$api/models";
 import { arraySwap, randomRange, shuffleArray } from "$lib/utils/utils";
 import { writable, type Writable } from "svelte/store";
 
@@ -158,9 +163,21 @@ export function normalizeQuestion(question: Question): Question {
 
   // Add min max fields if they are missing
   if (question.ty === QuestionType.Multiple) {
-    question.min = question.min ?? 1;
-    question.max = question.max ?? question.answers.length;
+    question.marking = question.marking ?? { ty: MultipleMarking.Exact };
+    normalizeMarkingType(question);
   }
 
+  return question;
+}
+
+export function normalizeMarkingType(question: Question): Question {
+  if (question.ty === QuestionType.Multiple) {
+    const marking = question.marking;
+
+    if (marking.ty === MultipleMarking.Partial) {
+      marking.partial = marking.partial ?? 1;
+      marking.correct = marking.correct ?? question.answers.length;
+    }
+  }
   return question;
 }

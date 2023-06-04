@@ -1,9 +1,18 @@
 <script lang="ts">
   import Close from "$components/icons/Delete.svelte";
 
-  import { QuestionType, type Question, questionTypeText } from "$api/models";
+  import {
+    QuestionType,
+    type Question,
+    questionTypeText,
+    MultipleMarking,
+    multipleMarkingText
+  } from "$api/models";
   import * as constants from "$lib/constants";
-  import { normalizeQuestion } from "$lib/stores/createStore";
+  import {
+    normalizeMarkingType,
+    normalizeQuestion
+  } from "$lib/stores/createStore";
 
   export let question: Question;
   export let visible: boolean;
@@ -14,6 +23,10 @@
    */
   function onTypeChange() {
     question = normalizeQuestion(question);
+  }
+
+  function onMarkingTypeChange() {
+    question = normalizeMarkingType(question);
   }
 
   /**
@@ -31,8 +44,8 @@
   $: {
     if (question.ty === QuestionType.Multiple) {
       let max = correct();
-      if (question.max > max) question.max = max;
-      if (question.max < question.min) question.max = question.min;
+      // if (question.max > max) question.max = max;
+      // if (question.max < question.min) question.max = question.min;
     }
   }
 </script>
@@ -60,35 +73,52 @@
       <p>{questionTypeText[question.ty]}</p>
 
       <!-- Min/max choice decision for multiple choice -->
-      {#if question.ty == QuestionType.Multiple}
-        <label class="field">
-          <span class="field__name">Required for partial</span>
-          <p class="field__desc">
-            The minimum number of correct answers to be considered a partially
-            correct answer (Less than this will be considered Incorrect)
-          </p>
-          <input
+      {#if question.ty == QuestionType.Multiple && question.marking !== undefined}
+        <div class="field">
+          <p class="field__name">Marking type</p>
+          <p class="field__desc">The type of question to present</p>
+          <select
+            bind:value={question.marking.ty}
+            on:change={onMarkingTypeChange}
             class="input"
-            type="number"
-            bind:value={question.min}
-            min={1}
-            max={question.answers.length}
-          />
-        </label>
-        <label class="field">
-          <span class="field__name">Required for correct</span>
-          <p class="field__desc">
-            The number of correct answers to be considered a correct answer
-            (Greater than or equal to this will be considered Correct)
-          </p>
-          <input
-            class="input"
-            type="number"
-            bind:value={question.max}
-            min={question.min}
-            max={question.answers.length}
-          />
-        </label>
+          >
+            {#each Object.values(MultipleMarking) as ty}
+              <option value={ty}>{ty}: {multipleMarkingText[ty]}</option>
+            {/each}
+          </select>
+        </div>
+
+        {#if question.marking.ty === MultipleMarking.Partial}
+          <label class="field">
+            <span class="field__name">Required for partial</span>
+            <p class="field__desc">
+              The minimum number of correct answers to be considered a partially
+              correct answer (Less than this will be considered Incorrect)
+            </p>
+            <input
+              class="input"
+              type="number"
+              bind:value={question.marking.partial}
+              min={1}
+              max={question.answers.length}
+            />
+          </label>
+          <label class="field">
+            <span class="field__name">Required for correct</span>
+            <p class="field__desc">
+              The number of correct answers to be considered a completely
+              correct answer (Greater than or equal to this will be considered
+              Correct)
+            </p>
+            <input
+              class="input"
+              type="number"
+              bind:value={question.marking.correct}
+              min={question.marking.partial}
+              max={question.answers.length}
+            />
+          </label>
+        {/if}
       {/if}
     </div>
   </div>

@@ -3,8 +3,8 @@ use crate::{
     msg::ServerMessage,
     session::{ClearGameMessage, Session, SessionId},
     types::{
-        Answer, AnswerData, HostAction, Image, ImageRef, NameFiltering, Question, QuestionData,
-        RemoveReason, Score, ServerError,
+        Answer, AnswerData, HostAction, Image, ImageRef, MultipleMarking, NameFiltering, Question,
+        QuestionData, RemoveReason, Score, ServerError,
     },
 };
 use actix::{Actor, ActorContext, Addr, AsyncContext, Context, Handler, Message, SpawnHandle};
@@ -691,34 +691,37 @@ impl PlayerAnswer {
                     Score::Incorrect
                 }
             }
-            (
-                A::Multiple {
-                    answers: answer_indexes,
-                },
-                Q::Multiple { answers, max, min },
-            ) => {
-                let mut correct = 0;
-                for answer in answer_indexes {
-                    if let Some(answer) = answers.get(*answer) {
-                        if answer.correct {
-                            correct += 1;
+            (A::Multiple { answers: indexes }, Q::Multiple { answers, marking }) => {
+                // Count the number of correct answers
+                let count = indexes
+                    .iter()
+                    .filter_map(|index| answers.get(*index))
+                    .filter(|value| value.correct)
+                    .count();
+
+                match marking {
+                    MultipleMarking::Partial { partial, correct } => {
+                        if count >= *correct {
+                            Score::Correct { value: base_score }
+                        } else if count < *partial {
+                            Score::Incorrect
+                        } else {
+                            // % correct out of total answers
+                            let percent = count as f32 / *correct as f32;
+                            let score = ((base_score as f32) * percent).round() as u32;
+                            Score::Partial {
+                                value: score,
+                                count: count as u32,
+                                total: *correct as u32,
+                            }
                         }
                     }
-                }
-
-                // % correct out of total answers
-                let percent = correct as f32 / *max as f32;
-
-                if correct >= *max {
-                    Score::Correct { value: base_score }
-                } else if correct < *min {
-                    Score::Incorrect
-                } else {
-                    let score = ((base_score as f32) * percent).round() as u32;
-                    Score::Partial {
-                        value: score,
-                        count: correct as u32,
-                        total: *max as u32,
+                    MultipleMarking::Exact => {
+                        if count == answers.len() {
+                            Score::Correct { value: base_score }
+                        } else {
+                            Score::Incorrect
+                        }
                     }
                 }
             }

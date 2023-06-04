@@ -146,6 +146,23 @@ pub struct AnswerValue {
 /// Alias representing an index within an answers list
 pub type AnswerIndex = usize;
 
+/// Describes how a multiple choice question should
+/// be marked
+#[derive(Deserialize, Serialize)]
+#[serde(tag = "ty")]
+pub enum MultipleMarking {
+    /// Answers can be partially correct if not all selections
+    /// were correct
+    Partial {
+        /// Correct answers required for a partial score
+        partial: usize,
+        /// Correct answers required for a full score
+        correct: usize,
+    },
+    /// User must select all answers that are marked as correct
+    Exact,
+}
+
 /// The different types of questions and their
 /// associated question data
 #[derive(Serialize, Deserialize)]
@@ -160,11 +177,10 @@ pub enum QuestionData {
     Multiple {
         /// Vec of indexes of correct answers
         answers: Vec<AnswerValue>,
-        /// The minimum number of required answers
-        min: usize,
-        /// The maximum number of required answers
-        max: usize,
+        /// Marking type for the question
+        marking: MultipleMarking,
     },
+    // TODO: True/false with boolean
 }
 
 /// Game settings for global min/max scoring along with
