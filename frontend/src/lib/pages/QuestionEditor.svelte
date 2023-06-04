@@ -136,7 +136,7 @@
     }
   }
   .actions {
-    margin-bottom: 0.5rem;
+    margin-bottom: 1rem;
   }
 
   .answers {
