@@ -44,8 +44,13 @@
   $: {
     if (question.ty === QuestionType.Multiple) {
       let max = correct();
-      // if (question.max > max) question.max = max;
-      // if (question.max < question.min) question.max = question.min;
+      const marking = question.marking;
+      if (marking.ty === MultipleMarking.Partial) {
+        if (marking.partial > max) marking.partial = max;
+        if (marking.correct > max) marking.correct = max;
+        if (marking.correct < marking.partial)
+          marking.correct = marking.partial;
+      }
     }
   }
 </script>
@@ -60,67 +65,69 @@
       Close
     </button>
 
-    <div class="field-group">
+    <div class="field">
+      <p class="field__name">Question Type</p>
+      <p class="field__desc">The type of question to present</p>
+      <select bind:value={question.ty} on:change={onTypeChange} class="input">
+        {#each Object.values(QuestionType) as ty}
+          <option value={ty}>{ty} Choice: {questionTypeText[ty]}</option>
+        {/each}
+      </select>
+    </div>
+
+    <p />
+
+    <!-- Multiple choice additional settings -->
+    {#if question.ty == QuestionType.Multiple && question.marking !== undefined}
+      <!-- Marking type -->
       <div class="field">
-        <p class="field__name">Question Type</p>
-        <p class="field__desc">The type of question to present</p>
-        <select bind:value={question.ty} on:change={onTypeChange} class="input">
-          <option value={QuestionType.Single}>Single Choice</option>
-          <option value={QuestionType.Multiple}>Multiple Choice</option>
+        <p class="field__name">Marking type</p>
+        <p class="field__desc">How the question should be marked</p>
+        <select
+          bind:value={question.marking.ty}
+          on:change={onMarkingTypeChange}
+          class="input"
+        >
+          {#each Object.values(MultipleMarking) as ty}
+            <option value={ty}>{ty}: {multipleMarkingText[ty]}</option>
+          {/each}
         </select>
       </div>
 
-      <p>{questionTypeText[question.ty]}</p>
-
-      <!-- Min/max choice decision for multiple choice -->
-      {#if question.ty == QuestionType.Multiple && question.marking !== undefined}
-        <div class="field">
-          <p class="field__name">Marking type</p>
-          <p class="field__desc">The type of question to present</p>
-          <select
-            bind:value={question.marking.ty}
-            on:change={onMarkingTypeChange}
+      <!-- Extra settings for partial marking -->
+      {#if question.marking.ty === MultipleMarking.Partial}
+        <!-- Partial required -->
+        <label class="field">
+          <span class="field__name">Required for partial</span>
+          <p class="field__desc">
+            The minimum number of correct answers to be considered a partially
+            correct answer (Less than this will be considered Incorrect)
+          </p>
+          <input
             class="input"
-          >
-            {#each Object.values(MultipleMarking) as ty}
-              <option value={ty}>{ty}: {multipleMarkingText[ty]}</option>
-            {/each}
-          </select>
-        </div>
-
-        {#if question.marking.ty === MultipleMarking.Partial}
-          <label class="field">
-            <span class="field__name">Required for partial</span>
-            <p class="field__desc">
-              The minimum number of correct answers to be considered a partially
-              correct answer (Less than this will be considered Incorrect)
-            </p>
-            <input
-              class="input"
-              type="number"
-              bind:value={question.marking.partial}
-              min={1}
-              max={question.answers.length}
-            />
-          </label>
-          <label class="field">
-            <span class="field__name">Required for correct</span>
-            <p class="field__desc">
-              The number of correct answers to be considered a completely
-              correct answer (Greater than or equal to this will be considered
-              Correct)
-            </p>
-            <input
-              class="input"
-              type="number"
-              bind:value={question.marking.correct}
-              min={question.marking.partial}
-              max={question.answers.length}
-            />
-          </label>
-        {/if}
+            type="number"
+            bind:value={question.marking.partial}
+            min={1}
+            max={question.answers.length}
+          />
+        </label>
+        <!-- Correct required -->
+        <label class="field">
+          <span class="field__name">Required for correct</span>
+          <p class="field__desc">
+            The number of correct answers to be considered a completely correct
+            answer (Greater than or equal to this will be considered Correct)
+          </p>
+          <input
+            class="input"
+            type="number"
+            bind:value={question.marking.correct}
+            min={question.marking.partial}
+            max={question.answers.length}
+          />
+        </label>
       {/if}
-    </div>
+    {/if}
   </div>
 </div>
 

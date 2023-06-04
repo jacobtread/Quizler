@@ -16,6 +16,7 @@
   import Checkbox from "$components/Checkbox.svelte";
   import Delete from "$components/icons/Delete.svelte";
   import QuestionTypeSelect from "$lib/components/editor/QuestionTypeSelect.svelte";
+  import Swap from "$lib/components/icons/Swap.svelte";
 
   export let question: Question;
   let settings: boolean = false;
@@ -69,7 +70,7 @@
   {/if}
 
   <button class="btn btn--icon qt" on:click={() => (type = true)}>
-    <Cog />
+    <Swap />
     Change Type
 
     <span class="qt__type">{question.ty}</span>

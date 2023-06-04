@@ -125,7 +125,7 @@ export const removeReasonText: Record<RemoveReason, string> = {
 };
 
 // Question types
-export const enum QuestionType {
+export enum QuestionType {
   Single = "Single",
   Multiple = "Multiple"
 }
