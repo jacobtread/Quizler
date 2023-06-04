@@ -2,10 +2,13 @@
   import { ImageFit, type Question } from "$lib/api/models";
   import { imagePreviewStore, selectImage } from "$lib/stores/imageStore";
   import ImageStorage from "$components/ImageStorage.svelte";
+  import Cog from "../icons/Cog.svelte";
+  import ImageSettings from "./ImageSettings.svelte";
 
   export let question: Question;
 
   let image: string | null = null;
+  let settings: boolean = false;
 
   $: if (question.image !== null) {
     // Handle displaying image previews
@@ -41,13 +44,7 @@
   }
 </script>
 
-<div
-  tabindex="0"
-  role="button"
-  class="wrapper"
-  on:click={pickImage}
-  on:keypress={onImageKeyPress}
->
+<div tabindex="0" role="button" class="wrapper">
   {#if question.image !== null && image}
     <img
       class="image"
@@ -57,28 +54,21 @@
     />
 
     <button class="overlay" on:click={removeImage}> Click to remove </button>
+    <button
+      class="btn btn--icon btn--icon-only settings"
+      on:click={() => (settings = true)}
+    >
+      <Cog />
+    </button>
   {:else}
-    <p>Pick Image</p>
+    <button class="overlay" on:click={pickImage} on:keypress={onImageKeyPress}
+      >Pick Image</button
+    >
   {/if}
 </div>
 
-{#if question.image !== null}
-  <label class="field">
-    <span class="field__name">Image Fit</span>
-    <p class="field__desc">
-      Decide how the image should be best fit for the player screens, It's
-      recommended that you use "Contain" if the full image content is important
-      to be visible
-    </p>
-    <select class="input" bind:value={question.image.fit}>
-      <option value={ImageFit.Contain}>Contain: Fit the entire image</option>
-      <option value={ImageFit.Cover}>Cover: Fill the available space</option>
-      <option value={ImageFit.Width}> Fill Width: Fill available width </option>
-      <option value={ImageFit.Height}>
-        Fill Height: Fill available height
-      </option>
-    </select>
-  </label>
+{#if settings}
+  <ImageSettings bind:question bind:visible={settings} />
 {/if}
 
 <!-- Image store access for rendering the image picker -->
@@ -87,17 +77,19 @@
 <style lang="scss">
   @import "../../../assets/scheme.scss";
 
+  .settings {
+    position: absolute;
+    right: 0;
+    top: 0;
+  }
+
   .wrapper {
     max-height: 50vh;
     width: 100%;
-    height: 50vh;
+    flex: auto;
     overflow: hidden;
     position: relative;
     margin-bottom: 1rem;
-
-    display: flex;
-    justify-content: center;
-    align-items: center;
   }
 
   .image {

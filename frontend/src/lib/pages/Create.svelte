@@ -245,6 +245,8 @@
   .editor {
     flex: auto;
     overflow: auto;
+    display: flex;
+    flex-flow: column;
   }
 
   .wrapper {
@@ -281,5 +283,20 @@
     display: flex;
     flex-wrap: wrap;
     gap: 1rem;
+  }
+
+  @media screen and (max-width: 64rem) {
+    .list {
+      flex-flow: row;
+      max-height: 10rem;
+    }
+
+    .wrapper {
+      flex-flow: column-reverse;
+    }
+
+    .questions {
+      flex-flow: row;
+    }
   }
 </style>
