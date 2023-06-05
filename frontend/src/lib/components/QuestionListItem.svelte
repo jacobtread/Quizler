@@ -50,8 +50,7 @@
 </script>
 
 <div class="question" class:question--active={$activeIndex === index}>
-  <div class="actions">
-    <p class="question__index">{index + 1}</p>
+  <div class="actions btn-row btn-row--fill">
     <button
       on:click={moveUp}
       disabled={index <= 0}
@@ -82,6 +81,7 @@
       <Edit />
     </button>
   </div>
+
   {#if question.image !== null && image !== null}
     <div class="image-wrapper">
       <img
@@ -93,6 +93,7 @@
     </div>
   {/if}
   <p class="text">
+    <span class="question__index">{index + 1} </span>
     {question.text}
   </p>
 
@@ -144,22 +145,23 @@
     display: flex;
     flex-flow: column;
     gap: 0.5rem;
-    max-width: 14rem;
-    border: 3px solid $surface;
+    max-width: 12rem;
+    // border: 3px solid $surface;
 
     &--active {
-      border: 3px solid $primary;
+      outline: 2px solid $primary;
+      outline-offset: 0.25rem;
+      // border: 3px solid $primary;
     }
 
     &__index {
-      display: inline-block;
+      display: inline;
+      background-color: $surface;
 
       color: #fff;
-      padding: 0.5rem;
 
       font-weight: bold;
-      line-height: 1rem;
-      border-radius: 1rem;
+      margin-right: 0.25rem;
     }
   }
 
@@ -167,6 +169,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-size: 0.8rem;
   }
 
   .answers {
@@ -175,7 +178,7 @@
 
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1rem;
+    gap: 0.5rem;
   }
 
   .answer {
