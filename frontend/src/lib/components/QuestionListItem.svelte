@@ -55,28 +55,28 @@
     <button
       on:click={moveUp}
       disabled={index <= 0}
-      class="btn btn--icon-only btn--surface"
+      class="btn btn--icon-only btn--surface btn--small"
     >
       <ArrowUp />
     </button>
     <button
       on:click={moveDown}
       disabled={index + 1 >= length}
-      class="btn btn--icon-only btn--surface"
+      class="btn btn--icon-only btn--surface btn--small"
     >
       <ArrowDown />
     </button>
     <button
       on:click={remove}
       disabled={length == 1}
-      class="btn btn--icon-only btn--surface"
+      class="btn btn--icon-only btn--surface btn--small"
     >
       <Delete />
     </button>
 
     <button
       on:click={edit}
-      class="btn btn--icon-only btn--surface"
+      class="btn btn--icon-only btn--surface btn--small"
       disabled={$activeIndex === index}
     >
       <Edit />
@@ -139,12 +139,12 @@
   .question {
     position: relative;
     background-color: $surface;
-    padding: 1rem;
+    padding: 0.5rem;
     border-radius: 0.5rem;
     display: flex;
     flex-flow: column;
-    gap: 1rem;
-    max-width: 18rem;
+    gap: 0.5rem;
+    max-width: 14rem;
     border: 3px solid $surface;
 
     &--active {
@@ -179,7 +179,7 @@
   }
 
   .answer {
-    padding: 0.575rem;
+    padding: 0.5rem;
     border-radius: 0.25rem;
     background-color: $surfaceLight;
     transition: background-color 0.1s linear;
@@ -198,5 +198,26 @@
   .actions {
     display: flex;
     gap: 0.5rem;
+  }
+
+  @media screen and (max-width: 64rem) {
+    .image-wrapper {
+      display: none;
+    }
+
+    .question {
+      height: 100%;
+      overflow: hidden;
+      padding: 0.5rem;
+      gap: 0.5rem;
+    }
+
+    .answers {
+      gap: 0.5rem;
+    }
+
+    .answer {
+      // padding: 0.25rem;
+    }
   }
 </style>

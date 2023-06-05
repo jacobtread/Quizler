@@ -288,7 +288,6 @@
   @media screen and (max-width: 64rem) {
     .list {
       flex-flow: row;
-      max-height: 10rem;
     }
 
     .wrapper {
@@ -297,6 +296,20 @@
 
     .questions {
       flex-flow: row;
+    }
+  }
+
+  @media screen and (max-width: 32rem), (max-height: 48rem) {
+    .wrapper {
+    }
+
+    .main {
+      // overflow: auto;
+    }
+
+    .editor {
+      display: block;
+      overflow: auto;
     }
   }
 </style>

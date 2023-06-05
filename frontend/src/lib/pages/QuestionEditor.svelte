@@ -193,7 +193,8 @@
       grid-template-columns: 1fr;
     }
 
-    .answer:nth-child(odd):last-child {
+    .answer:nth-child(odd):last-child,
+    .add:nth-child(odd):last-child {
       grid-column-start: 1;
       grid-column-end: 2;
     }

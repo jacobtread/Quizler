@@ -36,12 +36,6 @@
     question.image = null;
     image = null;
   }
-
-  function onImageKeyPress(event: KeyboardEvent) {
-    if (event.key === "Enter" || event.key === "NumpadEnter") {
-      pickImage();
-    }
-  }
 </script>
 
 <div tabindex="0" role="button" class="wrapper">
@@ -61,9 +55,7 @@
       <Cog />
     </button>
   {:else}
-    <button class="overlay" on:click={pickImage} on:keypress={onImageKeyPress}
-      >Pick Image</button
-    >
+    <button class="add" on:click={pickImage}>Pick Image</button>
   {/if}
 </div>
 
@@ -90,6 +82,12 @@
     overflow: hidden;
     position: relative;
     margin-bottom: 1rem;
+  }
+
+  @media screen and (max-width: 64rem) {
+    .wrapper {
+      height: 50vh;
+    }
   }
 
   .image {
@@ -125,51 +123,31 @@
     }
   }
 
+  .add {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    font-size: 1rem;
+    background-color: transparent;
+    border: none;
+  }
+
   .overlay {
     position: absolute;
     left: 0;
     top: 0;
-    opacity: 0;
     width: 100%;
     height: 100%;
     transition: opacity 0.15s ease;
     font-size: 1rem;
     background-color: rgba($color: #000000, $alpha: 0.7);
     border: none;
+    opacity: 0;
 
     &:hover {
       opacity: 1;
     }
-  }
-
-  .field {
-    display: block;
-    margin-bottom: 1rem;
-    background-color: $surface;
-    padding: 1rem;
-    border-radius: 0.55rem;
-
-    &__name {
-      font-weight: bold;
-      color: #ffffff;
-    }
-
-    &__desc {
-      color: #cccccc;
-      margin-bottom: 0.25rem;
-    }
-  }
-
-  .input {
-    display: block;
-    margin-top: 0.25rem;
-    width: 100%;
-    padding: 0.5rem;
-    border: none;
-    background-color: $surfaceLight;
-    border-radius: 0.25rem;
-    margin-top: 0.5rem;
-    font-size: 1rem;
-    line-height: 1.5;
   }
 </style>

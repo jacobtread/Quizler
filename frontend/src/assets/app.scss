@@ -18,6 +18,7 @@
 *::-webkit-scrollbar {
   background-color: $surface;
   max-width: 8px;
+  max-height: 8px;
 }
 
 *::-webkit-scrollbar-thumb {
@@ -136,10 +137,13 @@ p {
   }
 }
 
-.btn--icon.btn--small img,
-.btn--icon-only.btn-small img {
-  width: 1rem;
-  height: 1rem;
+.btn--icon.btn--small,
+.btn--icon-only.btn--small {
+  > img,
+  > svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
 }
 
 // Styling for buttons with only icons
