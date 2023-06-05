@@ -137,7 +137,7 @@
     }
   }
   .actions {
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
     display: flex;
     flex-flow: row wrap;
   }

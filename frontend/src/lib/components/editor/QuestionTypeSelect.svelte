@@ -45,7 +45,7 @@
     if (question.ty === QuestionType.Multiple) {
       let max = correct();
       const marking = question.marking;
-      if (marking.ty === MultipleMarking.Partial) {
+      if (marking !== undefined && marking.ty === MultipleMarking.Partial) {
         if (marking.partial > max) marking.partial = max;
         if (marking.correct > max) marking.correct = max;
         if (marking.correct < marking.partial)
