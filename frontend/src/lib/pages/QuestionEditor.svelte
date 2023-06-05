@@ -138,6 +138,8 @@
   }
   .actions {
     margin-bottom: 1rem;
+    display: flex;
+    flex-flow: row wrap;
   }
 
   .answers {
@@ -197,6 +199,12 @@
     .add:nth-child(odd):last-child {
       grid-column-start: 1;
       grid-column-end: 2;
+    }
+
+    .actions {
+      .btn {
+        flex: auto;
+      }
     }
   }
 
