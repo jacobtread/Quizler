@@ -11,6 +11,7 @@
     imagePreviewStore
   } from "$stores/imageStore";
   import Import from "$components/icons/Import.svelte";
+  import { formatBytes } from "$lib/utils/utils";
 
   let uploading: FileUpload[] = [];
 
@@ -136,15 +137,15 @@
                 <span>Preview loading..</span>
               {/if}
             </div>
-            <p>{image.size} bytes</p>
+            <p>{formatBytes(image.size)}</p>
             <div class="file__actions">
               <button
                 class="btn btn--small"
                 on:click={() => consumeSelectImage(image)}>Select</button
               >
-              <button class="btn btn--small" on:click={() => onDelete(image)}
-                >Delete</button
-              >
+              <button class="btn btn--small" on:click={() => onDelete(image)}>
+                Delete
+              </button>
             </div>
           </div>
         {/each}

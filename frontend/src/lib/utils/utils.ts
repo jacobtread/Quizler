@@ -13,6 +13,19 @@ export function formatTime(timer: TimerState): string {
 }
 
 /**
+ * Formats the provided size in bytes in
+ * bytes, kb, and mb units
+ *
+ * @param bytes The bytes to format
+ */
+export function formatBytes(bytes: number): string {
+  const sizes: string[] = ["bytes", "kb", "mb"];
+  if (bytes == 0) return "0 Byte";
+  const i: number = Math.floor(Math.log(bytes) / Math.log(1024));
+  return (bytes / Math.pow(1024, i)).toFixed(1) + sizes[i];
+}
+
+/**
  * Produces a random number between the provided
  * min and max (inclusive)
  *
