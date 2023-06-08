@@ -252,7 +252,10 @@
       {#if $activeQuestion !== null}
         <QuestionEditor bind:question={$activeQuestion} />
       {:else}
-        <p>No question selected</p>
+        <div class="editor__none">
+          <h1>Select a question</h1>
+          <p>No question selected. Select a question to start editing</p>
+        </div>
       {/if}
     </div>
   </div>
@@ -270,6 +273,18 @@
     border: 3px dashed #333;
     border-radius: 0.25rem;
     margin: 0;
+  }
+
+  .editor__none {
+    display: flex;
+    flex-flow: column;
+    justify-content: center;
+    align-items: center;
+    flex: auto;
+
+    h1 {
+      color: #fff;
+    }
   }
 
   .main {
