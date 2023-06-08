@@ -43,8 +43,15 @@
   $: {
     if (question.ty === QuestionType.Multiple) {
       let max = correct();
+
+      // Clamping min-max values to their requirements
+      if (question.min > max) question.min = max;
+      if (question.max > max) question.max = max;
+      if (question.min > question.max) question.max = question.min;
+
       const marking = question.marking;
       if (marking !== undefined && marking.ty === MultipleMarking.Partial) {
+        // Clamping partial-correct
         if (marking.partial > max) marking.partial = max;
         if (marking.correct > max) marking.correct = max;
         if (marking.correct < marking.partial)
@@ -90,6 +97,33 @@
           {/each}
         </select>
       </div>
+      <label class="field">
+        <span class="field__name">Min</span>
+        <p class="field__desc">
+          The minimum number of answers the players must choose to submit their
+          answer
+        </p>
+        <input
+          class="input"
+          type="number"
+          bind:value={question.min}
+          min={1}
+          max={question.answers.length}
+        />
+      </label>
+      <label class="field">
+        <span class="field__name">Max</span>
+        <p class="field__desc">
+          The maximum number of answers the players can choose
+        </p>
+        <input
+          class="input"
+          type="number"
+          bind:value={question.max}
+          min={question.min}
+          max={question.answers.length}
+        />
+      </label>
 
       <!-- Extra settings for partial marking -->
       {#if question.marking.ty === MultipleMarking.Partial}

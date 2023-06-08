@@ -206,7 +206,9 @@ export const questionSchema = z
           z.object({
             ty: z.literal(MultipleMarking.Exact)
           })
-        ])
+        ]),
+        min: z.number(),
+        max: z.number()
       })
     ])
   );

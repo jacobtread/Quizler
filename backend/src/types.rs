@@ -179,6 +179,11 @@ pub enum QuestionData {
         answers: Vec<AnswerValue>,
         /// Marking type for the question
         marking: MultipleMarking,
+
+        /// The minimum number of answers the user can select
+        min: usize,
+        /// The maximum number of answers the user can select
+        max: usize,
     },
     // TODO: True/false with boolean
 }

@@ -141,6 +141,9 @@ export function normalizeQuestion(question: Question): Question {
 
   // Add min max fields if they are missing
   if (question.ty === QuestionType.Multiple) {
+    question.min = question.min ?? 1;
+    question.max = question.max ?? 1;
+
     question.marking = question.marking ?? { ty: MultipleMarking.Exact };
     normalizeMarkingType(question);
   }

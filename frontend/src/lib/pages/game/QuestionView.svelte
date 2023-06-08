@@ -96,7 +96,8 @@
             data-host={gameData.host}
             class="answer btn btn--surface"
             class:answer--checked={answers.includes(index)}
-            disabled={gameData.host}
+            disabled={gameData.host ||
+              (!answers.includes(index) && answers.length === question.max)}
             on:click={() => select(index)}
           >
             {answer.value}
@@ -104,7 +105,11 @@
         {/each}
       </div>
       {#if !gameData.host}
-        <button class="btn btn btn--surface submit" on:click={doAnswers}>
+        <button
+          class="btn btn btn--surface submit"
+          on:click={doAnswers}
+          disabled={answers.length < question.min}
+        >
           Submit
         </button>
       {/if}

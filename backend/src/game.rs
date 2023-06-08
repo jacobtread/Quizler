@@ -691,7 +691,21 @@ impl PlayerAnswer {
                     Score::Incorrect
                 }
             }
-            (A::Multiple { answers: indexes }, Q::Multiple { answers, marking }) => {
+            (
+                A::Multiple { answers: indexes },
+                Q::Multiple {
+                    answers,
+                    marking,
+                    min,
+                    max,
+                },
+            ) => {
+                let count_answers: usize = indexes.len();
+                // Ensure they have atleast the required number of answers
+                if count_answers < *min || count_answers > *max {
+                    return Score::Incorrect;
+                }
+
                 // Count the number of correct answers
                 let count = indexes
                     .iter()
@@ -699,9 +713,12 @@ impl PlayerAnswer {
                     .filter(|value| value.correct)
                     .count();
 
+                // Number of incorrect answers
+                let incorrect = count_answers - count;
+
                 match marking {
                     MultipleMarking::Partial { partial, correct } => {
-                        if count >= *correct {
+                        if count >= *correct && incorrect == 0 {
                             Score::Correct { value: base_score }
                         } else if count < *partial {
                             Score::Incorrect
