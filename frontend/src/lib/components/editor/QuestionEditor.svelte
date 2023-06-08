@@ -7,14 +7,13 @@
 
   import ImageEditor from "$components/editor/ImageEditor.svelte";
   import Cog from "$lib/components/icons/Cog.svelte";
-  import QuestionSettings from "$lib/components/editor/QuestionSettings.svelte";
   import { shuffleArray } from "$lib/utils/utils";
 
+  import QuestionSettings from "$components/editor/QuestionSettings.svelte";
+  import QuestionTypeSelect from "$components/editor/QuestionTypeSelect.svelte";
+  import EditorAnswers from "$components/editor/EditorAnswers.svelte";
   import Shuffle from "$components/icons/Shuffle.svelte";
-
-  import QuestionTypeSelect from "$lib/components/editor/QuestionTypeSelect.svelte";
-  import Swap from "$lib/components/icons/Swap.svelte";
-  import EditorAnswers from "$lib/components/editor/EditorAnswers.svelte";
+  import Swap from "$components/icons/Swap.svelte";
 
   export let question: Question;
   let settings: boolean = false;
@@ -71,7 +70,7 @@
 {/if}
 
 <style lang="scss">
-  @import "../../assets/scheme.scss";
+  @import "../../../assets/scheme.scss";
 
   .actions {
     margin-bottom: 0.5rem;

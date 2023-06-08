@@ -1,5 +1,5 @@
 import { writable } from "svelte/store";
-import type { GameConfig, GameToken, Question, SessionId } from "$api/models";
+import type { GameConfig, GameToken, SessionId } from "$api/models";
 
 export const enum AppStateType {
   /// Home screen
@@ -8,8 +8,6 @@ export const enum AppStateType {
   Connect,
   // Create game screen
   Create,
-  // Editing question screen
-  Editing,
   // App is in a game
   Game
 }
@@ -31,7 +29,6 @@ export type AppState =
   | { ty: AppStateType.Home }
   | { ty: AppStateType.Connect }
   | { ty: AppStateType.Create }
-  | { ty: AppStateType.Editing; question: Question }
   | { ty: AppStateType.Game; gameData: GameData };
 
 export const appState = writable<AppState>({
@@ -52,8 +49,4 @@ export function setConnect() {
 
 export function setGame(gameData: GameData) {
   appState.set({ ty: AppStateType.Game, gameData });
-}
-
-export function setEditing(question: Question) {
-  appState.set({ ty: AppStateType.Editing, question });
 }

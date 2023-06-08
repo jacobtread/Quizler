@@ -32,7 +32,7 @@
   import { tweened, type Tweened } from "svelte/motion";
   import Cog from "$lib/components/icons/Cog.svelte";
   import Settings from "$lib/components/editor/Settings.svelte";
-  import QuestionEditor from "./QuestionEditor.svelte";
+  import QuestionEditor from "../components/editor/QuestionEditor.svelte";
 
   let loading: boolean = false;
   let loadingState: string = "";
@@ -300,13 +300,6 @@
   }
 
   @media screen and (max-width: 32rem), (max-height: 48rem) {
-    .wrapper {
-    }
-
-    .main {
-      // overflow: auto;
-    }
-
     .editor {
       display: block;
       overflow: auto;

@@ -2,7 +2,6 @@
   import { AppStateType, appState } from "$stores/state";
   import GlobalDialog from "$components/GlobalDialog.svelte";
   import { socketReady } from "$api/socket";
-  import QuestionEditor from "$pages/QuestionEditor.svelte";
   import Loading from "$pages/Loading.svelte";
   import Connect from "$pages/Connect.svelte";
   import Game from "$pages/Game.svelte";
@@ -17,8 +16,6 @@
     <Create />
   {:else if $appState.ty === AppStateType.Connect}
     <Connect />
-  {:else if $appState.ty === AppStateType.Editing}
-    <QuestionEditor question={$appState.question} />
   {:else if $appState.ty === AppStateType.Game}
     <Game gameData={$appState.gameData} />
   {/if}
