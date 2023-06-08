@@ -196,4 +196,13 @@
       display: none;
     }
   }
+  @media screen and (max-width: 48rem), (max-height: 48rem) {
+    .image-wrapper {
+      display: none;
+    }
+
+    .question {
+      max-width: 6rem;
+    }
+  }
 </style>

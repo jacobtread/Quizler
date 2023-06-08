@@ -230,7 +230,6 @@
         {#each $createData.questions as question, index (question.id)}
           <div style="position: relative;" animate:flip={{ duration: 300 }}>
             <QuestionListItem bind:question {index} />
-            <!-- @ts-expect-error -->
             {#if question[SHADOW_ITEM_MARKER_PROPERTY_NAME]}
               <div class="shadow-item" />
             {/if}
@@ -297,7 +296,8 @@
     display: flex;
     flex-flow: column;
     gap: 1rem;
-    width: 14rem;
+
+    min-width: 14rem;
   }
 
   .questions {
@@ -335,10 +335,15 @@
     }
   }
 
-  @media screen and (max-width: 32rem), (max-height: 48rem) {
+  @media screen and (max-width: 48rem), (max-height: 48rem) {
+    .questions {
+      padding: 0;
+      align-items: center;
+    }
+
     .editor {
-      // display: block;
-      // overflow: auto;
+      display: block;
+      overflow: auto;
     }
   }
 </style>
