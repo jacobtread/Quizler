@@ -8,7 +8,6 @@
     MultipleMarking,
     multipleMarkingText
   } from "$api/models";
-  import * as constants from "$lib/constants";
   import {
     normalizeMarkingType,
     normalizeQuestion
@@ -74,8 +73,6 @@
         {/each}
       </select>
     </div>
-
-    <p />
 
     <!-- Multiple choice additional settings -->
     {#if question.ty == QuestionType.Multiple && question.marking !== undefined}
@@ -165,11 +162,6 @@
     gap: 1rem;
   }
 
-  .optional {
-    color: #777;
-    margin-left: 0.5rem;
-  }
-
   .field {
     display: block;
     background-color: $surface;
@@ -194,7 +186,6 @@
 
   .input {
     display: block;
-    margin-top: 0.25rem;
     width: 100%;
     padding: 0.5rem;
     border: none;

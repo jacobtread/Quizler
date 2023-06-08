@@ -6,7 +6,7 @@
   import { createHttp } from "$api/http";
   import * as constants from "$lib/constants";
 
-  import QuestionListItem from "$components/QuestionListItem.svelte";
+  import QuestionListItem from "$lib/components/editor/QuestionListItem.svelte";
   import FloatingLoader from "$components/FloatingLoader.svelte";
   import Import from "$components/icons/Import.svelte";
   import Back from "$components/icons/Back.svelte";
@@ -301,8 +301,8 @@
 
   @media screen and (max-width: 32rem), (max-height: 48rem) {
     .editor {
-      display: block;
-      overflow: auto;
+      // display: block;
+      // overflow: auto;
     }
   }
 </style>

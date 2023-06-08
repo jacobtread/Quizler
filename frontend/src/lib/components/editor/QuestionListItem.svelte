@@ -111,7 +111,7 @@
 </div>
 
 <style lang="scss">
-  @import "../../assets/scheme.scss";
+  @import "../../../assets/scheme.scss";
 
   .image-wrapper {
     max-height: 50vh;
@@ -213,14 +213,11 @@
       overflow: hidden;
       padding: 0.5rem;
       gap: 0.5rem;
+      max-width: 12rem;
     }
 
     .answers {
-      gap: 0.5rem;
-    }
-
-    .answer {
-      // padding: 0.25rem;
+      display: none;
     }
   }
 </style>

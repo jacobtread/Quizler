@@ -45,17 +45,6 @@
 <style lang="scss">
   @import "../../../assets/scheme.scss";
 
-  .group {
-    &__title {
-      color: #ffffff;
-      margin-bottom: 0.25rem;
-    }
-
-    &__desc {
-      margin-bottom: 0.5rem;
-    }
-  }
-
   .floating-wrapper {
     z-index: 1;
   }
