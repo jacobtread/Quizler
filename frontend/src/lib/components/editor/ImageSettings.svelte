@@ -21,8 +21,10 @@
       <label class="field">
         <span class="field__name">Image Fit</span>
         <p class="field__desc">
-          Decide how the image should be best fit for the player screens, It's
-          recommended that you use "Contain" if the full image content is
+          Decide how the image should be best fit for the player screens,
+        </p>
+        <p class="field__desc">
+          It's recommended that you use "Contain" if the full image content is
           important to be visible
         </p>
         <select class="input" bind:value={question.image.fit}>
@@ -61,7 +63,7 @@
     border-radius: 0.5rem;
 
     width: 100%;
-    max-width: 48rem;
+    max-width: 32rem;
 
     margin: 1rem;
     padding: 1rem;

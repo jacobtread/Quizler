@@ -223,7 +223,11 @@
       </button>
       <section
         class="questions"
-        use:dndzone={{ items: $createData.questions, flipDurationMs: 300 }}
+        use:dndzone={{
+          items: $createData.questions,
+          flipDurationMs: 300,
+          dropTargetStyle: {}
+        }}
         on:consider={handleDndConsider}
         on:finalize={handleDndFinalize}
       >
