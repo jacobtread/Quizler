@@ -170,7 +170,7 @@ export const multipleMarkingText: Record<MultipleMarking, string> = {
 // Schema for questions
 export const questionSchema = z
   .object({
-    id: z.number(),
+    id: z.string(),
     text: z.string(),
     image: z
       .object({

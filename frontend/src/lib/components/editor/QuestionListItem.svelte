@@ -1,23 +1,12 @@
 <script lang="ts">
   import { QuestionType, type Question } from "$api/models";
-
-  import {
-    activeIndex,
-    removeQuestion,
-    swapQuestion
-  } from "$stores/createStore";
-
-  import ArrowUp from "$components/icons/ArrowUp.svelte";
-  import ArrowDown from "$components/icons/ArrowDown.svelte";
-  import Delete from "$components/icons/Delete.svelte";
-  import Edit from "$components/icons/Edit.svelte";
+  import { activeQuestion } from "$lib/stores/createStore";
 
   import { imagePreviewStore } from "$lib/stores/imageStore";
   import { flip } from "svelte/animate";
 
   export let question: Question;
   export let index: number;
-  export let length: number;
 
   let image: string | null = null;
 
@@ -36,52 +25,24 @@
    * for the current question.
    */
   function edit() {
-    activeIndex.set(index);
+    activeQuestion.set(question);
   }
 
-  // Move the question up
-  const moveUp = () => swapQuestion(index, index - 1);
-
-  // Move the question down
-  const moveDown = () => swapQuestion(index, index + 1);
-
-  // Remove the question
-  const remove = () => removeQuestion(index);
+  function onKeydown(event: KeyboardEvent) {
+    console.log(event.key);
+    if (event.key === "Return" || event.key == "Enter") {
+      edit();
+    }
+  }
 </script>
 
-<div class="question" class:question--active={$activeIndex === index}>
-  <div class="actions btn-row btn-row--fill">
-    <button
-      on:click={moveUp}
-      disabled={index <= 0}
-      class="btn btn--icon-only btn--surface btn--small"
-    >
-      <ArrowUp />
-    </button>
-    <button
-      on:click={moveDown}
-      disabled={index + 1 >= length}
-      class="btn btn--icon-only btn--surface btn--small"
-    >
-      <ArrowDown />
-    </button>
-    <button
-      on:click={remove}
-      disabled={length == 1}
-      class="btn btn--icon-only btn--surface btn--small"
-    >
-      <Delete />
-    </button>
-
-    <button
-      on:click={edit}
-      class="btn btn--icon-only btn--surface btn--small"
-      disabled={$activeIndex === index}
-    >
-      <Edit />
-    </button>
-  </div>
-
+<div
+  class="question"
+  class:question--active={$activeQuestion !== null &&
+    $activeQuestion.id === question.id}
+  on:click={edit}
+  on:keypress={onKeydown}
+>
   {#if question.image !== null && image !== null}
     <div class="image-wrapper">
       <img

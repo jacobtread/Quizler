@@ -1,5 +1,6 @@
 import { QuestionType, type Question, NameFiltering } from "$api/models";
 import type { CreateData } from "$stores/createStore";
+import { v4 } from "uuid";
 
 export const TOKEN_LENGTH: number = 5;
 
@@ -64,7 +65,7 @@ export function defaultCreateData(): CreateData {
  */
 export function defaultQuestion(): Question {
   return {
-    id: 0,
+    id: v4(),
     ty: QuestionType.Single,
     text: "This is an example question, you should replace this with your first question",
     image: null,

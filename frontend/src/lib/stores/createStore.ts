@@ -5,8 +5,9 @@ import {
   type Question,
   MultipleMarking
 } from "$api/models";
-import { arraySwap, randomRange, shuffleArray } from "$lib/utils/utils";
+import { arraySwap, randomRange } from "$lib/utils/utils";
 import { writable, type Writable } from "svelte/store";
+import { v4 } from "uuid";
 
 export interface CreateData {
   name: string;
@@ -18,31 +19,15 @@ export interface CreateData {
 
 // Store for the current creation data
 export const createData: Writable<CreateData> = writable(defaultCreateData());
-
-export const activeIndex: Writable<number> = writable(0);
-
-// The ID for the next question
-export let nextQuestionId: number = 1;
+export const activeQuestion: Writable<Question | null> = writable(null);
 
 export function setCreateData(data: CreateData) {
   createData.set(data);
 
-  nextQuestionId = 0;
-
-  // TODO: Intial data if no question
-
-  activeIndex.update((value) => {
-    if (value >= data.questions.length) {
-      return 0;
-    } else {
-      return value;
-    }
-  });
-
-  for (let i = 0; i < data.questions.length; i++) {
-    const question = data.questions[i];
-    question.id = nextQuestionId;
-    nextQuestionId++;
+  if (data.questions.length > 0) {
+    activeQuestion.set(data.questions[0]);
+  } else {
+    activeQuestion.set(null);
   }
 }
 
@@ -53,9 +38,6 @@ export function setCreateData(data: CreateData) {
 export function addQuestion() {
   createData.update((store) => {
     const question: Question = defaultQuestion();
-    question.id = nextQuestionId;
-    nextQuestionId++;
-
     store.questions.push(question);
     return store;
   });
@@ -71,30 +53,19 @@ export function swapQuestion(aIndex: number, bIndex: number) {
   createData.update((store) => {
     arraySwap(store.questions, aIndex, bIndex);
 
-    activeIndex.update((value) => {
-      if (aIndex === value) {
-        return bIndex;
-      } else if (bIndex === value) {
-        return aIndex;
-      } else {
-        return value;
-      }
-    });
-
     return store;
   });
 }
 
-/**
- * Removes the question at the provided index
- *
- * @param index The index to remove
- */
-export function removeQuestion(index: number) {
+export function removeQuestion(question: Question) {
   createData.update((store) => {
-    activeIndex.update((value) => {
-      if (index === value) {
-        return 0;
+    const index = store.questions.findIndex(
+      (value) => value.id === question.id
+    );
+
+    activeQuestion.update((value) => {
+      if (value === null || value.id === question.id) {
+        return null;
       } else {
         return value;
       }

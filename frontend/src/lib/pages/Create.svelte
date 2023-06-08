@@ -1,7 +1,14 @@
 <script lang="ts">
   import { flip } from "svelte/animate";
 
-  import { ClientMessage, errorText, ServerError } from "$api/models";
+  import { dndzone, type DndEvent } from "svelte-dnd-action";
+
+  import {
+    ClientMessage,
+    errorText,
+    ServerError,
+    type Question
+  } from "$api/models";
   import * as socket from "$api/socket";
   import { createHttp } from "$api/http";
   import * as constants from "$lib/constants";
@@ -27,7 +34,7 @@
     type CreateData,
     addQuestion,
     setCreateData,
-    activeIndex
+    activeQuestion
   } from "$stores/createStore";
   import { tweened, type Tweened } from "svelte/motion";
   import Cog from "$lib/components/icons/Cog.svelte";
@@ -153,6 +160,14 @@
       .finally(() => (loading = false));
   }
 
+  function handleDndConsider(e: CustomEvent<DndEvent<Question>>) {
+    $createData.questions = e.detail.items;
+  }
+
+  function handleDndFinalize(e: CustomEvent<DndEvent<Question>>) {
+    $createData.questions = e.detail.items;
+  }
+
   let settings: boolean = false;
 </script>
 
@@ -202,19 +217,18 @@
         <Shuffle />
         Shuffle
       </button>
-      <div class="list__content">
-        <ol class="questions">
-          {#each $createData.questions as question, index (question.id)}
-            <li animate:flip={{ duration: 250 }}>
-              <QuestionListItem
-                bind:question
-                {index}
-                length={$createData.questions.length}
-              />
-            </li>
-          {/each}
-        </ol>
-      </div>
+      <section
+        class="questions"
+        use:dndzone={{ items: $createData.questions, flipDurationMs: 300 }}
+        on:consider={handleDndConsider}
+        on:finalize={handleDndFinalize}
+      >
+        {#each $createData.questions as question, index (question.id)}
+          <div animate:flip={{ duration: 300 }}>
+            <QuestionListItem bind:question {index} />
+          </div>
+        {/each}
+      </section>
       <button
         on:click={addQuestion}
         disabled={$createData.questions.length >= constants.MAX_QUESTIONS}
@@ -224,7 +238,11 @@
       </button>
     </div>
     <div class="editor">
-      <QuestionEditor bind:question={$createData.questions[$activeIndex]} />
+      {#if $activeQuestion !== null}
+        <QuestionEditor bind:question={$activeQuestion} />
+      {:else}
+        <p>No question selected</p>
+      {/if}
     </div>
   </div>
 </main>
@@ -262,16 +280,12 @@
     gap: 1rem;
   }
 
-  .list__content {
+  .questions {
     padding: 1rem;
     overflow: auto;
     flex: auto;
     border: 0.1rem solid $surface;
     border-radius: 0.25rem;
-  }
-
-  .questions {
-    flex: auto;
 
     display: flex;
     gap: 1rem;

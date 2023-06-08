@@ -8,12 +8,14 @@
   import ImageEditor from "$components/editor/ImageEditor.svelte";
   import Cog from "$lib/components/icons/Cog.svelte";
   import { shuffleArray } from "$lib/utils/utils";
+  import Delete from "$components/icons/Delete.svelte";
 
   import QuestionSettings from "$components/editor/QuestionSettings.svelte";
   import QuestionTypeSelect from "$components/editor/QuestionTypeSelect.svelte";
   import EditorAnswers from "$components/editor/EditorAnswers.svelte";
   import Shuffle from "$components/icons/Shuffle.svelte";
   import Swap from "$components/icons/Swap.svelte";
+  import { createData, removeQuestion } from "$lib/stores/createStore";
 
   export let question: Question;
   let settings: boolean = false;
@@ -22,6 +24,13 @@
   function shuffleAnswers() {
     question.answers = shuffleArray(question.answers);
   }
+
+  function onChange() {
+    createData.update((store) => store);
+  }
+
+  // Remove the question
+  const remove = () => removeQuestion(question);
 </script>
 
 <ImageEditor bind:question />
@@ -49,6 +58,11 @@
 
     <span class="qt__type">{question.ty}</span>
   </button>
+
+  <button on:click={remove} class="btn btn--icon">
+    <Delete />
+    <span>Delete</span>
+  </button>
 </div>
 
 <textarea
@@ -57,6 +71,7 @@
   rows="2"
   maxlength={constants.MAX_QUESTION_LENGTH}
   bind:value={question.text}
+  on:change={onChange}
 />
 
 <EditorAnswers bind:question />
