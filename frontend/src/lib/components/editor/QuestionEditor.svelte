@@ -61,7 +61,7 @@
 
   <button on:click={remove} class="btn btn--icon">
     <Delete />
-    <span>Delete</span>
+    Delete
   </button>
 </div>
 

@@ -1,3 +1,4 @@
+import type { SHADOW_ITEM_MARKER_PROPERTY_NAME } from "svelte-dnd-action";
 import { z } from "zod";
 
 // Represents a unique ID of a session
@@ -170,7 +171,6 @@ export const multipleMarkingText: Record<MultipleMarking, string> = {
 // Schema for questions
 export const questionSchema = z
   .object({
-    id: z.string(),
     text: z.string(),
     image: z
       .object({
@@ -212,7 +212,12 @@ export const questionSchema = z
   );
 
 // Question type inferred from its schema
-export type Question = z.infer<typeof questionSchema>;
+export type Question = z.infer<typeof questionSchema> & {
+  // ID used internally to make items unique
+  id: string;
+  // Shadow marker state for drag dropping
+  [SHADOW_ITEM_MARKER_PROPERTY_NAME]: undefined | boolean;
+};
 
 // Different answer types
 export const enum AnswerType {

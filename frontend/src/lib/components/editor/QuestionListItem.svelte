@@ -4,6 +4,7 @@
 
   import { imagePreviewStore } from "$lib/stores/imageStore";
   import { flip } from "svelte/animate";
+  import Image from "../icons/Image.svelte";
 
   export let question: Question;
   export let index: number;
@@ -43,16 +44,18 @@
   on:click={edit}
   on:keypress={onKeydown}
 >
-  {#if question.image !== null && image !== null}
-    <div class="image-wrapper">
+  <div class="image-wrapper">
+    {#if question.image !== null && image !== null}
       <img
         class="image"
-        data-fit={"Cover"}
+        data-fit={question.image.fit}
         src={image}
         alt="Uploaded Content"
       />
-    </div>
-  {/if}
+    {:else}
+      <Image />
+    {/if}
+  </div>
   <p class="text">
     <span class="question__index">{index + 1} </span>
     {question.text}
@@ -75,9 +78,8 @@
   @import "../../../assets/scheme.scss";
 
   .image-wrapper {
-    max-height: 50vh;
     width: 100%;
-    height: 5rem;
+    height: 2.5rem;
     overflow: hidden;
     position: relative;
 
@@ -93,9 +95,29 @@
     transform: translate(-50%, -50%);
     aspect-ratio: auto;
 
-    height: 100%;
-    width: 100%;
-    object-fit: cover;
+    // Fit for width
+    &[data-fit="Width"] {
+      width: 100%;
+    }
+
+    // Fit for height
+    &[data-fit="Height"] {
+      height: 100%;
+    }
+
+    // Fit for containing whole image
+    &[data-fit="Contain"] {
+      height: 100%;
+      width: 100%;
+      object-fit: contain;
+    }
+
+    // Fit for covering available space
+    &[data-fit="Cover"] {
+      height: 100%;
+      width: 100%;
+      object-fit: cover;
+    }
   }
 
   .question {
@@ -106,13 +128,15 @@
     display: flex;
     flex-flow: column;
     gap: 0.5rem;
-    max-width: 12rem;
-    // border: 3px solid $surface;
+    width: 12rem;
 
-    &--active {
+    &:hover {
+      outline: 2px solid #666;
+    }
+
+    &--active,
+    &--active:hover {
       outline: 2px solid $primary;
-      outline-offset: 0.25rem;
-      // border: 3px solid $primary;
     }
 
     &__index {
@@ -159,21 +183,12 @@
     }
   }
 
-  .actions {
-    display: flex;
-    gap: 0.5rem;
-  }
-
   @media screen and (max-width: 64rem) {
     .image-wrapper {
-      display: none;
+      height: 2rem;
     }
 
     .question {
-      height: 100%;
-      overflow: hidden;
-      padding: 0.5rem;
-      gap: 0.5rem;
       max-width: 12rem;
     }
 

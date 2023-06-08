@@ -1,7 +1,11 @@
 <script lang="ts">
   import { flip } from "svelte/animate";
 
-  import { dndzone, type DndEvent } from "svelte-dnd-action";
+  import {
+    dndzone,
+    type DndEvent,
+    SHADOW_ITEM_MARKER_PROPERTY_NAME
+  } from "svelte-dnd-action";
 
   import {
     ClientMessage,
@@ -224,8 +228,12 @@
         on:finalize={handleDndFinalize}
       >
         {#each $createData.questions as question, index (question.id)}
-          <div animate:flip={{ duration: 300 }}>
+          <div style="position: relative;" animate:flip={{ duration: 300 }}>
             <QuestionListItem bind:question {index} />
+            <!-- @ts-expect-error -->
+            {#if question[SHADOW_ITEM_MARKER_PROPERTY_NAME]}
+              <div class="shadow-item" />
+            {/if}
           </div>
         {/each}
       </section>
@@ -249,6 +257,17 @@
 
 <style lang="scss">
   @import "../../assets/scheme.scss";
+  .shadow-item {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    visibility: visible;
+    border: 3px dashed #333;
+    border-radius: 0.25rem;
+    margin: 0;
+  }
 
   .main {
     height: 100%;
@@ -278,9 +297,11 @@
     display: flex;
     flex-flow: column;
     gap: 1rem;
+    width: 14rem;
   }
 
   .questions {
+    position: relative;
     padding: 1rem;
     overflow: auto;
     flex: auto;
@@ -302,6 +323,7 @@
   @media screen and (max-width: 64rem) {
     .list {
       flex-flow: row;
+      width: auto;
     }
 
     .wrapper {

@@ -21,8 +21,15 @@ export interface CreateData {
 export const createData: Writable<CreateData> = writable(defaultCreateData());
 export const activeQuestion: Writable<Question | null> = writable(null);
 
+activeQuestion.subscribe(() => {
+  createData.update((store) => store);
+});
+
 export function setCreateData(data: CreateData) {
   createData.set(data);
+
+  // Assign new IDs to each of the question elements
+  data.questions.forEach((value) => (value.id = v4()));
 
   if (data.questions.length > 0) {
     activeQuestion.set(data.questions[0]);
