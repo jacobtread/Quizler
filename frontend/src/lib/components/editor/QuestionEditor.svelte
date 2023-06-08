@@ -25,10 +25,6 @@
     question.answers = shuffleArray(question.answers);
   }
 
-  function onChange() {
-    createData.update((store) => store);
-  }
-
   // Remove the question
   const remove = () => removeQuestion(question);
 </script>
@@ -71,7 +67,6 @@
   rows="2"
   maxlength={constants.MAX_QUESTION_LENGTH}
   bind:value={question.text}
-  on:change={onChange}
 />
 
 <EditorAnswers bind:question />
@@ -109,15 +104,13 @@
     width: 100%;
     resize: vertical;
     margin-bottom: 1rem;
-  }
 
-  .input {
-    display: block;
-    margin-top: 0.25rem;
-    width: 100%;
+    min-height: 2.5rem;
+    max-height: 6rem;
+
     padding: 0.5rem;
     border: none;
-    background-color: $surfaceLight;
+    background-color: $surface;
     border-radius: 0.25rem;
     margin-top: 0.5rem;
     font-size: 1rem;

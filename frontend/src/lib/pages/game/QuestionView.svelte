@@ -96,16 +96,18 @@
             data-host={gameData.host}
             class="answer btn btn--surface"
             class:answer--checked={answers.includes(index)}
-            disabled={gameData.host || !answers.includes(index)}
+            disabled={gameData.host}
             on:click={() => select(index)}
           >
             {answer.value}
           </button>
         {/each}
       </div>
-      <button class="btn btn btn--surface submit" on:click={doAnswers}>
-        Submit
-      </button>
+      {#if !gameData.host}
+        <button class="btn btn btn--surface submit" on:click={doAnswers}>
+          Submit
+        </button>
+      {/if}
     {/if}
   </div>
   <div class="bottom">

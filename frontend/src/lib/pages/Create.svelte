@@ -280,6 +280,7 @@
     flex-flow: column;
     padding: 1rem;
     gap: 1rem;
+    overflow: hidden;
   }
 
   .editor {
@@ -347,7 +348,6 @@
 
     .editor {
       display: block;
-      overflow: auto;
     }
   }
 </style>
