@@ -225,14 +225,14 @@
         class="questions"
         use:dndzone={{
           items: $createData.questions,
-          flipDurationMs: 300,
+          flipDurationMs: 200,
           dropTargetStyle: {}
         }}
         on:consider={handleDndConsider}
         on:finalize={handleDndFinalize}
       >
         {#each $createData.questions as question, index (question.id)}
-          <div style="position: relative;" animate:flip={{ duration: 300 }}>
+          <div style="position: relative;" animate:flip={{ duration: 200 }}>
             <QuestionListItem bind:question {index} />
             {#if question[SHADOW_ITEM_MARKER_PROPERTY_NAME]}
               <div class="shadow-item" />
