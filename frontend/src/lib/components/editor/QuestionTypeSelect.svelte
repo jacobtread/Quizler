@@ -12,6 +12,8 @@
     normalizeMarkingType,
     normalizeQuestion
   } from "$lib/stores/createStore";
+  import RadioButton from "../RadioButton.svelte";
+  import { slide } from "svelte/transition";
 
   export let question: Question;
   export let visible: boolean;
@@ -73,97 +75,151 @@
 
     <div class="field">
       <p class="field__name">Question Type</p>
-      <p class="field__desc">The type of question to present</p>
-      <select bind:value={question.ty} on:change={onTypeChange} class="input">
+      <p class="field__desc">The type of question to use</p>
+      <div class="radio">
         {#each Object.values(QuestionType) as ty}
-          <option value={ty}>{ty} Choice: {questionTypeText[ty]}</option>
+          <div>
+            <RadioButton
+              on:change={onTypeChange}
+              bind:group={question.ty}
+              value={ty}
+            >
+              <b>{ty} Choice</b>: {questionTypeText[ty]}
+            </RadioButton>
+          </div>
         {/each}
-      </select>
+      </div>
     </div>
 
     <!-- Multiple choice additional settings -->
-    {#if question.ty == QuestionType.Multiple && question.marking !== undefined}
-      <!-- Marking type -->
-      <div class="field">
-        <p class="field__name">Marking type</p>
-        <p class="field__desc">How the question should be marked</p>
-        <select
-          bind:value={question.marking.ty}
-          on:change={onMarkingTypeChange}
-          class="input"
-        >
-          {#each Object.values(MultipleMarking) as ty}
-            <option value={ty}>{ty}: {multipleMarkingText[ty]}</option>
-          {/each}
-        </select>
-      </div>
-      <label class="field">
-        <span class="field__name">Min</span>
-        <p class="field__desc">
-          The minimum number of answers the players must choose to submit their
-          answer
-        </p>
-        <input
-          class="input"
-          type="number"
-          bind:value={question.min}
-          min={1}
-          max={question.answers.length}
-        />
-      </label>
-      <label class="field">
-        <span class="field__name">Max</span>
-        <p class="field__desc">
-          The maximum number of answers the players can choose
-        </p>
-        <input
-          class="input"
-          type="number"
-          bind:value={question.max}
-          min={question.min}
-          max={question.answers.length}
-        />
-      </label>
+    {#if question.ty == QuestionType.Multiple}
+      <div class="section" transition:slide>
+        <div class="section">
+          <label class="field field--small">
+            <div>
+              <span class="field__name">Min</span>
+              <p class="field__desc">
+                The number answers the players <strong>must</strong> choose
+              </p>
+            </div>
+            <input
+              class="input"
+              type="number"
+              bind:value={question.min}
+              min={1}
+              max={question.answers.length}
+            />
+          </label>
+          <label class="field field--small">
+            <div>
+              <span class="field__name">Max</span>
+              <p class="field__desc">
+                The maximum number answers the players <strong>can</strong> choose
+              </p>
+            </div>
+            <input
+              class="input"
+              type="number"
+              bind:value={question.max}
+              min={question.min}
+              max={question.answers.length}
+            />
+          </label>
+        </div>
 
-      <!-- Extra settings for partial marking -->
-      {#if question.marking.ty === MultipleMarking.Partial}
-        <!-- Partial required -->
-        <label class="field">
-          <span class="field__name">Required for partial</span>
-          <p class="field__desc">
-            The minimum number of correct answers to be considered a partially
-            correct answer (Less than this will be considered Incorrect)
-          </p>
-          <input
-            class="input"
-            type="number"
-            bind:value={question.marking.partial}
-            min={1}
-            max={question.answers.length}
-          />
-        </label>
-        <!-- Correct required -->
-        <label class="field">
-          <span class="field__name">Required for correct</span>
-          <p class="field__desc">
-            The number of correct answers to be considered a completely correct
-            answer (Greater than or equal to this will be considered Correct)
-          </p>
-          <input
-            class="input"
-            type="number"
-            bind:value={question.marking.correct}
-            min={question.marking.partial}
-            max={question.answers.length}
-          />
-        </label>
-      {/if}
+        {#if question.marking !== undefined}
+          <!-- Marking type -->
+          <div class="field">
+            <p class="field__name">Marking type</p>
+            <p class="field__desc">How the question should be marked</p>
+
+            <div class="radio">
+              {#each Object.values(MultipleMarking) as ty}
+                <div>
+                  <RadioButton
+                    on:change={onMarkingTypeChange}
+                    bind:group={question.marking.ty}
+                    value={ty}
+                  >
+                    <b>{ty}</b>: {multipleMarkingText[ty]}
+                  </RadioButton>
+                </div>
+              {/each}
+            </div>
+          </div>
+
+          <!-- Extra settings for partial marking -->
+          {#if question.marking.ty === MultipleMarking.Partial}
+            <div class="section" transition:slide>
+              <!-- Partial required -->
+              <label class="field field--small">
+                <div>
+                  <span class="field__name">Required for partial</span>
+                  <p class="field__desc">
+                    The minimum number of correct answers to be considered a
+                    partially correct answer
+                  </p>
+                  <p class="field__note">
+                    Less than this will be considered Incorrect
+                  </p>
+                </div>
+
+                <input
+                  class="input"
+                  type="number"
+                  bind:value={question.marking.partial}
+                  min={1}
+                  max={question.answers.length}
+                />
+              </label>
+              <!-- Correct required -->
+              <label class="field field--small">
+                <div>
+                  <span class="field__name">Required for correct</span>
+                  <p class="field__desc">
+                    The number of correct answers to be considered a completely
+                    correct answer
+                  </p>
+                  <p class="field__note">
+                    Greater than or equal to this will be considered Correct
+                  </p>
+                </div>
+                <input
+                  class="input"
+                  type="number"
+                  bind:value={question.marking.correct}
+                  min={question.marking.partial}
+                  max={question.answers.length}
+                />
+              </label>
+            </div>
+          {/if}
+        {/if}
+      </div>
     {/if}
   </div>
 </div>
 
 <style lang="scss">
   @import "../../../assets/scheme.scss";
+
+  .group {
+  }
+
+  .radio {
+    display: flex;
+    flex-flow: column;
+    gap: 0.5rem;
+  }
+
+  .section {
+    display: flex;
+    flex-flow: column;
+    gap: 1rem;
+    border: 1px solid #444;
+    padding: 1rem;
+    border-radius: 0.25rem;
+  }
 
   .floating-wrapper {
     z-index: 1;
@@ -186,7 +242,7 @@
     border-radius: 0.5rem;
 
     width: 100%;
-    max-width: 32rem;
+    max-width: 46rem;
 
     margin: 1rem;
     padding: 1rem;
@@ -197,9 +253,11 @@
   }
 
   .field {
-    display: block;
+    display: flex;
+    flex-flow: column;
     background-color: $surface;
     border-radius: 0.55rem;
+    justify-content: space-between;
 
     &__name {
       font-weight: bold;
@@ -209,6 +267,32 @@
     &__desc {
       color: #cccccc;
       margin-bottom: 0.25rem;
+    }
+
+    &--small {
+      flex-flow: row;
+      gap: 1rem;
+      align-items: center;
+
+      .field__desc {
+        margin-bottom: 0;
+      }
+
+      .input {
+        max-width: 6rem;
+      }
+    }
+  }
+
+  @media screen and (max-width: 38rem) {
+    .field--small {
+      flex-flow: column;
+      align-items: stretch;
+      gap: 0;
+
+      .input {
+        max-width: none;
+      }
     }
   }
 
