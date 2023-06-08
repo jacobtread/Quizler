@@ -15,7 +15,7 @@
   import EditorAnswers from "$components/editor/EditorAnswers.svelte";
   import Shuffle from "$components/icons/Shuffle.svelte";
   import Swap from "$components/icons/Swap.svelte";
-  import { createData, removeQuestion } from "$lib/stores/createStore";
+  import { removeQuestion } from "$lib/stores/createStore";
 
   export let question: Question;
   let settings: boolean = false;
