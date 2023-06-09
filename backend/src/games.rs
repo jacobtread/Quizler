@@ -10,6 +10,7 @@ use serde::Serialize;
 use std::{
     collections::HashMap,
     fmt::Display,
+    hash::Hash,
     str::FromStr,
     sync::Arc,
     time::{Duration, Instant},
@@ -76,8 +77,14 @@ impl Actor for Games {
 /// Token abstraction to store tokens as fixed length byte
 /// slices rather than strings. This makes them easier to
 /// compare,generate, and serialize
-#[derive(Hash, PartialEq, Eq, Clone, Copy)]
+#[derive(PartialEq, Eq, Clone, Copy)]
 pub struct GameToken([u8; GameToken::LENGTH]);
+
+impl Hash for GameToken {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.0.hash(state);
+    }
+}
 
 impl GameToken {
     /// Length of tokens that will be created
