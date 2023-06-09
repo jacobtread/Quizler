@@ -16,6 +16,7 @@
   import Shuffle from "$components/icons/Shuffle.svelte";
   import Swap from "$components/icons/Swap.svelte";
   import { removeQuestion } from "$lib/stores/createStore";
+  import { confirmDialog } from "$lib/stores/dialogStore";
 
   export let question: Question;
   let settings: boolean = false;
@@ -26,7 +27,16 @@
   }
 
   // Remove the question
-  const remove = () => removeQuestion(question);
+  async function remove() {
+    const confirmed = await confirmDialog(
+      "Confirm Deletion",
+      "Are you sure you want to delete this question?"
+    );
+
+    if (!confirmed) return;
+
+    removeQuestion(question);
+  }
 </script>
 
 <ImageEditor bind:question />

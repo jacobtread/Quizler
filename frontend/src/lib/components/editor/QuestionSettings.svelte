@@ -5,13 +5,14 @@
   import * as constants from "$lib/constants";
 
   import TimeInput from "../TimeInput.svelte";
+  import { fade, slide } from "svelte/transition";
 
   export let question: Question;
   export let visible: boolean;
 </script>
 
-<div class="floating-wrapper">
-  <div class="dialog">
+<div class="floating-wrapper" transition:fade={{ duration: 200 }}>
+  <div class="dialog" transition:slide={{ duration: 200 }}>
     <button
       on:click={() => (visible = false)}
       class="btn btn--icon btn--surface"
@@ -20,12 +21,12 @@
       Close
     </button>
 
-    <div class="group">
-      <h2 class="group__title">Timing</h2>
-      <p class="group__desc">
+    <div class="section">
+      <h2 class="section__title">Timing</h2>
+      <p class="section__desc">
         Below you can configuring the timing for different events
       </p>
-      <div class="group__value field-group">
+      <div class="field-group">
         <div class="field">
           <span class="field__name">Answer Time</span>
           <p class="field__desc">
@@ -52,14 +53,14 @@
       </div>
     </div>
 
-    <div class="group">
-      <h2 class="group__title">Scoring</h2>
-      <p class="group__desc">
+    <div class="section">
+      <h2 class="section__title">Scoring</h2>
+      <p class="section__desc">
         Score is awarded to players based on how quickly the player answers the
         question. You can configure the minimum and maximum values for this
         below
       </p>
-      <div class="group__value field-group">
+      <div class=" field-group">
         <label class="field">
           <span class="field__name">Min Score</span>
           <p class="field__desc">
@@ -107,7 +108,12 @@
 <style lang="scss">
   @import "../../../assets/scheme.scss";
 
-  .group {
+  .section {
+    display: flex;
+    flex-flow: column;
+    border: 1px solid #444;
+    padding: 1rem;
+    border-radius: 0.25rem;
     &__title {
       color: #ffffff;
       margin-bottom: 0.25rem;
@@ -144,6 +150,12 @@
     gap: 1rem;
   }
 
+  .field-group {
+    display: flex;
+
+    gap: 1rem;
+  }
+
   .field {
     display: block;
     background-color: $surface;
@@ -171,5 +183,11 @@
     margin-top: 0.5rem;
     font-size: 1rem;
     line-height: 1.5;
+  }
+
+  @media screen and (max-width: 48rem) {
+    .field-group {
+      flex-flow: column;
+    }
   }
 </style>

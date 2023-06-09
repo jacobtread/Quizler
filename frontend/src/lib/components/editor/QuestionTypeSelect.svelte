@@ -13,7 +13,7 @@
     normalizeQuestion
   } from "$lib/stores/createStore";
   import RadioButton from "../RadioButton.svelte";
-  import { slide } from "svelte/transition";
+  import { fade, slide } from "svelte/transition";
 
   export let question: Question;
   export let visible: boolean;
@@ -53,6 +53,9 @@
 
       const marking = question.marking;
       if (marking !== undefined && marking.ty === MultipleMarking.Partial) {
+        if (marking.partial > question.max) marking.partial = question.max;
+        if (marking.correct > question.max) marking.correct = question.max;
+
         // Clamping partial-correct
         if (marking.partial > max) marking.partial = max;
         if (marking.correct > max) marking.correct = max;
@@ -63,8 +66,8 @@
   }
 </script>
 
-<div class="floating-wrapper">
-  <div class="dialog">
+<div class="floating-wrapper" transition:fade={{ duration: 200 }}>
+  <div class="dialog" transition:slide={{ duration: 200 }}>
     <button
       on:click={() => (visible = false)}
       class="btn btn--icon btn--surface"
@@ -94,38 +97,36 @@
     <!-- Multiple choice additional settings -->
     {#if question.ty == QuestionType.Multiple}
       <div class="section" transition:slide>
-        <div class="section">
-          <label class="field field--small">
-            <div>
-              <span class="field__name">Min</span>
-              <p class="field__desc">
-                The number answers the players <strong>must</strong> choose
-              </p>
-            </div>
-            <input
-              class="input"
-              type="number"
-              bind:value={question.min}
-              min={1}
-              max={question.answers.length}
-            />
-          </label>
-          <label class="field field--small">
-            <div>
-              <span class="field__name">Max</span>
-              <p class="field__desc">
-                The maximum number answers the players <strong>can</strong> choose
-              </p>
-            </div>
-            <input
-              class="input"
-              type="number"
-              bind:value={question.max}
-              min={question.min}
-              max={question.answers.length}
-            />
-          </label>
-        </div>
+        <label class="field field--small">
+          <div>
+            <span class="field__name">Min</span>
+            <p class="field__desc">
+              The number answers the players <strong>must</strong> choose
+            </p>
+          </div>
+          <input
+            class="input"
+            type="number"
+            bind:value={question.min}
+            min={1}
+            max={question.answers.length}
+          />
+        </label>
+        <label class="field field--small">
+          <div>
+            <span class="field__name">Max</span>
+            <p class="field__desc">
+              The maximum number answers the players <strong>can</strong> choose
+            </p>
+          </div>
+          <input
+            class="input"
+            type="number"
+            bind:value={question.max}
+            min={question.min}
+            max={question.answers.length}
+          />
+        </label>
 
         {#if question.marking !== undefined}
           <!-- Marking type -->
@@ -202,9 +203,6 @@
 
 <style lang="scss">
   @import "../../../assets/scheme.scss";
-
-  .group {
-  }
 
   .radio {
     display: flex;

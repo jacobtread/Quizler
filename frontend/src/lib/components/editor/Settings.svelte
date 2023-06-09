@@ -5,12 +5,13 @@
   import * as constants from "$lib/constants";
 
   import { createData } from "$stores/createStore";
+  import { fade, slide } from "svelte/transition";
 
   export let visible: boolean;
 </script>
 
-<div class="floating-wrapper">
-  <div class="dialog">
+<div class="floating-wrapper" transition:fade={{ duration: 200 }}>
+  <div class="dialog" transition:slide={{ duration: 200 }}>
     <button
       on:click={() => (visible = false)}
       class="btn btn--icon btn--surface"
