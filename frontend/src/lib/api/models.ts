@@ -218,7 +218,7 @@ export type Question = z.infer<typeof questionSchema> & {
   // ID used internally to make items unique
   id: string;
   // Shadow marker state for drag dropping
-  [SHADOW_ITEM_MARKER_PROPERTY_NAME]: undefined | boolean;
+  [SHADOW_ITEM_MARKER_PROPERTY_NAME]?: undefined | boolean;
 };
 
 // Different answer types
