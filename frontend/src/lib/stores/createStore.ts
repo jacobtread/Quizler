@@ -7,7 +7,6 @@ import {
 } from "$api/models";
 import { arraySwap, randomRange } from "$lib/utils/utils";
 import { writable, type Writable } from "svelte/store";
-import { v4 } from "uuid";
 
 export interface CreateData {
   name: string;
@@ -27,9 +26,6 @@ activeQuestion.subscribe(() => {
 
 export function setCreateData(data: CreateData) {
   createData.set(data);
-
-  // Assign new IDs to each of the question elements
-  data.questions.forEach((value) => (value.id = v4()));
 
   if (data.questions.length > 0) {
     activeQuestion.set(data.questions[0]);

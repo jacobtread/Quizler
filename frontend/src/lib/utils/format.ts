@@ -6,8 +6,9 @@ import {
   type StoredImage
 } from "$stores/imageStore";
 import type { CreateData } from "$stores/createStore";
-import { questionSchema, NameFiltering } from "$api/models";
+import { questionSchema, NameFiltering, type Question } from "$api/models";
 import { z } from "zod";
+import { v4 } from "uuid";
 
 // Schema used for parsing and validating the file format
 const fileFormatSchema = z.object({
@@ -121,11 +122,16 @@ export async function loadQuizBlob(file: Blob): Promise<CreateData> {
     loadImagePreview(blob, uuid);
   }
 
+  // Assign IDs to each of the question elements
+  obj.questions.forEach((value) => {
+    (value as Question).id = v4();
+  });
+
   return {
     name: obj.name,
     text: obj.text,
     max_players: obj.max_players,
     filtering: obj.filtering as NameFiltering,
-    questions: obj.questions
+    questions: obj.questions as Question[]
   };
 }
