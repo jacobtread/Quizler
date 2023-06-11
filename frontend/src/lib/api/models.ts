@@ -155,19 +155,6 @@ export const enum ImageFit {
   Height = "Height"
 }
 
-// Different answer types
-export enum MultipleMarking {
-  Exact = "Exact",
-  Partial = "Partial"
-}
-
-export const multipleMarkingText: Record<MultipleMarking, string> = {
-  [MultipleMarking.Exact]:
-    "Players must select all the answers marked as correct in order to score",
-  [MultipleMarking.Partial]:
-    "Players can get partial scores if they selected some correct answers"
-};
-
 // Schema for questions
 export const questionSchema = z
   .object({
@@ -197,18 +184,7 @@ export const questionSchema = z
       z.object({
         ty: z.literal(QuestionType.Multiple),
         answers: z.array(answerValueSchema),
-        marking: z.discriminatedUnion("ty", [
-          z.object({
-            ty: z.literal(MultipleMarking.Partial),
-            partial: z.number(),
-            correct: z.number()
-          }),
-          z.object({
-            ty: z.literal(MultipleMarking.Exact)
-          })
-        ]),
-        min: z.number(),
-        max: z.number()
+        correct_answers: z.number()
       })
     ])
   );

@@ -97,7 +97,8 @@
             class="answer btn btn--surface"
             class:answer--checked={answers.includes(index)}
             disabled={gameData.host ||
-              (!answers.includes(index) && answers.length === question.max)}
+              (!answers.includes(index) &&
+                answers.length === question.correct_answers)}
             on:click={() => select(index)}
           >
             {answer.value}
@@ -108,7 +109,7 @@
         <button
           class="btn btn btn--surface submit"
           on:click={doAnswers}
-          disabled={answers.length < question.min}
+          disabled={answers.length < 1}
         >
           Submit
         </button>

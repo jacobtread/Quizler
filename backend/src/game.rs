@@ -3,8 +3,8 @@ use crate::{
     msg::ServerMessage,
     session::{ClearGameMessage, Session, SessionId},
     types::{
-        Answer, AnswerData, HostAction, Image, ImageRef, MultipleMarking, NameFiltering, Question,
-        QuestionData, RemoveReason, Score, ServerError,
+        Answer, AnswerData, HostAction, Image, ImageRef, NameFiltering, Question, QuestionData,
+        RemoveReason, Score, ServerError,
     },
 };
 use actix::{Actor, ActorContext, Addr, AsyncContext, Context, Handler, Message, SpawnHandle};
@@ -691,57 +691,36 @@ impl PlayerAnswer {
                     Score::Incorrect
                 }
             }
-            (
-                A::Multiple { answers: indexes },
-                Q::Multiple {
-                    answers,
-                    marking,
-                    min,
-                    max,
-                },
-            ) => {
-                let count_answers: usize = indexes.len();
-                // Ensure they have atleast the required number of answers
-                if count_answers < *min || count_answers > *max {
+            (A::Multiple { answers: indexes }, Q::Multiple { answers, .. }) => {
+                let count_answers = indexes.len();
+
+                // The total number of actual correct answers
+                let count_expected = answers.iter().filter(|value| value.correct).count();
+
+                // Didn't provide enough answer or provided too many
+                if count_answers < 1 || count_answers > count_expected {
                     return Score::Incorrect;
                 }
 
-                // Count the number of correct answers
-                let count = indexes
+                // Count the number of provided correct answers
+                let count_correct = indexes
                     .iter()
                     .filter_map(|index| answers.get(*index))
                     .filter(|value| value.correct)
                     .count();
 
-                // Number of incorrect answers
-                let incorrect = count_answers - count;
-
-                match marking {
-                    MultipleMarking::Partial { partial, correct } => {
-                        if count >= *correct && incorrect == 0 {
-                            Score::Correct { value: base_score }
-                        } else if count < *partial {
-                            Score::Incorrect
-                        } else {
-                            // % correct out of total answers
-                            let percent = count as f32 / *correct as f32;
-                            let score = ((base_score as f32) * percent).round() as u32;
-                            Score::Partial {
-                                value: score,
-                                count: count as u32,
-                                total: *correct as u32,
-                            }
-                        }
-                    }
-                    MultipleMarking::Exact => {
-                        // The total number of correct answers
-                        let count_correct = answers.iter().filter(|value| value.correct).count();
-
-                        if count == count_correct {
-                            Score::Correct { value: base_score }
-                        } else {
-                            Score::Incorrect
-                        }
+                if count_correct < 1 {
+                    Score::Incorrect
+                } else if count_correct == count_expected {
+                    Score::Correct { value: base_score }
+                } else {
+                    // % correct out of total answers
+                    let percent = count_correct as f32 / count_expected as f32;
+                    let score = ((base_score as f32) * percent).round() as u32;
+                    Score::Partial {
+                        value: score,
+                        count: count_correct as u32,
+                        total: count_expected as u32,
                     }
                 }
             }

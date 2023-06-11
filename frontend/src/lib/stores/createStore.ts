@@ -1,10 +1,5 @@
 import { defaultCreateData, defaultQuestion } from "$lib/constants";
-import {
-  NameFiltering,
-  QuestionType,
-  type Question,
-  MultipleMarking
-} from "$api/models";
+import { NameFiltering, QuestionType, type Question } from "$api/models";
 import { arraySwap, randomRange } from "$lib/utils/utils";
 import { writable, type Writable } from "svelte/store";
 
@@ -132,29 +127,22 @@ export function saveQuestion(question: Question) {
  * @returns The question provided
  */
 export function normalizeQuestion(question: Question): Question {
-  // Create answers if they are missing
-  question.answers = question.answers ?? [];
-
-  // Add min max fields if they are missing
-  if (question.ty === QuestionType.Multiple) {
-    question.min = question.min ?? 1;
-    question.max = question.max ?? 1;
-
-    question.marking = question.marking ?? { ty: MultipleMarking.Exact };
-    normalizeMarkingType(question);
-  }
-
-  return question;
-}
-
-export function normalizeMarkingType(question: Question): Question {
-  if (question.ty === QuestionType.Multiple) {
-    const marking = question.marking;
-
-    if (marking.ty === MultipleMarking.Partial) {
-      marking.partial = marking.partial ?? 1;
-      marking.correct = marking.correct ?? question.answers.length;
+  if (
+    question.ty === QuestionType.Multiple ||
+    question.ty === QuestionType.Single
+  ) {
+    // Create answers if they are missing
+    question.answers = question.answers ?? [];
+    if (question.ty === QuestionType.Multiple) {
+      let correct = 0;
+      for (let i = 0; i < question.answers.length; i++) {
+        const answer = question.answers[i];
+        if (answer.correct) correct++;
+      }
+      // Set the count of correct answers
+      question.correct_answers = correct;
     }
   }
+
   return question;
 }
