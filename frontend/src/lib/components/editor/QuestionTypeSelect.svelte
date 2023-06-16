@@ -1,9 +1,8 @@
 <script lang="ts">
   import Close from "$components/icons/Delete.svelte";
 
-  import { QuestionType, type Question, questionTypeText } from "$api/models";
+  import { QuestionType, type Question } from "$api/models";
   import { normalizeQuestion } from "$lib/stores/createStore";
-  import RadioButton from "../RadioButton.svelte";
   import { fade, slide } from "svelte/transition";
 
   export let question: Question;
