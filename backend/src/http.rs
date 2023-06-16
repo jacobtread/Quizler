@@ -38,8 +38,7 @@ pub fn configure(cfg: &mut ServiceConfig) {
     cfg.service(public);
 }
 
-/// Contains all the files stored in the "test" folder
-/// use the [`Embedded::get`] method to access the folders
+/// Embedded assets for serving the frontend of the application
 #[derive(Embedded)]
 #[folder = "public"]
 struct Assets;
