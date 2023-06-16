@@ -128,15 +128,10 @@ export const removeReasonText: Record<RemoveReason, string> = {
 // Question types
 export enum QuestionType {
   Single = "Single",
-  Multiple = "Multiple"
+  Multiple = "Multiple",
+  TrueFalse = "TrueFalse",
+  Typer = "Typer"
 }
-
-export const questionTypeText: Record<QuestionType, string> = {
-  [QuestionType.Single]:
-    "There can be multiple correct answers but the user can only choose 1",
-  [QuestionType.Multiple]:
-    "There can be 1 or more correct answers and the user can select many"
-};
 
 // Schema for question answers
 const answerValueSchema = z.object({
@@ -185,6 +180,18 @@ export const questionSchema = z
         ty: z.literal(QuestionType.Multiple),
         answers: z.array(answerValueSchema),
         correct_answers: z.number()
+      }),
+      // True / False choice questions
+      z.object({
+        ty: z.literal(QuestionType.TrueFalse),
+        answer: z.boolean()
+      }),
+
+      // Typing question
+      z.object({
+        ty: z.literal(QuestionType.Typer),
+        answers: z.array(z.string()),
+        ignore_case: z.boolean()
       })
     ])
   );
@@ -200,13 +207,17 @@ export type Question = z.infer<typeof questionSchema> & {
 // Different answer types
 export const enum AnswerType {
   Single = "Single",
-  Multiple = "Multiple"
+  Multiple = "Multiple",
+  TrueFalse = "TrueFalse",
+  Typer = "Typer"
 }
 
 // Answer schemas for each different type
 export type Answer =
   | { ty: AnswerType.Single; answer: number }
-  | { ty: AnswerType.Multiple; answers: number[] };
+  | { ty: AnswerType.Multiple; answers: number[] }
+  | { ty: AnswerType.TrueFalse; answer: boolean }
+  | { ty: AnswerType.Typer; answer: string };
 
 // Different score types
 export const enum ScoreType {

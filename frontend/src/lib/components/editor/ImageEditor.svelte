@@ -4,7 +4,6 @@
   import ImageStorage from "$components/ImageStorage.svelte";
   import Cog from "../icons/Cog.svelte";
   import ImageSettings from "./ImageSettings.svelte";
-  import Image from "../icons/Image.svelte";
 
   export let question: Question;
 
@@ -77,7 +76,6 @@
   }
 
   .wrapper {
-    max-height: 50vh;
     width: 100%;
     flex: auto;
     overflow: hidden;

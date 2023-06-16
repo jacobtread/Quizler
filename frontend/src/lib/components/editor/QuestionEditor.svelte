@@ -1,7 +1,7 @@
 <!-- Component represents a question that is being created -->
 
 <script lang="ts">
-  import { type Question } from "$api/models";
+  import { QuestionType, type Question } from "$api/models";
 
   import * as constants from "$lib/constants";
 
@@ -23,6 +23,12 @@
   let type: boolean = false;
 
   function shuffleAnswers() {
+    if (
+      question.ty != QuestionType.Single &&
+      question.ty != QuestionType.Multiple
+    ) {
+      return;
+    }
     question.answers = shuffleArray(question.answers);
   }
 
@@ -47,7 +53,8 @@
     <span>Settings</span>
   </button>
 
-  {#if question.answers !== undefined}
+  <!-- If question type is shufflable include a shuffle button -->
+  {#if (question.ty === QuestionType.Single || question.ty === QuestionType.Multiple) && question.answers !== undefined}
     <button
       class="btn btn--icon"
       on:click={shuffleAnswers}

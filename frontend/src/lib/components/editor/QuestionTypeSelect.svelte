@@ -2,23 +2,31 @@
   import Close from "$components/icons/Delete.svelte";
 
   import { QuestionType, type Question } from "$api/models";
-  import { normalizeQuestion } from "$lib/stores/createStore";
+  import {
+    activeQuestion,
+    changeQuestionType,
+    replaceQuestion
+  } from "$lib/stores/createStore";
   import { fade, slide } from "svelte/transition";
+  import Checkbox from "../Checkbox.svelte";
+  import { confirmDialog } from "$lib/stores/dialogStore";
 
   export let question: Question;
   export let visible: boolean;
 
-  /**
-   * Handle changes between types to ensure that the
-   * question has the relevant fields for that type
-   */
-  function onTypeChange(event: Event) {
-    console.log(event);
-    question = normalizeQuestion(question);
-  }
+  async function setQuestionType(ty: QuestionType) {
+    if (ty !== question.ty) {
+      const answer = await confirmDialog(
+        "Confirm change",
+        "Are you sure you want to change the question type? Current questions will be lost."
+      );
+      if (!answer) return;
+    }
 
-  $: {
-    question = normalizeQuestion(question);
+    question = changeQuestionType(question, ty);
+
+    replaceQuestion(question);
+    activeQuestion.set(question);
   }
 </script>
 
@@ -37,18 +45,11 @@
       <p class="section__desc">Please select the type of question below</p>
 
       <div class="types">
-        <label
+        <button
           class="type"
           class:type--selected={question.ty == QuestionType.Single}
+          on:click={() => setQuestionType(QuestionType.Single)}
         >
-          <input
-            class="type__input"
-            type="radio"
-            on:change={onTypeChange}
-            bind:group={question.ty}
-            value={QuestionType.Single}
-            tabindex="0"
-          />
           <p class="type__name">Single Choice</p>
           <p class="type__desc">Players can only select one answer</p>
           <div class="answers">
@@ -57,19 +58,13 @@
             <p class="answer" />
             <p class="answer" />
           </div>
-        </label>
+        </button>
 
-        <label
+        <button
           class="type"
           class:type--selected={question.ty == QuestionType.Multiple}
+          on:click={() => setQuestionType(QuestionType.Multiple)}
         >
-          <input
-            class="type__input"
-            type="radio"
-            on:change={onTypeChange}
-            bind:group={question.ty}
-            value={QuestionType.Multiple}
-          />
           <p class="type__name">Multiple Choice</p>
           <p class="type__desc">Players can select multiple answers</p>
           <div class="answers">
@@ -78,14 +73,57 @@
             <p class="answer" />
             <p class="answer answer--correct" />
           </div>
-        </label>
+        </button>
+        <button
+          class="type"
+          class:type--selected={question.ty == QuestionType.TrueFalse}
+          on:click={() => setQuestionType(QuestionType.TrueFalse)}
+        >
+          <p class="type__name">True / False</p>
+          <p class="type__desc">Simple true or false questions</p>
+          <div class="answers">
+            <p class="answer answer--correct" />
+            <p class="answer" />
+          </div>
+        </button>
+        <button
+          class="type"
+          class:type--selected={question.ty == QuestionType.Typer}
+          on:click={() => setQuestionType(QuestionType.Typer)}
+        >
+          <p class="type__name">Typer</p>
+          <p class="type__desc">Players must type out their answer</p>
+          <div class="answers">
+            <p class="answer" />
+          </div>
+        </button>
       </div>
     </div>
+
+    {#if question.ty === QuestionType.Typer}
+      <div class="section">
+        <h2 class="section__title">Settings</h2>
+        <p class="section__desc">Below are settings specific to this type</p>
+        <div>
+          <div class="row">
+            <Checkbox bind:value={question.ignore_case} />
+            <p>Ignore case when checking if the answer is correct</p>
+          </div>
+        </div>
+      </div>
+    {/if}
   </div>
 </div>
 
 <style lang="scss">
   @import "../../../assets/scheme.scss";
+
+  .row {
+    display: flex;
+    flex-flow: row;
+    gap: 0.5rem;
+    align-items: center;
+  }
 
   .types {
     display: grid;
@@ -94,6 +132,9 @@
   }
 
   .type {
+    text-align: left;
+    background-color: $surface;
+    border: none;
     padding: 1rem;
     border: 2px solid $surfaceLight;
     border-radius: 0.25rem;
@@ -112,10 +153,6 @@
       border-color: $primaryLighter;
     }
 
-    &__input {
-      display: none;
-    }
-
     &__name {
       font-size: 1.25rem;
       font-weight: bold;
@@ -124,6 +161,7 @@
     }
 
     &__desc {
+      font-size: 1rem;
       margin-bottom: 0.5rem;
     }
   }
@@ -152,12 +190,6 @@
       background-color: $primary;
       color: #fff;
     }
-  }
-
-  .radio {
-    display: flex;
-    flex-flow: column;
-    gap: 0.5rem;
   }
 
   .section {

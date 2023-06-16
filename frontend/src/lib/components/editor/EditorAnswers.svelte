@@ -11,33 +11,63 @@
   export let question: Question;
 
   function addAnswer() {
-    let nextId = 0;
+    /// Adding questions is only supported by single/multiple choice questions
+    if (
+      question.ty != QuestionType.Single &&
+      question.ty != QuestionType.Multiple
+    ) {
+      return;
+    }
 
-    for (const answer of question.answers) {
+    const answers = question.answers;
+
+    let nextId = 0;
+    for (const answer of answers) {
       if (answer.id >= nextId) {
         nextId = answer.id + 1;
       }
     }
 
-    question.answers.push({
+    answers.push({
       id: nextId,
       value: "",
       correct: false
     });
+    question.answers = answers;
+  }
+
+  function addTyperAnswer() {
+    if (question.ty != QuestionType.Typer) {
+      return;
+    }
+
+    question.answers.push("");
     question.answers = question.answers;
   }
 
   function removeAnswer(index: number) {
-    question.answers = question.answers.filter(
-      (_, valueIndex) => valueIndex != index
-    );
+    /// Adding questions is only supported by single/multiple choice questions
+    if (
+      question.ty != QuestionType.Single &&
+      question.ty != QuestionType.Multiple &&
+      question.ty != QuestionType.Typer
+    ) {
+      return;
+    }
+
+    question.answers.splice(index, 1);
+    question.answers = question.answers;
   }
 </script>
 
 {#if question.ty == QuestionType.Single || question.ty == QuestionType.Multiple}
   <div class="answers">
     {#each question.answers as answer, index (answer.id)}
-      <div class="answer" animate:flip={{ duration: 200 }}>
+      <div
+        class="answer"
+        animate:flip={{ duration: 200 }}
+        class:answer--selected={answer.correct}
+      >
         <div class="answer__check">
           <Checkbox bind:value={answer.correct} />
         </div>
@@ -62,14 +92,72 @@
       <button class="btn add" on:click={addAnswer}> Add Answer </button>
     {/if}
   </div>
+{:else if question.ty === QuestionType.TrueFalse}
+  <div class="answers">
+    <label
+      class="answer answer--bool"
+      class:answer--selected={question.answer === true}
+    >
+      <input
+        class="hidden"
+        type="radio"
+        bind:group={question.answer}
+        value={true}
+      />
+
+      <p class="answer__text">True</p>
+    </label>
+
+    <label
+      class="answer answer--bool"
+      class:answer--selected={question.answer === false}
+    >
+      <input
+        class="hidden"
+        type="radio"
+        bind:group={question.answer}
+        value={false}
+      />
+
+      <p class="answer__text">False</p>
+    </label>
+  </div>
+{:else if question.ty === QuestionType.Typer}
+  <div class="answers">
+    {#each question.answers as answer, index}
+      <div class="answer">
+        <input
+          class="answer__input"
+          type="text"
+          bind:value={answer}
+          maxlength={constants.MAX_ANSWER_LENGTH}
+        />
+
+        <button
+          disabled={question.answers.length == 1}
+          on:click={() => removeAnswer(index)}
+          class="btn btn--surface btn--icon-only"
+        >
+          <Delete />
+        </button>
+      </div>
+    {/each}
+    {#if question.answers.length < constants.MAX_ANSWERS}
+      <button class="btn add" on:click={addTyperAnswer}> Add Answer </button>
+    {/if}
+  </div>
 {/if}
 
 <style lang="scss">
   @import "../../../assets/scheme.scss";
 
-  .answers {
-    overflow: hidden;
+  .hidden {
+    display: none;
+  }
 
+  .answers {
+    // overflow: hidden;
+    padding: 0.25rem;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1rem;
@@ -85,6 +173,10 @@
     align-items: stretch;
     line-height: 1;
 
+    &--selected {
+      outline: 2px solid $primary;
+    }
+
     &__check {
       align-self: center;
     }
@@ -97,6 +189,21 @@
       background-color: $surfaceLight;
       border-radius: 0.25rem;
       font-size: 1rem;
+    }
+
+    &--bool {
+      font-weight: bold;
+      font-size: 2rem;
+      text-align: center;
+      padding: 0.5rem;
+    }
+
+    &__text {
+      display: block;
+      width: 100%;
+      padding: 0.5rem;
+      border-radius: 0.25rem;
+      font-size: 1.25rem;
     }
   }
 

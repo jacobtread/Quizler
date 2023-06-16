@@ -16,8 +16,12 @@ export const createData: Writable<CreateData> = writable(defaultCreateData());
 export const activeQuestion: Writable<Question | null> = writable(null);
 
 activeQuestion.subscribe(() => {
-  createData.update((store) => store);
+  forceUpdateCreate();
 });
+
+export function forceUpdateCreate() {
+  createData.update((store) => store);
+}
 
 export function setCreateData(data: CreateData) {
   createData.set(data);
@@ -100,16 +104,13 @@ export function shuffleQuestions() {
  *
  * @param question The question to save
  */
-export function saveQuestion(question: Question) {
+export function replaceQuestion(question: Question) {
   createData.update((store) => {
     const index = store.questions.findIndex(
       (value) => value.id === question.id
     );
 
-    if (index === -1) {
-      // Add the new question
-      store.questions.push(question);
-    } else {
+    if (index !== -1) {
       // Replace the existing question
       store.questions[index] = question;
     }
@@ -118,31 +119,49 @@ export function saveQuestion(question: Question) {
   });
 }
 
-/**
- * Normalizises the question for its current type. For
- * the multiple choice question it adds the missing
- * min and max fields
- *
- * @param question The question to normalize
- * @returns The question provided
- */
-export function normalizeQuestion(question: Question): Question {
-  if (
-    question.ty === QuestionType.Multiple ||
-    question.ty === QuestionType.Single
-  ) {
-    // Create answers if they are missing
-    question.answers = question.answers ?? [];
-    if (question.ty === QuestionType.Multiple) {
-      let correct = 0;
-      for (let i = 0; i < question.answers.length; i++) {
-        const answer = question.answers[i];
-        if (answer.correct) correct++;
-      }
-      // Set the count of correct answers
-      question.correct_answers = correct;
-    }
+export function changeQuestionType(
+  question: Question,
+  target: QuestionType
+): Question {
+  // If the question is of the same type no change should be made
+  if (target === question.ty) {
+    return question;
   }
 
-  return question;
+  // Create a copy of the basic question details
+  const base: Question = {
+    id: question.id,
+    text: question.text,
+    image: question.image,
+    answer_time: question.answer_time,
+    bonus_score_time: question.bonus_score_time,
+    scoring: question.scoring,
+    ty: target
+  } as Question;
+
+  // Recreate the required fields based on the previous type
+  switch (base.ty) {
+    case QuestionType.Single:
+    case QuestionType.Multiple:
+      // Try and inherit answers from the alternative type
+      if (
+        question.ty === QuestionType.Single ||
+        question.ty === QuestionType.Multiple
+      ) {
+        base.answers = question.answers;
+      } else {
+        base.answers = [];
+      }
+
+      break;
+    case QuestionType.TrueFalse:
+      base.answer = true;
+      break;
+    case QuestionType.Typer:
+      base.answers = ["Example Answer"];
+      base.ignore_case = true;
+      break;
+  }
+
+  return base;
 }

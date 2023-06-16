@@ -11,7 +11,8 @@
     ClientMessage,
     errorText,
     ServerError,
-    type Question
+    type Question,
+    QuestionType
   } from "$api/models";
   import * as socket from "$api/socket";
   import { createHttp } from "$api/http";
@@ -106,18 +107,24 @@
         return false;
       }
 
-      for (let j = 0; j < question.answers.length; j++) {
-        const answer = question.answers[j];
-        answer.value = answer.value.trim();
+      if (
+        question.ty === QuestionType.Single ||
+        question.ty === QuestionType.Multiple
+      ) {
+        for (let j = 0; j < question.answers.length; j++) {
+          const answer = question.answers[j];
+          answer.value = answer.value.trim();
 
-        if (answer.value.length < 1) {
-          errorDialog(
-            "Empty answer",
-            `Answer number ${j + 1} of question ${i + 1} must not be blank`
-          );
-          return false;
+          if (answer.value.length < 1) {
+            errorDialog(
+              "Empty answer",
+              `Answer number ${j + 1} of question ${i + 1} must not be blank`
+            );
+            return false;
+          }
         }
       }
+      // TODO: Validate other types
     }
     return true;
   }
@@ -233,7 +240,7 @@
       >
         {#each $createData.questions as question, index (question.id)}
           <div style="position: relative;" animate:flip={{ duration: 200 }}>
-            <QuestionListItem bind:question {index} />
+            <QuestionListItem {question} {index} />
             {#if question[SHADOW_ITEM_MARKER_PROPERTY_NAME]}
               <div class="shadow-item" />
             {/if}

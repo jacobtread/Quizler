@@ -71,6 +71,13 @@
         />
       {/each}
     </div>
+  {:else if question.ty === QuestionType.TrueFalse}
+    <div class="answers">
+      <p class="answer" data-correct={question.answer === true} />
+      <p class="answer" data-correct={question.answer === false} />
+    </div>
+  {:else if question.ty === QuestionType.Typer}
+    <p class="answer" data-correct={false} />
   {/if}
 </div>
 
