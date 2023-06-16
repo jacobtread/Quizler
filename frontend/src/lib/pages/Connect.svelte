@@ -16,6 +16,7 @@
 
   import { setGame, setHome } from "$stores/state";
   import { errorDialog } from "$stores/dialogStore";
+  import { afterUpdate } from "svelte";
 
   const enum State {
     Connect,
@@ -38,6 +39,12 @@
 
   // Loading screen state
   let loading: boolean = false;
+
+  // Determines whether focus should be updated
+  let updateFocus: boolean = true;
+
+  let inputToken: HTMLInputElement;
+  let inputName: HTMLInputElement;
 
   /**
    * Update called whenever the token input changes in
@@ -83,6 +90,7 @@
       .send({ ty: ClientMessage.Connect, token })
       .then(() => {
         state = State.Join;
+        updateFocus = true;
       })
       .catch((error: ServerError) => {
         console.error("Failed to connect", error);
@@ -111,8 +119,23 @@
       setHome();
     } else {
       state = State.Connect;
+      inputToken.focus();
     }
   }
+
+  afterUpdate(() => {
+    if (!updateFocus) return;
+
+    if (inputToken && document.activeElement !== inputToken) {
+      inputToken.focus();
+      console.log("Focus called");
+    }
+
+    if (inputName && document.activeElement !== inputName) {
+      inputName.focus();
+      console.log("Focus called");
+    }
+  });
 </script>
 
 {#if loading} <FloatingLoader /> {/if}
@@ -126,8 +149,9 @@
     <h1>Enter Code</h1>
     <p>Please enter your quiz code below</p>
 
-    <div class="form">
+    <form class="form" on:submit|preventDefault={connect}>
       <input
+        bind:this={inputToken}
         class="input"
         type="text"
         bind:value={token}
@@ -139,14 +163,14 @@
 
       {#if tokenValid}
         <button
-          on:click={connect}
+          type="submit"
           class="play"
           transition:slide={{ axis: "x", duration: 200 }}
         >
           <Play />
         </button>
       {/if}
-    </div>
+    </form>
   </main>
 {:else}
   <main class="page page--center page--overflow" transition:slide>
@@ -154,8 +178,9 @@
     <h1>Enter Name</h1>
     <p>Please enter your desired name</p>
 
-    <div class="form">
+    <form class="form" on:submit|preventDefault={join}>
       <input
+        bind:this={inputName}
         class="input input--small"
         type="text"
         bind:value={name}
@@ -166,14 +191,14 @@
 
       {#if nameValid}
         <button
-          on:click={join}
+          type="submit"
           class="play play--small"
           transition:slide={{ axis: "x", duration: 200 }}
         >
           <Play />
         </button>
       {/if}
-    </div>
+    </form>
   </main>
 {/if}
 
