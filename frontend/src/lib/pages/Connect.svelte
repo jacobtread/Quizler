@@ -52,6 +52,11 @@
       // Remove any invald values
       .replace(/[^A-Z0-9]/, "");
 
+    // Enforce max token length for mobile devices
+    if (token.length > TOKEN_LENGTH) {
+      token = token.substring(0, TOKEN_LENGTH);
+    }
+
     // Change the disabled state based on the length requirement
     tokenValid = token.length === TOKEN_LENGTH;
   }
