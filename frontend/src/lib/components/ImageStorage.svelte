@@ -156,7 +156,7 @@
             {#if upload.error}
               <p class="error">{upload.error}</p>
             {:else}
-              <p>Progress: {upload.progress}</p>
+              <p>Progress: {upload.progress.toFixed(0)}%</p>
             {/if}
           </div>
         {/each}
