@@ -123,6 +123,19 @@
             return false;
           }
         }
+      } else if (question.ty === QuestionType.Typer) {
+        // Trim answers
+        for (let j = 0; j < question.answers.length; j++) {
+          const trimmed = question.answers[j].trim();
+          question.answers[j] = trimmed;
+          if (trimmed.length < 1) {
+            errorDialog(
+              "Empty answer",
+              `Answer number ${j + 1} of question ${i + 1} must not be blank`
+            );
+            return false;
+          }
+        }
       }
       // TODO: Validate other types
     }

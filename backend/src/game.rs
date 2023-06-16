@@ -745,6 +745,9 @@ impl PlayerAnswer {
                     ignore_case,
                 },
             ) => {
+                // Trim extra whitespace
+                let answer = answer.trim();
+
                 let correct = if *ignore_case {
                     answers
                         .iter()

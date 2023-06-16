@@ -20,6 +20,7 @@
   export let preloadedImage: HTMLImageElement | null;
 
   let answers: number[] = [];
+  let typerAnswer: string = "";
 
   async function doAnswer(index: number) {
     answered = true;
@@ -30,6 +31,38 @@
         answer: {
           ty: AnswerType.Single,
           answer: index
+        }
+      });
+    } catch (e) {
+      console.error("Error while attempting to answer", e);
+    }
+  }
+
+  async function doAnswerBool(answer: boolean) {
+    answered = true;
+
+    try {
+      await socket.send({
+        ty: ClientMessage.Answer,
+        answer: {
+          ty: AnswerType.TrueFalse,
+          answer
+        }
+      });
+    } catch (e) {
+      console.error("Error while attempting to answer", e);
+    }
+  }
+
+  async function doAnswerTyper() {
+    answered = true;
+
+    try {
+      await socket.send({
+        ty: ClientMessage.Answer,
+        answer: {
+          ty: AnswerType.Typer,
+          answer: typerAnswer
         }
       });
     } catch (e) {
@@ -114,6 +147,34 @@
           Submit
         </button>
       {/if}
+    {:else if question.ty === QuestionType.TrueFalse}
+      <div class="answers">
+        <button
+          data-host={gameData.host}
+          class="answer btn btn--surface"
+          disabled={gameData.host}
+          on:click={() => doAnswerBool(true)}
+        >
+          True
+        </button>
+        <button
+          data-host={gameData.host}
+          class="answer btn btn--surface"
+          disabled={gameData.host}
+          on:click={() => doAnswerBool(false)}
+        >
+          False
+        </button>
+      </div>
+    {:else if question.ty === QuestionType.Typer && !gameData.host}
+      <input class="input" type="text" bind:value={typerAnswer} />
+      <button
+        class="btn btn btn--surface submit"
+        on:click={doAnswerTyper}
+        disabled={typerAnswer.length < 1}
+      >
+        Submit
+      </button>
     {/if}
   </div>
   <div class="bottom">
@@ -136,6 +197,19 @@
     justify-content: space-between;
     align-items: center;
     border-top: 5px solid $surfaceLight;
+  }
+
+  .input {
+    display: block;
+    margin-top: 0.25rem;
+    width: 100%;
+    padding: 0.5rem;
+    border: none;
+    background-color: $surfaceLight;
+    border-radius: 0.25rem;
+    margin-top: 0.5rem;
+    font-size: 1rem;
+    line-height: 1.5;
   }
 
   .token {
