@@ -16,6 +16,11 @@ This version aims to improve upon the downfalls of the previous app (Written in 
 
 This new version makes use of [Rust](https://www.rust-lang.org/) for the backend with the [Actix](https://actix.rs) web framework and [Svelte](https://svelte.dev/) for the frontend. The previous version used [Go](https://go.dev/) for the backend and [VueJS](https://vuejs.org/) for the frontend.
 
+## 🛫 Deploying
+
+Quizler can be quickly and easily deployed to [Render](https://render.com) if you would like to deploy a Free instance to render
+you can follow the guide on the Wiki [Here](https://github.com/jacobtread/Quizler-v2/wiki/Deploying-to-Render)
+
 
 ## 📥 Downloads
 
