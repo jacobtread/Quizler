@@ -2,12 +2,14 @@
 @import "scheme";
 
 :root {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
   color-scheme: light dark;
+}
 
+* {
+  font-family: Avenir, Helvetica, Arial, sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -44,7 +46,7 @@ body {
 
 body {
   background-color: $appBackground;
-  color: #999;
+  color: #e3e3e3;
 }
 
 p {
