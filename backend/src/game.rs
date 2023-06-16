@@ -725,6 +725,41 @@ impl PlayerAnswer {
                 }
             }
 
+            (
+                A::TrueFalse { answer },
+                Q::TrueFalse {
+                    answer: actual_answer,
+                },
+            ) => {
+                if *answer == *actual_answer {
+                    Score::Correct { value: base_score }
+                } else {
+                    Score::Incorrect
+                }
+            }
+
+            (
+                A::Typer { answer },
+                Q::Typer {
+                    answers,
+                    ignore_case,
+                },
+            ) => {
+                let correct = if *ignore_case {
+                    answers
+                        .iter()
+                        .any(|value| answer.eq_ignore_ascii_case(value))
+                } else {
+                    answers.iter().any(|value| answer.eq(value))
+                };
+
+                if correct {
+                    Score::Correct { value: base_score }
+                } else {
+                    Score::Incorrect
+                }
+            }
+
             // Mismatched types shouldn't be possible but
             // will be marked as incorrect
             _ => Score::Incorrect,

@@ -163,7 +163,23 @@ pub enum QuestionData {
         /// The number of correct answers
         correct_answers: usize,
     },
-    // TODO: True/false with boolean
+    /// True / False questions
+    TrueFalse {
+        /// Answer value
+        /// (Not sent to clients)
+        #[serde(skip_serializing)]
+        answer: bool,
+    },
+    /// Typing question
+    Typer {
+        /// Collection of valid answers
+        /// (Not sent to clients)
+        #[serde(skip_serializing)]
+        answers: Vec<String>,
+        /// Whether to ignore case when marking
+        #[serde(skip_serializing)]
+        ignore_case: bool,
+    },
 }
 
 /// Game settings for global min/max scoring along with
@@ -205,6 +221,16 @@ pub enum Answer {
         /// The list of chosen answers
         answers: Vec<AnswerIndex>,
     },
+    /// Answer for true false questions
+    TrueFalse {
+        /// The boolean answer
+        answer: bool,
+    },
+    /// Answer for typing questions
+    Typer {
+        /// The string answer
+        answer: String,
+    },
 }
 
 impl Answer {
@@ -217,6 +243,8 @@ impl Answer {
             (Self::Single { .. }, QuestionData::Single { .. })
             // Both type Multiple
                 | (Self::Multiple { .. }, QuestionData::Multiple { .. })
+                | (Self::TrueFalse { .. }, QuestionData::TrueFalse { .. })
+                | (Self::Typer { .. }, QuestionData::Typer { .. })
         )
     }
 }
