@@ -103,12 +103,17 @@ impl Game {
         });
     }
 
-    /// Moves the game to the next state based on its current state
-    fn next_state(&mut self, ctx: &mut Context<Self>) {
-        // If a task handle still exists cancel it
+    /// Cancels a expected task if the handle is present
+    fn cancel_task(&mut self, ctx: &mut Context<Self>) {
         if let Some(task_handle) = self.task_handle.take() {
             ctx.cancel_future(task_handle);
         }
+    }
+
+    /// Moves the game to the next state based on its current state
+    fn next_state(&mut self, ctx: &mut Context<Self>) {
+        // If a task handle still exists cancel it
+        self.cancel_task(ctx);
 
         match self.state {
             // Next state after lobby is starting
@@ -156,7 +161,7 @@ impl Game {
 
             // Next state after finished is a reset game
             GameState::Finished => {
-                self.reset_completely();
+                self.reset_completely(ctx);
             }
         }
     }
@@ -184,7 +189,9 @@ impl Game {
     }
 
     /// Resets the game state and all the player data to its initial values
-    fn reset_completely(&mut self) {
+    fn reset_completely(&mut self, ctx: &mut Context<Self>) {
+        self.cancel_task(ctx);
+
         self.question_index = 0;
 
         for player in self.players.iter_mut() {
@@ -204,7 +211,7 @@ impl Game {
 
         // Reset the game if everyone disconected while in progress
         if self.state != GameState::Finished && self.players.is_empty() {
-            self.reset_completely();
+            self.reset_completely(ctx);
         }
     }
 
@@ -423,7 +430,7 @@ impl Handler<HostActionMessage> for Game {
         }
 
         match msg.action {
-            HostAction::Reset => self.reset_completely(),
+            HostAction::Reset => self.reset_completely(ctx),
             HostAction::Next => self.next_state(ctx),
         };
 
