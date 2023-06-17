@@ -3,17 +3,16 @@
   import {
     QuestionType,
     type Question,
-    type TimerState,
     ClientMessage,
     AnswerType,
     HostAction
   } from "$api/models";
-  import { formatTime } from "$lib/utils/utils";
   import type { GameData } from "$pages/Game.svelte";
   import { doHostAction } from "$lib/api/actions";
+  import { formatTime } from "$lib/utils/utils";
 
   export let gameData: GameData;
-  export let timer: TimerState;
+  export let timeMs: number;
   export let question: Question;
   export let answered: boolean;
 
@@ -182,7 +181,7 @@
     {#if gameData.host}
       <button class="btn btn--surface" on:click={next}>Skip</button>
     {/if}
-    <p class="time">{formatTime(timer)}</p>
+    <p class="time">{formatTime(timeMs)}</p>
   </div>
 </main>
 

@@ -7,9 +7,6 @@ export type SessionId = number;
 // Represents a 5 character game token (e.g EAU32)
 export type GameToken = string;
 
-// State of the quiz timer
-export type TimerState = { total: number; elapsed: number };
-
 // Mapping between IDs and the scores
 export type Scores = Record<SessionId, number>;
 

@@ -23,7 +23,6 @@
     type Question,
     type Score,
     type SessionId,
-    type TimerState,
     ScoreType,
     removeReasonText,
     type GameSummary,
@@ -73,22 +72,23 @@
 
   let answered: boolean;
 
-  let timer: TimerState = { total: 0, elapsed: 0 };
+  let timeMs: number = 0;
   let lastUpdateTime: number = 0;
 
   function updateTimer() {
     // Don't update the timer if we have reached the time
-    if (timer.elapsed === timer.total) return;
+    if (timeMs <= 0) return;
 
     const time = performance.now();
 
     const elapsed = time - lastUpdateTime;
-    timer.elapsed += elapsed;
+
+    timeMs -= elapsed;
+    if (timeMs < 0) timeMs = 0;
+
     lastUpdateTime = time;
 
-    if (timer.elapsed > timer.total) {
-      timer.elapsed = timer.total;
-    } else {
+    if (timeMs != 0) {
       // Request the next animation frame
       requestAnimationFrame(updateTimer);
     }
@@ -132,9 +132,7 @@
     console.debug("Time sync message", msg);
 
     lastUpdateTime = performance.now();
-
-    timer.total = msg.value;
-    timer.elapsed = 0;
+    timeMs = msg.value;
 
     updateTimer();
   });
@@ -208,13 +206,13 @@
 {#if gameState === GameState.Finished && summary != null}
   <FinishedView {gameData} {summary} />
 {:else if gameState === GameState.Starting || gameState === GameState.PreQuestion || gameState === GameState.AwaitingReady}
-  <Starting {gameState} {gameData} {timer} />
+  <Starting {gameState} {gameData} {timeMs} />
 {:else if gameState === GameState.AwaitingAnswers && question != null}
   {#if !answered}
     <QuestionView
       {gameData}
       {question}
-      {timer}
+      {timeMs}
       {preloadedImage}
       bind:answered
     />

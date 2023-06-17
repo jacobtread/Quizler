@@ -1,13 +1,10 @@
-import type { TimerState } from "$api/models";
-
 /**
  * Formats the provided timer as seconds
  *
- * @param timer The timer to format
+ * @param timeMs The time in milliseconds to format
  * @returns     The formatted time
  */
-export function formatTime(timer: TimerState): string {
-  const timeMs: number = timer.total - timer.elapsed;
+export function formatTime(timeMs: number): string {
   const seconds = timeMs / 1000;
   return seconds.toFixed(0);
 }

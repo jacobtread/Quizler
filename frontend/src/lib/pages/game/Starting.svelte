@@ -4,11 +4,11 @@
   import { doHostAction } from "$api/actions";
 
   import type { GameData } from "$pages/Game.svelte";
-  import { GameState, HostAction, type TimerState } from "$lib/api/models";
+  import { GameState, HostAction } from "$lib/api/models";
   import { formatTime } from "$lib/utils/utils";
 
   export let gameState: GameState;
-  export let timer: TimerState;
+  export let timeMs: number;
   export let gameData: GameData;
 
   // Sends the next state action
@@ -20,8 +20,8 @@
 
 <main class="page page--overflow" transition:slide>
   <div class="quiz">
-    {#if timer.elapsed !== timer.total}
-      <span class="time">{formatTime(timer)}</span>
+    {#if timeMs > 1000}
+      <span class="time" transition:slide>{formatTime(timeMs)}</span>
     {/if}
 
     {#if gameState === GameState.Starting}
