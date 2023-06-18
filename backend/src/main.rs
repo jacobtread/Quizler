@@ -1,7 +1,6 @@
 use std::{net::Ipv4Addr, process::exit};
 
 use crate::games::Games;
-use actix_cors::Cors;
 use actix_web::{App, HttpServer};
 use dotenvy::dotenv;
 use log::{error, info, LevelFilter};
@@ -40,9 +39,18 @@ async fn main() {
     info!("Starting Quizler on port {} (v{})", port, VERSION);
 
     let server = HttpServer::new(move || {
-        // TODO: CORS is only required in development
-        let cors = Cors::permissive();
-        App::new().wrap(cors).configure(http::configure)
+        // Include CORS support for debug builds
+        #[cfg(debug_assertions)]
+        {
+            use actix_cors::Cors;
+            let cors = Cors::permissive();
+            App::new().wrap(cors).configure(http::configure)
+        }
+        // Release builds don't require CORS
+        #[cfg(not(debug_assertions))]
+        {
+            App::new().configure(http::configure)
+        }
     });
 
     let server = match server.bind((Ipv4Addr::UNSPECIFIED, port)) {

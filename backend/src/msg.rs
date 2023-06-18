@@ -8,7 +8,7 @@ use crate::{
 };
 use actix::Message;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, sync::Arc};
+use std::sync::Arc;
 use uuid::Uuid;
 
 #[derive(Deserialize)]
