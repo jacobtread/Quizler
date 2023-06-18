@@ -56,17 +56,12 @@ rustrict = "0.7.6"
 
 [dependencies.uuid]
 version = "1.3.2"
-features = ["v4", "fast-rng", "macro-diagnostics", "serde"]
+features = ["v4", "fast-rng", "serde"]
 
 
 [profile.release]
 strip = true
 lto = true
 codegen-units = 1
-
-# The profile that 'cargo dist' will build with
-[profile.dist]
-inherits = "release"
-lto = "thin"
 # Optionally optimize for binary size:
 # opt-level = "z"
