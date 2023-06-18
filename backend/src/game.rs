@@ -4,7 +4,7 @@ use crate::{
     session::{ClearGameMessage, Session, SessionId},
     types::{
         Answer, AnswerData, HostAction, Image, ImageRef, NameFiltering, Question, QuestionData,
-        RemoveReason, Score, ServerError,
+        RemoveReason, Score, ScoreCollection, ServerError,
     },
 };
 use actix::{Actor, ActorContext, Addr, AsyncContext, Context, Handler, Message, SpawnHandle};
@@ -273,7 +273,7 @@ impl Game {
         // Get the current question
         let question = self.current_question();
 
-        let mut scores = HashMap::with_capacity(self.players.len());
+        let mut scores = ScoreCollection::with_capacity(self.players.len());
 
         for player in &mut self.players {
             let answer = &mut player.answers[self.question_index];
@@ -284,7 +284,7 @@ impl Game {
 
             player.addr.do_send(ServerMessage::Score { score });
 
-            scores.insert(player.id, player.score);
+            scores.push(player.id, player.score);
         }
 
         // Update everyones scores

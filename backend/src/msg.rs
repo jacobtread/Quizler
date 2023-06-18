@@ -4,7 +4,7 @@ use crate::{
     game::{GameConfig, GameState},
     games::GameToken,
     session::SessionId,
-    types::{Answer, HostAction, Question, RemoveReason, Score, ServerError},
+    types::{Answer, HostAction, Question, RemoveReason, Score, ScoreCollection, ServerError},
 };
 use actix::Message;
 use serde::{Deserialize, Serialize};
@@ -97,7 +97,7 @@ pub enum ServerMessage {
     },
     /// Updates the player scores with the new scores
     Scores {
-        scores: HashMap<SessionId, u32>,
+        scores: ScoreCollection,
     },
 
     /// Message telling the player the score that they obtained

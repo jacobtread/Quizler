@@ -1,9 +1,11 @@
 use actix::Message;
 use bytes::Bytes;
 use mime::Mime;
-use serde::{Deserialize, Serialize};
+use serde::{ser::SerializeMap, Deserialize, Serialize};
 use std::time::Duration;
 use uuid::Uuid;
+
+use crate::session::SessionId;
 
 #[derive(Message, Debug, Copy, Clone, Serialize)]
 #[rtype(result = "()")]
@@ -270,5 +272,34 @@ impl Score {
             Self::Partial { value, .. } => *value,
             Self::Incorrect => 0,
         }
+    }
+}
+
+/// More efficient collection for storing the scores of
+/// each player that will be sent to the client
+pub struct ScoreCollection(Vec<(SessionId, u32)>);
+
+impl ScoreCollection {
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self(Vec::with_capacity(capacity))
+    }
+
+    pub fn push(&mut self, key: SessionId, value: u32) {
+        self.0.push((key, value));
+    }
+}
+
+impl Serialize for ScoreCollection {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let mut map = serializer.serialize_map(Some(self.0.len()))?;
+
+        for (key, value) in &self.0 {
+            map.serialize_entry(key, value)?;
+        }
+
+        map.end()
     }
 }
