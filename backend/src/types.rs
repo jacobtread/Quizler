@@ -279,17 +279,7 @@ impl Score {
 
 /// More efficient collection for storing the scores of
 /// each player that will be sent to the client
-pub struct ScoreCollection(Vec<(SessionId, u32)>);
-
-impl ScoreCollection {
-    pub fn with_capacity(capacity: usize) -> Self {
-        Self(Vec::with_capacity(capacity))
-    }
-
-    pub fn push(&mut self, key: SessionId, value: u32) {
-        self.0.push((key, value));
-    }
-}
+pub struct ScoreCollection(pub Vec<(SessionId, u32)>);
 
 impl Serialize for ScoreCollection {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>

@@ -269,19 +269,22 @@ impl Game {
         // Get the current question
         let question = &self.config.questions[self.question_index];
 
-        let mut scores = ScoreCollection::with_capacity(self.players.len());
+        let scores: Vec<(SessionId, u32)> = self
+            .players
+            .iter_mut()
+            .map(|player| {
+                let answer = player.answers.get_answer(self.question_index);
+                let score = answer.mark(question);
 
-        for player in &mut self.players {
-            let answer = player.answers.get_answer(self.question_index);
-            let score = answer.mark(question);
+                // Increase the player score
+                player.score += score.value();
 
-            // Increase the player score
-            player.score += score.value();
+                player.addr.do_send(ServerMessage::Score { score });
 
-            player.addr.do_send(ServerMessage::Score { score });
-
-            scores.push(player.id, player.score);
-        }
+                (player.id, player.score)
+            })
+            .collect();
+        let scores = ScoreCollection(scores);
 
         // Update everyones scores
         self.send_all(ServerMessage::Scores { scores });
