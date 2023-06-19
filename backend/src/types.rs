@@ -7,6 +7,9 @@ use uuid::Uuid;
 
 use crate::session::SessionId;
 
+/// Immutable string type
+pub type ImStr = Box<str>;
+
 #[derive(Message, Debug, Copy, Clone, Serialize)]
 #[rtype(result = "()")]
 pub enum ServerError {
@@ -105,7 +108,7 @@ pub struct Question {
     #[serde(flatten)]
     pub data: QuestionData,
     /// The text of the question
-    pub text: String,
+    pub text: ImStr,
     /// Optional image
     pub image: Option<QuestionImage>,
     /// The time given to answer the question
@@ -138,7 +141,7 @@ pub enum ImageFit {
 #[derive(Deserialize, Serialize)]
 pub struct AnswerValue {
     /// The actual message for the answer
-    pub value: String,
+    pub value: ImStr,
     /// Whether the answer is a correct one
     /// (Not sent to clients)
     #[serde(skip_serializing)]
@@ -177,7 +180,7 @@ pub enum QuestionData {
         /// Collection of valid answers
         /// (Not sent to clients)
         #[serde(skip_serializing)]
-        answers: Box<[String]>,
+        answers: Box<[ImStr]>,
         /// Whether to ignore case when marking
         #[serde(skip_serializing)]
         ignore_case: bool,
@@ -230,7 +233,7 @@ pub enum Answer {
     /// Answer for typing questions
     Typer {
         /// The string answer
-        answer: String,
+        answer: ImStr,
     },
 }
 

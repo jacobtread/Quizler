@@ -2,7 +2,7 @@ use crate::{
     game::{GameConfig, GetImageMessage},
     games::{Games, GetGameMessage, PrepareGameMessage},
     session::Session,
-    types::{Image, NameFiltering, Question},
+    types::{ImStr, Image, NameFiltering, Question},
 };
 use actix_multipart::{Multipart, MultipartError};
 use actix_web::{
@@ -75,8 +75,8 @@ async fn public(path: web::Path<String>) -> impl Responder {
 
 #[derive(Deserialize)]
 pub struct GameConfigUpload {
-    pub name: String,
-    pub text: String,
+    pub name: ImStr,
+    pub text: ImStr,
     pub max_players: usize,
     pub filtering: NameFiltering,
     pub questions: Box<[Arc<Question>]>,

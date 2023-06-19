@@ -3,8 +3,8 @@ use crate::{
     msg::ServerMessage,
     session::{ClearGameMessage, Session, SessionId},
     types::{
-        Answer, AnswerData, HostAction, Image, ImageRef, NameFiltering, Question, QuestionData,
-        RemoveReason, Score, ScoreCollection, ServerError,
+        Answer, AnswerData, HostAction, ImStr, Image, ImageRef, NameFiltering, Question,
+        QuestionData, RemoveReason, Score, ScoreCollection, ServerError,
     },
 };
 use actix::{Actor, ActorContext, Addr, AsyncContext, Context, Handler, Message, SpawnHandle};
@@ -245,14 +245,7 @@ impl Game {
         self.question();
     }
 
-    fn current_question(&self) -> Arc<Question> {
-        self.config.questions[self.question_index].clone()
-    }
-
     fn question(&mut self) {
-        // Obtain the current question
-        let question = self.current_question();
-
         // Reset ready states for the players
         self.players
             .iter_mut()
@@ -260,6 +253,9 @@ impl Game {
 
         // Reset host ready state
         self.host.ready = false;
+
+        // Obtain the current question
+        let question = self.config.questions[self.question_index].clone();
 
         // Send the question contents to the clients
         self.send_all(ServerMessage::Question { question });
@@ -376,14 +372,14 @@ impl Handler<JoinMessage> for Game {
         let game_player = PlayerSession::new(
             msg.id,
             msg.addr,
-            name.to_string(),
+            Box::from(name),
             self.config.questions.len(),
         );
 
         // Message sent to existing players for this player
         let joiner_message = Arc::new(ServerMessage::PlayerData {
             id: game_player.id,
-            name: game_player.name.clone(),
+            name: game_player.name.to_string(),
         });
 
         // Notify all players of the existence of eachother
@@ -393,7 +389,7 @@ impl Handler<JoinMessage> for Game {
             // Message describing the other player
             game_player.addr.do_send(ServerMessage::PlayerData {
                 id: player.id,
-                name: player.name.clone(),
+                name: player.name.to_string(),
             });
         }
 
@@ -630,7 +626,7 @@ pub struct PlayerSession {
     ready: bool,
 
     /// The player name
-    name: String,
+    name: ImStr,
     /// The players answers and the score they got for them
     answers: PlayerAnswers,
     /// The player total score
@@ -812,7 +808,7 @@ impl PlayerAnswer {
                         .iter()
                         .any(|value| answer.eq_ignore_ascii_case(value))
                 } else {
-                    answers.iter().any(|value| answer.eq(value))
+                    answers.iter().any(|value| answer.eq(value.as_ref()))
                 };
 
                 if correct {
@@ -830,7 +826,7 @@ impl PlayerAnswer {
 }
 
 impl PlayerSession {
-    pub fn new(id: SessionId, addr: Addr<Session>, name: String, question_len: usize) -> Self {
+    pub fn new(id: SessionId, addr: Addr<Session>, name: ImStr, question_len: usize) -> Self {
         Self {
             id,
             addr,
@@ -846,9 +842,9 @@ impl PlayerSession {
 #[derive(Serialize)]
 pub struct GameConfig {
     /// The name of the game
-    pub name: String,
+    pub name: ImStr,
     /// Text displayed under the game name
-    pub text: String,
+    pub text: ImStr,
     /// Maximum number of players allowed in this game
     pub max_players: usize,
     /// Filtering on names
