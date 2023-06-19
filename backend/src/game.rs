@@ -195,8 +195,8 @@ impl Game {
         self.question_index = 0;
 
         for player in self.players.iter_mut() {
-            // Fill the answers and scores with None
-            player.answers.fill(PlayerAnswer::default());
+            // Reset the player answers
+            player.answers.reset();
 
             // Reset the player score
             player.score = 0;
@@ -276,7 +276,7 @@ impl Game {
         let mut scores = ScoreCollection::with_capacity(self.players.len());
 
         for player in &mut self.players {
-            let answer = &mut player.answers[self.question_index];
+            let answer = player.answers.get_answer(self.question_index);
             let score = answer.mark(&question);
 
             // Increase the player score
@@ -580,16 +580,19 @@ impl Handler<PlayerAnswerMessage> for Game {
         }
 
         // Set the player answer
-        player.answers[self.question_index].answer(AnswerData {
-            answer: msg.answer,
-            elapsed,
-        });
+        player.answers.set_answer(
+            self.question_index,
+            AnswerData {
+                elapsed,
+                answer: msg.answer,
+            },
+        );
 
-        // If all the players have answered we can skip the timer
+        // If all the players have answered we can advance the state
         let all_answered = self
             .players
             .iter()
-            .all(|player| player.answers[self.question_index].has_answer());
+            .all(|player| player.answers.has_answer(self.question_index));
 
         if all_answered {
             self.next_state(ctx);
@@ -629,12 +632,71 @@ pub struct PlayerSession {
     /// The player name
     name: String,
     /// The players answers and the score they got for them
-    answers: Vec<PlayerAnswer>,
+    answers: PlayerAnswers,
     /// The player total score
     score: u32,
 }
 
-#[derive(Default, Clone)]
+/// Structure storing the player answers. Fixed length to
+/// the total number of questions in the game
+struct PlayerAnswers {
+    /// The actual player answers
+    values: Box<[PlayerAnswer]>,
+}
+
+impl PlayerAnswers {
+    /// Creates a new player answers structure of the
+    /// provided length
+    ///
+    /// # Arguments
+    /// * length - The length of the answers
+    fn new(length: usize) -> Self {
+        // Create all the answers collecting into the boxed slice
+        let values: Box<[PlayerAnswer]> = (0..length).map(|_| PlayerAnswer::default()).collect();
+        Self { values }
+    }
+
+    /// Resets the state of each player answer replacing the
+    /// score and answer data with None
+    fn reset(&mut self) {
+        self.values.iter_mut().for_each(|value| {
+            value.data = None;
+            value.score = None;
+        })
+    }
+
+    /// Sets the player answer at the provided index to the
+    /// provided value
+    ///
+    /// # Arguments
+    /// * index - The index of the answer within the values array
+    /// * answer - The answer to set the value to
+    fn set_answer(&mut self, index: usize, answer: AnswerData) {
+        debug_assert!(index < self.values.len());
+        self.values[index].data = Some(answer);
+    }
+
+    /// Provides mutable access to the player answer at the provided
+    /// index
+    ///
+    /// # Arguments
+    /// * index - The index of the answer within the values array
+    fn get_answer(&mut self, index: usize) -> &mut PlayerAnswer {
+        debug_assert!(index < self.values.len());
+        &mut self.values[index]
+    }
+
+    /// Checks if theres an answer stored at the provided index
+    ///
+    /// # Arguments
+    /// * index - The index of the answer within the values array
+    fn has_answer(&self, index: usize) -> bool {
+        debug_assert!(index < self.values.len());
+        self.values[index].data.is_some()
+    }
+}
+
+#[derive(Default)]
 struct PlayerAnswer {
     /// The answer provided by the player
     data: Option<AnswerData>,
@@ -643,16 +705,6 @@ struct PlayerAnswer {
 }
 
 impl PlayerAnswer {
-    #[inline]
-    fn has_answer(&self) -> bool {
-        self.data.is_some()
-    }
-
-    #[inline]
-    fn answer(&mut self, answer: AnswerData) {
-        self.data = Some(answer);
-    }
-
     fn mark(&mut self, question: &Question) -> Score {
         let score = self.get_score(question);
         self.score = Some(score);
@@ -779,14 +831,12 @@ impl PlayerAnswer {
 
 impl PlayerSession {
     pub fn new(id: SessionId, addr: Addr<Session>, name: String, question_len: usize) -> Self {
-        // Initialize the empty answers list
-        let answers = vec![PlayerAnswer::default(); question_len];
         Self {
             id,
             addr,
             name,
             ready: false,
-            answers,
+            answers: PlayerAnswers::new(question_len),
             score: 0,
         }
     }

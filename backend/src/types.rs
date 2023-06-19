@@ -199,7 +199,6 @@ pub struct Scoring {
 /// Stored state for answer data including
 /// the elapsed time when the answer was made
 /// to calculate time scores
-#[derive(Clone)]
 pub struct AnswerData {
     /// The current elapsed timer duration at the
     /// time of answering
@@ -210,7 +209,7 @@ pub struct AnswerData {
 
 /// The different types of answers for the different
 /// question types along with the associated answer values
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize)]
 #[serde(tag = "ty")]
 pub enum Answer {
     /// Answer for a single choice question
