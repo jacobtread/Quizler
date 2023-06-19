@@ -79,7 +79,7 @@ pub struct GameConfigUpload {
     pub text: String,
     pub max_players: usize,
     pub filtering: NameFiltering,
-    pub questions: Vec<Arc<Question>>,
+    pub questions: Box<[Arc<Question>]>,
 }
 
 #[derive(Debug)]

@@ -156,12 +156,12 @@ pub enum QuestionData {
     /// Single choice question
     Single {
         /// Vec of indexes of correct answers
-        answers: Vec<AnswerValue>,
+        answers: Box<[AnswerValue]>,
     },
     /// Multiple choice question
     Multiple {
         /// Vec of indexes of correct answers
-        answers: Vec<AnswerValue>,
+        answers: Box<[AnswerValue]>,
         /// The number of correct answers
         correct_answers: usize,
     },
@@ -177,7 +177,7 @@ pub enum QuestionData {
         /// Collection of valid answers
         /// (Not sent to clients)
         #[serde(skip_serializing)]
-        answers: Vec<String>,
+        answers: Box<[String]>,
         /// Whether to ignore case when marking
         #[serde(skip_serializing)]
         ignore_case: bool,
@@ -220,7 +220,7 @@ pub enum Answer {
     /// Answers for a multiple choice question
     Multiple {
         /// The list of chosen answers
-        answers: Vec<AnswerIndex>,
+        answers: Box<[AnswerIndex]>,
     },
     /// Answer for true false questions
     TrueFalse {

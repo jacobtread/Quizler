@@ -144,7 +144,7 @@ impl Game {
                 // Assign the question start time
                 self.start_time = Instant::now();
 
-                let question = self.current_question();
+                let question = &self.config.questions[self.question_index];
                 self.timed_next_state(Duration::from_millis(question.answer_time), ctx);
             }
 
@@ -271,13 +271,13 @@ impl Game {
     /// Task for marking the answers
     fn mark_answers(&mut self) {
         // Get the current question
-        let question = self.current_question();
+        let question = &self.config.questions[self.question_index];
 
         let mut scores = ScoreCollection::with_capacity(self.players.len());
 
         for player in &mut self.players {
             let answer = player.answers.get_answer(self.question_index);
-            let score = answer.mark(&question);
+            let score = answer.mark(question);
 
             // Increase the player score
             player.score += score.value();
@@ -565,7 +565,7 @@ impl Handler<PlayerAnswerMessage> for Game {
             return Err(ServerError::UnexpectedMessage);
         }
 
-        let question = self.current_question();
+        let question = &self.config.questions[self.question_index];
 
         // Find the player within the game
         let player = self
@@ -856,7 +856,7 @@ pub struct GameConfig {
     pub filtering: NameFiltering,
     /// The game questions
     #[serde(skip)]
-    pub questions: Vec<Arc<Question>>,
+    pub questions: Box<[Arc<Question>]>,
     /// Map of uploaded image UUIDs to their respective
     /// image data
     #[serde(skip)]
