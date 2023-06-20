@@ -22,7 +22,7 @@ use std::{
     convert::Infallible,
     fmt::Display,
     future::{ready, Ready},
-    sync::{atomic::AtomicU32, Arc},
+    sync::Arc,
     task::{Context, Poll},
 };
 use tower::Service;
@@ -54,6 +54,12 @@ impl<T> Service<Request<T>> for Assets {
 
     fn call(&mut self, req: Request<T>) -> Self::Future {
         let path = req.uri().path();
+        // Strip the leading slash in order to match paths correctly
+        let path = match path.strip_prefix('/') {
+            Some(value) => value,
+            None => path,
+        };
+
         let std_path = std::path::Path::new(path);
 
         let (file, content_type) = if let Some(file) = Assets::get(path) {
@@ -61,6 +67,8 @@ impl<T> Service<Request<T>> for Assets {
             let content_type = std_path
                 .extension()
                 .and_then(|ext| {
+                    dbg!(ext);
+
                     if ext == "js" {
                         Some("application/javascript")
                     } else if ext == "css" {
@@ -223,8 +231,6 @@ async fn quiz_image(Path((token, uuid)): Path<(String, Uuid)>) -> Result<Respons
 
     Ok(res)
 }
-
-static SESSION_ID: AtomicU32 = AtomicU32::new(0);
 
 async fn quiz_socket(ws: WebSocketUpgrade) -> Response {
     ws.on_upgrade(Session::start)
