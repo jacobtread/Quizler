@@ -15,8 +15,10 @@ jobs:
         include:
           - os: ubuntu-latest
             file: quizler
+            file_name: Ubuntu Build
           - os: windows-latest
             file: quizler.exe
+            file_name: Windows Build
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -33,5 +35,5 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: Binary
+          name: ${{ matrix.file_name }}
           path: "./backend/target/debug/${{ matrix.file }}"
