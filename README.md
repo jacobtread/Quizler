@@ -39,6 +39,29 @@ Prebuilt binaries are available for download here
 -->
 
 
+## 📸 Screenshots
+
+### Home screen
+
+This is the screen which allows the users to select between joining a quiz and
+creating their own
+
+![Home Screen](assets/home.png)
+
+### Create screen
+
+This is the screen for creating a new quiz
+
+![Create Screen](assets/create.png)
+
+### Join screen
+
+This is the screen for creating a new quiz
+
+![Join Screen](assets/join.png)
+
+
+
 ## ⚙️ Features
 
 - [x] Different quesiton types
@@ -72,29 +95,6 @@ Prebuilt binaries are available for download here
 - [x] Cross platform
   - The server can be run on both Windows or Linux, and can be connected to by any device with a web browser (Its recommended that a up to date browser be used as some older browsers might incorrectly render the page) 
   - Any other platform can run the server within a Docker container
-
-
-## 📸 Screenshots
-
-### Home screen
-
-This is the screen which allows the users to select between joining a quiz and
-creating their own
-
-![Home Screen](assets/home.png)
-
-### Create screen
-
-This is the screen for creating a new quiz
-
-![Create Screen](assets/create.png)
-
-### Join screen
-
-This is the screen for creating a new quiz
-
-![Join Screen](assets/join.png)
-
 
 ## ⚒ Build Instructions
 
