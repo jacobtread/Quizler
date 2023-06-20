@@ -1,7 +1,7 @@
 use crate::{
     game::GameRef,
     games::Games,
-    msg::{ClientMessage, ClientRequest, ResponseMessage, ServerEvent, ServerResponse},
+    msg::{ClientMessage, ResponseMessage, ServerEvent, ServerResponse},
     types::{Answer, GameToken, HostAction, RemoveReason, ServerError},
 };
 
@@ -182,10 +182,18 @@ impl Session {
         };
 
         // Decode the recieved client message
-        let req = match serde_json::from_str::<ClientRequest>(&text) {
+        let req = match serde_json::from_str::<ClientMessage>(&text) {
             Ok(value) => value,
             Err(err) => {
                 error!("Unable to decode client message: {}", err);
+
+                self.send(&ServerResponse {
+                    msg: ResponseMessage::Error {
+                        error: ServerError::MalformedMessage,
+                    },
+                })
+                .await?;
+
                 return Ok(true);
             }
         };
@@ -196,8 +204,8 @@ impl Session {
     }
 
     /// Handles a recieved client message
-    async fn handle_request(&mut self, req: ClientRequest) -> Result<(), axum::Error> {
-        let res = match req.msg {
+    async fn handle_request(&mut self, req: ClientMessage) -> Result<(), axum::Error> {
+        let res = match req {
             // Handle initializing new games
             ClientMessage::Initialize { uuid } => self.initialize(uuid).await,
 
@@ -224,7 +232,7 @@ impl Session {
             Err(error) => ResponseMessage::Error { error },
         };
 
-        let res: ServerResponse = ServerResponse { rid: req.rid, msg };
+        let res: ServerResponse = ServerResponse { msg };
         self.send(&res).await
     }
 
@@ -258,7 +266,7 @@ impl Session {
         let result = {
             let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
             let mut lock = game.write().await;
-            lock.try_join(self.id, self.tx.clone(), name)
+            lock.join(self.id, self.tx.clone(), name)
         };
 
         match result {

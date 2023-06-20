@@ -26,10 +26,8 @@ interface RequestHandler<T> {
   reject(err: ServerError): void;
 }
 
-// The next request ID to use
-let requestHandle: number = 0;
-// Handlers from requests awaiting responses
-let requestHandles: Partial<Record<number, RequestHandler<unknown>>> = {};
+// Handler for the next response
+let responseHandle: RequestHandler<unknown> | null = null;
 // Queue of messages that haven't yet been handled
 let messageQueue: ServerMessage[] = [];
 
@@ -139,8 +137,7 @@ function createSocket(): WebSocket {
 
 function onDisconnected() {
   // Reset the state
-  requestHandle = 0;
-  requestHandles = {};
+  responseHandle = null;
   clearMessageQueue();
 
   // Return to the home screen
@@ -178,10 +175,7 @@ export function send<T extends ClientMessage>(
   return new Promise((resolve, reject) => {
     console.debug("Sending message to server", msg);
 
-    // Set the return ID and increase it for the next request
-    msg.rid = requestHandle++;
-
-    requestHandles[msg.rid] = {
+    responseHandle = {
       resolve: resolve as ServerResponseHandler<unknown>,
       reject
     };
@@ -191,7 +185,7 @@ export function send<T extends ClientMessage>(
       socket.send(data);
     } catch (e) {
       console.error("Failed to send message", e);
-      delete requestHandles[msg.rid];
+      responseHandle = null;
       reject({
         ty: ServerResponse.Error,
         error: "Unexpected"
@@ -216,32 +210,30 @@ function onMessage({ data }: MessageEvent) {
     return;
   }
 
-  // Handle messages with return IDs
-  const rid = msg.rid;
-  if (rid !== undefined) {
-    const handle = requestHandles[rid];
-    if (handle === undefined) {
-      console.error(`Missing return handle ${rid} for message`, msg);
+  // Handle messages marked as responses
+  if (msg.ret === 1) {
+    if (responseHandle === null) {
+      console.error("Missing response handle for message", msg);
       return;
     }
 
     // Compare the message type
     if (msg.ty === ServerResponse.Error) {
       // If the types didn't match it must've been an error
-      handle.reject(msg.error);
+      responseHandle.reject(msg.error);
     } else {
       // Reoslve with the correct result
-      handle.resolve(msg as ServerResponseOf<unknown>);
+      responseHandle.resolve(msg);
     }
+
+    return;
   }
 
   // Find the handler for the message
-  const handler = messageHandlers[msg.ty as ServerEvent] as
-    | ServerEventHandler<typeof msg.ty>
-    | undefined;
+  const handler = messageHandlers[msg.ty];
   if (handler !== undefined) {
     // Call the handler with the mesasge
-    handler(msg as ServerEventOf<unknown>);
+    handler(msg);
     return;
   }
 

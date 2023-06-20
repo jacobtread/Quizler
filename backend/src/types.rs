@@ -11,6 +11,8 @@ pub type ImStr = Box<str>;
 
 #[derive(Debug, Copy, Clone, Serialize)]
 pub enum ServerError {
+    /// Provided message was malformed
+    MalformedMessage,
     /// The provided token didn't match up to any game
     InvalidToken,
     /// The provided username doesn't meet the requirements

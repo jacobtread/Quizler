@@ -8,22 +8,26 @@ use crate::{
         ServerError,
     },
 };
-use serde::{Deserialize, Serialize};
+use serde::{ser::SerializeMap, Deserialize, Serialize, __private::ser::FlatMapSerializer};
 use std::sync::Arc;
 use uuid::Uuid;
 
-#[derive(Deserialize)]
-pub struct ClientRequest {
-    pub rid: u32,
-    #[serde(flatten)]
-    pub msg: ClientMessage,
+/// Wrapper around the response message type to include
+/// "ret": 1, which is used to indicate this is a response
+pub struct ServerResponse {
+    pub msg: ResponseMessage,
 }
 
-#[derive(Serialize)]
-pub struct ServerResponse {
-    pub rid: u32,
-    #[serde(flatten)]
-    pub msg: ResponseMessage,
+impl Serialize for ServerResponse {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let mut map = serializer.serialize_map(None)?;
+        map.serialize_entry("ret", &1)?;
+        self.msg.serialize(FlatMapSerializer(&mut map))?;
+        map.end()
+    }
 }
 
 /// Messages recieved from the client

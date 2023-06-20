@@ -280,7 +280,7 @@ export const enum ServerResponse {
 }
 
 // Server message schema based on each message type
-export type ServerEventSchema = { rid: undefined } & (
+export type ServerEventSchema = { ret: undefined } & (
   | { ty: ServerEvent.PlayerData; id: number; name: string }
   | { ty: ServerEvent.GameState; state: GameState }
   | {
@@ -296,7 +296,7 @@ export type ServerEventSchema = { rid: undefined } & (
 // Server message type extractor
 export type ServerEventOf<T> = Extract<ServerEventSchema, { ty: T }>;
 
-export type ServerResponseSchema = { rid: number } & (
+export type ServerResponseSchema = { ret: 1 } & (
   | { ty: ServerResponse.Joined; id: number; token: string; config: GameConfig }
   | { ty: ServerResponse.Ok }
   | { ty: ServerResponse.Error; error: ServerError }

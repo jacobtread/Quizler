@@ -69,6 +69,52 @@ pub enum GameState {
     Stopped,
 }
 
+/// Configuration data for a game
+#[derive(Serialize)]
+pub struct GameConfig {
+    /// The name of the game
+    pub name: ImStr,
+    /// Text displayed under the game name
+    pub text: ImStr,
+    /// Maximum number of players allowed in this game
+    pub max_players: usize,
+    /// Filtering on names
+    #[serde(skip)]
+    pub filtering: NameFiltering,
+    /// The game questions
+    #[serde(skip)]
+    pub questions: Box<[Arc<Question>]>,
+    /// Map of uploaded image UUIDs to their respective
+    /// image data
+    #[serde(skip)]
+    pub images: HashMap<ImageRef, Image>,
+}
+
+impl GameConfig {
+    const MAX_TITLE_LENGTH: usize = 70;
+    const MAX_DESCRIPTION_LENGTH: usize = 300;
+    const MAX_QUESTIONS: usize = 50;
+
+    /// Validates that the game configuration is valid
+    /// and can be used for a game
+    pub fn validate(&self) -> bool {
+        if self.name.len() > Self::MAX_TITLE_LENGTH {
+            return false;
+        }
+
+        if self.text.len() > Self::MAX_DESCRIPTION_LENGTH {
+            return false;
+        }
+
+        let questions_length = self.questions.len();
+        if questions_length == 0 || questions_length > Self::MAX_QUESTIONS {
+            return false;
+        }
+
+        self.questions.iter().all(|value| value.validate())
+    }
+}
+
 impl Game {
     /// Creates a new game instance
     pub fn new(
@@ -334,7 +380,7 @@ impl Game {
         debug!("Game stopped: {}", self.token);
     }
 
-    pub fn try_join(
+    pub fn join(
         &mut self,
         id: SessionId,
         listener: EventTarget,
@@ -783,51 +829,5 @@ impl PlayerAnswer {
             // will be marked as incorrect
             _ => Score::Incorrect,
         }
-    }
-}
-
-/// Configuration data for a game
-#[derive(Serialize)]
-pub struct GameConfig {
-    /// The name of the game
-    pub name: ImStr,
-    /// Text displayed under the game name
-    pub text: ImStr,
-    /// Maximum number of players allowed in this game
-    pub max_players: usize,
-    /// Filtering on names
-    #[serde(skip)]
-    pub filtering: NameFiltering,
-    /// The game questions
-    #[serde(skip)]
-    pub questions: Box<[Arc<Question>]>,
-    /// Map of uploaded image UUIDs to their respective
-    /// image data
-    #[serde(skip)]
-    pub images: HashMap<ImageRef, Image>,
-}
-
-impl GameConfig {
-    const MAX_TITLE_LENGTH: usize = 70;
-    const MAX_DESCRIPTION_LENGTH: usize = 300;
-    const MAX_QUESTIONS: usize = 50;
-
-    /// Validates that the game configuration is valid
-    /// and can be used for a game
-    pub fn validate(&self) -> bool {
-        if self.name.len() > Self::MAX_TITLE_LENGTH {
-            return false;
-        }
-
-        if self.text.len() > Self::MAX_DESCRIPTION_LENGTH {
-            return false;
-        }
-
-        let questions_length = self.questions.len();
-        if questions_length == 0 || questions_length > Self::MAX_QUESTIONS {
-            return false;
-        }
-
-        self.questions.iter().all(|value| value.validate())
     }
 }
