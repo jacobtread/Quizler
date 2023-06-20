@@ -1,4 +1,7 @@
-use std::{net::Ipv4Addr, process::exit};
+use std::{
+    net::{Ipv4Addr, SocketAddr, SocketAddrV4},
+    process::exit,
+};
 
 use dotenvy::dotenv;
 use log::{error, info, LevelFilter};
@@ -38,31 +41,20 @@ async fn main() {
 
     info!("Starting Quizler on port {} (v{})", port, VERSION);
 
-    let server = HttpServer::new(move || {
-        // Include CORS support for debug builds
-        #[cfg(debug_assertions)]
-        {
-            use actix_cors::Cors;
-            let cors = Cors::permissive();
-            App::new().wrap(cors).configure(http::configure)
-        }
-        // Release builds don't require CORS
-        #[cfg(not(debug_assertions))]
-        {
-            App::new().configure(http::configure)
-        }
-    });
+    let mut router = http::router();
 
-    let server = match server.bind((Ipv4Addr::UNSPECIFIED, port)) {
-        Ok(value) => value,
-        Err(error) => {
-            error!("Failed to start server: {}", error);
-            exit(1);
-        }
-    };
+    #[cfg(debug_assertions)]
+    {
+        router = router.layer(tower_http::cors::CorsLayer::very_permissive());
+    }
 
-    if let Err(error) = server.run().await {
-        error!("Server error: {}", error);
+    let addr = SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, port));
+
+    if let Err(err) = axum::Server::bind(&addr)
+        .serve(router.into_make_service())
+        .await
+    {
+        error!("Server error: {}", err);
         exit(1);
     }
 }

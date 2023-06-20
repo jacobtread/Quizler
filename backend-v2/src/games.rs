@@ -12,7 +12,7 @@ use std::{
 use tokio::{sync::RwLock, time::interval};
 use uuid::Uuid;
 
-static GAMES: RwLock<Games> = RwLock::const_new(Games::default());
+static mut GAMES: Option<RwLock<Games>> = None;
 
 /// Central store for storing all the references to the individual
 /// games that are currently running
@@ -25,31 +25,39 @@ pub struct Games {
 }
 
 impl Games {
+    async fn get() -> &'static RwLock<Games> {
+        match unsafe { &GAMES } {
+            Some(value) => value,
+            None => panic!("Games not initialized"),
+        }
+    }
+
     pub async fn is_game(token: &GameToken) -> bool {
-        let lock = GAMES.read().await;
+        let lock = Self::get().await.read().await;
         lock.games.contains_key(token)
     }
 
     pub async fn get_game(token: &GameToken) -> Option<Arc<RwLock<Game>>> {
-        let lock = GAMES.read().await;
+        let lock = Self::get().await.read().await;
         lock.games.get(token).cloned()
     }
 
     pub async fn remove_game(token: &GameToken) {
-        let lock = GAMES.write().await;
+        let mut lock = Self::get().await.write().await;
         lock.games.remove(token);
     }
 
     pub async fn prepare(config: GameConfig) -> Uuid {
-        let lock = GAMES.write().await;
         let id = Uuid::new_v4();
         let created = Instant::now();
+        let mut lock = Self::get().await.write().await;
+
         lock.preparing.insert(id, PreparingGame { config, created });
         id
     }
 
     async fn take_prepare(id: Uuid) -> Option<PreparingGame> {
-        let lock = GAMES.write().await;
+        let mut lock = Self::get().await.write().await;
 
         // Find the config data from the pre init list
         lock.preparing.remove(&id)
@@ -71,17 +79,21 @@ impl Games {
         // Create a new game token
         let token = GameToken::unique_token().await;
 
-        let game = Game::new(token, id, listener, config.clone()).start();
+        let game = Game::new(token, id, listener, config.clone());
 
         let game = Arc::new(RwLock::new(game));
 
-        let lock = GAMES.write().await;
+        let mut lock = Self::get().await.write().await;
         lock.games.insert(token, game.clone());
 
         Ok(InitializedMessage { token, config })
     }
 
     pub fn init() {
+        unsafe {
+            GAMES = Some(RwLock::new(Games::default()));
+        }
+
         /// Interval to check for expired game prepares (5mins)
         const PREPARE_CHECK_INTERVAL: Duration = Duration::from_secs(60 * 5);
 
@@ -90,18 +102,18 @@ impl Games {
         const GAME_EXPIRY_TIME: Duration = Duration::from_secs(60 * 20);
 
         tokio::spawn(async move {
-            let future = interval(PREPARE_CHECK_INTERVAL);
+            let mut future = interval(PREPARE_CHECK_INTERVAL);
 
             loop {
                 future.tick().await;
 
-                let lock = GAMES.write().await;
+                let mut lock = Games::get().await.write().await;
                 lock.preparing.retain(|_, value| {
                     let elapsed = value.created.elapsed();
                     elapsed < GAME_EXPIRY_TIME
                 });
             }
-        })
+        });
     }
 }
 

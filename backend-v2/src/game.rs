@@ -33,7 +33,7 @@ pub struct Game {
     question_index: usize,
 
     /// Spawn handle for delayed tasks
-    task_handle: AbortHandle,
+    task_handle: Option<AbortHandle>,
 
     /// Start time updated for each question
     start_time: Instant,
@@ -289,7 +289,7 @@ impl Game {
                 // Increase the player score
                 player.score += score.value();
 
-                player.addr.do_send(ServerEvent::Score { score });
+                player.addr.do_send(Arc::new(ServerEvent::Score { score }));
 
                 (player.id, player.score)
             })
@@ -316,14 +316,14 @@ impl Game {
         // Tell all the players they've been kicked
         for player in &self.players {
             // Send the visual kick message
-            player.addr.do_send(ServerEvent::Kicked {
+            player.addr.do_send(Arc::new(ServerEvent::Kicked {
                 id: player.id,
                 reason: RemoveReason::HostDisconnect,
-            });
+            }));
         }
     }
 
-    fn try_join(
+    pub fn try_join(
         &mut self,
         id: SessionId,
         listener: EventListener,
@@ -365,7 +365,7 @@ impl Game {
         // Message sent to existing players for this player
         let joiner_message = Arc::new(ServerEvent::PlayerData {
             id: game_player.id,
-            name: game_player.name.to_string(),
+            name: game_player.name.clone(),
         });
 
         // Notify all players of the existence of eachother
@@ -373,10 +373,10 @@ impl Game {
             player.addr.do_send(joiner_message.clone());
 
             // Message describing the other player
-            game_player.addr.do_send(ServerEvent::PlayerData {
+            game_player.addr.do_send(Arc::new(ServerEvent::PlayerData {
                 id: player.id,
-                name: player.name.to_string(),
-            });
+                name: player.name.clone(),
+            }));
         }
 
         // Notify the host of the join
@@ -390,7 +390,7 @@ impl Game {
         })
     }
 
-    fn host_action(&mut self, id: SessionId, action: HostAction) -> Result<(), ServerError> {
+    pub fn host_action(&mut self, id: SessionId, action: HostAction) -> Result<(), ServerError> {
         // Handle messages that aren't from the game host
         if self.host.id != id {
             return Err(ServerError::InvalidPermission);
@@ -404,7 +404,7 @@ impl Game {
         Ok(())
     }
 
-    fn ready(&mut self, id: SessionId) {
+    pub fn ready(&mut self, id: SessionId) {
         if id == self.host.id {
             self.host.ready = true;
         } else {
@@ -417,7 +417,7 @@ impl Game {
         self.update_ready();
     }
 
-    fn get_image(&self, uuid: Uuid) -> Option<Image> {
+    pub fn get_image(&self, uuid: Uuid) -> Option<Image> {
         self.config.images.get(&uuid).cloned()
     }
 
@@ -425,7 +425,7 @@ impl Game {
         &mut self,
         id: SessionId,
         target_id: SessionId,
-        reason: RemoveReason,
+        mut reason: RemoveReason,
     ) -> Result<(), ServerError> {
         // Handle messages that aren't from the game host
         if target_id != id && self.host.id != id {
@@ -469,7 +469,7 @@ impl Game {
         Ok(())
     }
 
-    fn answer(&mut self, id: SessionId, answer: Answer) -> Result<(), ServerError> {
+    pub fn answer(&mut self, id: SessionId, answer: Answer) -> Result<(), ServerError> {
         let elapsed = self.start_time.elapsed();
 
         // Answers are not being accepted at the current time

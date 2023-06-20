@@ -1,6 +1,6 @@
 use bytes::Bytes;
 use mime::Mime;
-use rand_core::OsRng;
+use rand_core::{OsRng, RngCore};
 use serde::{ser::SerializeMap, Deserialize, Serialize};
 use std::{fmt::Display, hash::Hash, str::FromStr, time::Duration};
 use uuid::Uuid;
@@ -94,7 +94,7 @@ pub type ImageRef = Uuid;
 #[derive(Debug, Clone)]
 pub struct Image {
     /// Mime type for the image
-    pub mime: Mime,
+    pub mime: Box<str>,
     /// The image data bytes
     pub data: Bytes,
 }
