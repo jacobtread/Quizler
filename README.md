@@ -3,6 +3,7 @@
 # Quizler
 
 ![License](https://img.shields.io/github/license/jacobtread/Quizler-v2?style=for-the-badge)
+![Build](https://img.shields.io/github/actions/workflow/status/jacobtread/Quizler-v2/build.yml?style=for-the-badge)
 
 > Real time quiz application
 
