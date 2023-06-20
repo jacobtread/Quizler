@@ -191,9 +191,9 @@ async fn quiz_image(Path((token, uuid)): Path<(String, Uuid)>) -> Result<Respons
     Ok(res)
 }
 
-/// # POST /api/quiz/socket
+/// # GET /api/quiz/socket
 ///
-/// Endpoint for uploading and creating a new Quiz.
+/// Endpoint for creating a new websocket session
 async fn quiz_socket(ws: WebSocketUpgrade) -> Response {
     ws.on_upgrade(Session::start)
 }
