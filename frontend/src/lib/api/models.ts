@@ -58,7 +58,8 @@ export const enum ServerError {
   Unexpected = "Unexpected",
   InvalidPermission = "InvalidPermission",
   UnexpectedMessage = "UnexpectedMessage",
-  InvalidAnswer = "InvalidAnswer"
+  InvalidAnswer = "InvalidAnswer",
+  GameStopped = "GameStopped"
 }
 
 // Messages for different server errors
@@ -75,7 +76,8 @@ export const errorText: Record<ServerError, string> = {
   [ServerError.Unexpected]: "Unexpected error occurred",
   [ServerError.InvalidPermission]: "You don't have permission to do that",
   [ServerError.UnexpectedMessage]: "Client and server out of sync",
-  [ServerError.InvalidAnswer]: "Invalid answer type"
+  [ServerError.InvalidAnswer]: "Invalid answer type",
+  [ServerError.GameStopped]: "Game is stopped"
 };
 
 // Name filtering modes
