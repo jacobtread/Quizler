@@ -1,5 +1,5 @@
 use crate::{
-    game::{Game, GameConfig},
+    game::{Game, GameConfig, GameRef},
     session::{EventTarget, SessionId},
     types::{GameToken, ServerError},
 };
@@ -86,7 +86,11 @@ impl Games {
         let mut lock = Self::get().await.write().await;
         lock.games.insert(token, game.clone());
 
-        Ok(InitializedMessage { token, config })
+        Ok(InitializedMessage {
+            token,
+            config,
+            game,
+        })
     }
 
     pub fn init() {
@@ -133,4 +137,6 @@ pub struct InitializedMessage {
     pub token: GameToken,
     /// The full game config to be used while playing
     pub config: Arc<GameConfig>,
+    /// Reference to the created game
+    pub game: GameRef,
 }

@@ -15,8 +15,11 @@ use std::{
     sync::Arc,
     time::{Duration, Instant},
 };
-use tokio::{task::AbortHandle, time::sleep};
+use tokio::{sync::RwLock, task::AbortHandle, time::sleep};
 use uuid::Uuid;
+
+/// Reference to a game behind an Arc and a RwLock
+pub type GameRef = Arc<RwLock<Game>>;
 
 pub struct Game {
     /// The token this game is stored behind
@@ -327,6 +330,11 @@ impl Game {
             });
         }
 
+        self.host.addr.send(ServerEvent::Kicked {
+            id: self.host.id,
+            reason: RemoveReason::HostDisconnect,
+        });
+
         self.state = GameState::Stopped;
     }
 
@@ -517,6 +525,12 @@ impl Game {
         }
 
         Ok(())
+    }
+}
+
+impl Drop for Game {
+    fn drop(&mut self) {
+        debug!("Game dropped: {}", self.token);
     }
 }
 

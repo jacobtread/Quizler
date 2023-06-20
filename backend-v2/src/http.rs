@@ -38,62 +38,6 @@ pub fn router() -> Router {
         .fallback_service(Assets)
 }
 
-/// Embedded assets for serving the frontend of the application
-#[derive(Embedded, Clone)]
-#[folder = "public"]
-struct Assets;
-
-impl<T> Service<Request<T>> for Assets {
-    type Response = Response;
-    type Error = Infallible;
-    type Future = Ready<Result<Self::Response, Self::Error>>;
-
-    fn poll_ready(&mut self, _cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        Poll::Ready(Ok(()))
-    }
-
-    fn call(&mut self, req: Request<T>) -> Self::Future {
-        let path = req.uri().path();
-        // Strip the leading slash in order to match paths correctly
-        let path = match path.strip_prefix('/') {
-            Some(value) => value,
-            None => path,
-        };
-
-        let std_path = std::path::Path::new(path);
-
-        let (file, content_type) = if let Some(file) = Assets::get(path) {
-            // Find a matching content type or default to text/plain
-            let content_type = std_path
-                .extension()
-                .and_then(|ext| {
-                    if ext == "js" {
-                        Some("application/javascript")
-                    } else if ext == "css" {
-                        Some("text/css")
-                    } else if ext == "html" {
-                        Some("text/html")
-                    } else {
-                        None
-                    }
-                })
-                .unwrap_or("text/plain");
-
-            (file, content_type)
-        } else {
-            // Fallback to the index.html file for all unknown pages
-            let index = Assets::get("index.html").expect("Missing index.html from build");
-            (index, "text/html")
-        };
-
-        let mut res = Full::from(file).into_response();
-        res.headers_mut()
-            .insert(CONTENT_TYPE, HeaderValue::from_static(content_type));
-
-        ready(Ok(res))
-    }
-}
-
 #[derive(Deserialize)]
 pub struct GameConfigUpload {
     pub name: ImStr,
@@ -232,6 +176,62 @@ async fn quiz_image(Path((token, uuid)): Path<(String, Uuid)>) -> Result<Respons
 
 async fn quiz_socket(ws: WebSocketUpgrade) -> Response {
     ws.on_upgrade(Session::start)
+}
+
+/// Embedded assets for serving the frontend of the application
+#[derive(Embedded, Clone)]
+#[folder = "public"]
+struct Assets;
+
+impl<T> Service<Request<T>> for Assets {
+    type Response = Response;
+    type Error = Infallible;
+    type Future = Ready<Result<Self::Response, Self::Error>>;
+
+    fn poll_ready(&mut self, _cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        Poll::Ready(Ok(()))
+    }
+
+    fn call(&mut self, req: Request<T>) -> Self::Future {
+        let path = req.uri().path();
+        // Strip the leading slash in order to match paths correctly
+        let path = match path.strip_prefix('/') {
+            Some(value) => value,
+            None => path,
+        };
+
+        let std_path = std::path::Path::new(path);
+
+        let (file, content_type) = if let Some(file) = Assets::get(path) {
+            // Find a matching content type or default to text/plain
+            let content_type = std_path
+                .extension()
+                .and_then(|ext| {
+                    if ext == "js" {
+                        Some("application/javascript")
+                    } else if ext == "css" {
+                        Some("text/css")
+                    } else if ext == "html" {
+                        Some("text/html")
+                    } else {
+                        None
+                    }
+                })
+                .unwrap_or("text/plain");
+
+            (file, content_type)
+        } else {
+            // Fallback to the index.html file for all unknown pages
+            let index = Assets::get("index.html").expect("Missing index.html from build");
+            (index, "text/html")
+        };
+
+        let mut res = Full::from(file).into_response();
+        res.headers_mut()
+            .insert(CONTENT_TYPE, HeaderValue::from_static(content_type));
+
+        ready(Ok(res))
+    }
 }
 
 impl From<MultipartError> for CreateError {

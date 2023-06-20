@@ -1,4 +1,5 @@
 use crate::{
+    game::GameRef,
     games::Games,
     msg::{ClientMessage, ClientRequest, ResponseMessage, ServerEvent, ServerResponse},
     types::{Answer, GameToken, HostAction, RemoveReason, ServerError},
@@ -27,43 +28,11 @@ pub type SessionId = u32;
 /// Atomic provider for session IDs
 static SESSION_ID: AtomicU32 = AtomicU32::new(0);
 
-/// Wrapper around server events to allow for owned
-/// and shared access
-pub enum EventMessage {
-    /// Owned server event
-    Owned(ServerEvent),
-    /// Server event behind an Arc shared for many players
-    Shared(Arc<ServerEvent>),
-}
-
-impl EventMessage {
-    fn as_ref(&self) -> &ServerEvent {
-        match self {
-            EventMessage::Owned(value) => value,
-            EventMessage::Shared(value) => value.as_ref(),
-        }
-    }
-}
-
-///
-#[derive(Clone)]
-pub struct EventTarget(mpsc::UnboundedSender<EventMessage>);
-
-impl EventTarget {
-    pub fn send(&self, msg: ServerEvent) {
-        let _ = self.0.send(EventMessage::Owned(msg));
-    }
-
-    pub fn send_shared(&self, msg: Arc<ServerEvent>) {
-        let _ = self.0.send(EventMessage::Shared(msg));
-    }
-}
-
 pub struct Session {
     /// Unique ID of the session
     id: SessionId,
     /// Token of the current game this session is in
-    game: Option<GameToken>,
+    game: Option<GameRef>,
 
     /// Last heartbeat received from the client
     hb: Instant,
@@ -116,14 +85,10 @@ impl Session {
         debug!("Session stopped: {}", self.id);
         // Take the game to attempt removing if present
         if let Some(game) = self.game.take() {
-            let game = Games::get_game(&game).await;
+            let mut lock = game.write().await;
 
-            if let Some(game) = game {
-                let mut lock = game.write().await;
-
-                // Inform game to remove self
-                let _ = lock.remove_player(self.id, self.id, RemoveReason::LostConnection);
-            }
+            // Inform game to remove self
+            let _ = lock.remove_player(self.id, self.id, RemoveReason::LostConnection);
         }
     }
 
@@ -180,23 +145,22 @@ impl Session {
     async fn disconnect(&mut self) {
         // If already in a game infrom the game that we've left
         if let Some(game) = self.game.take() {
-            let game = Games::get_game(&game).await;
-            if let Some(game) = game {
-                let mut lock = game.write().await;
-                let _ = lock.remove_player(self.id, self.id, RemoveReason::Disconnected);
-            }
+            let mut lock = game.write().await;
+            let _ = lock.remove_player(self.id, self.id, RemoveReason::Disconnected);
         }
     }
 
     async fn handle_event(&mut self, event: EventMessage) -> Result<(), axum::Error> {
-        // Handle self kicked
-        if let ServerEvent::Kicked { id, .. } = event.as_ref() {
-            if *id == self.id {
+        let value = event.as_ref();
+
+        // Ensure we drop our reference to the game when kicked
+        if let ServerEvent::Kicked { id, .. } = value {
+            if self.id.eq(id) {
                 self.game = None;
             }
         }
 
-        self.send(event.as_ref()).await
+        self.send(value).await
     }
 
     async fn handle_message(&mut self, msg: Message) -> Result<bool, axum::Error> {
@@ -268,7 +232,7 @@ impl Session {
         self.disconnect().await;
 
         let msg = Games::initialize(uuid, self.id, self.tx.clone()).await?;
-        self.game = Some(msg.token);
+        self.game = Some(msg.game);
 
         Ok(ResponseMessage::Joined {
             id: self.id,
@@ -280,26 +244,22 @@ impl Session {
     async fn connect(&mut self, token: String) -> Result<ResponseMessage, ServerError> {
         self.disconnect().await;
 
-        let token: GameToken = token.parse().map_err(|_| ServerError::InvalidToken)?;
+        let token: GameToken = token.parse()?;
 
-        let game = Games::is_game(&token).await;
-
-        if game {
-            self.game = Some(token);
-            Ok(ResponseMessage::Ok)
-        } else {
-            Err(ServerError::InvalidToken)
-        }
-    }
-
-    async fn join(&mut self, name: String) -> Result<ResponseMessage, ServerError> {
-        let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
-        let game = Games::get_game(game)
+        let game = Games::get_game(&token)
             .await
             .ok_or(ServerError::InvalidToken)?;
 
-        let mut lock = game.write().await;
-        let result = lock.try_join(self.id, self.tx.clone(), name);
+        self.game = Some(game);
+        Ok(ResponseMessage::Ok)
+    }
+
+    async fn join(&mut self, name: String) -> Result<ResponseMessage, ServerError> {
+        let result = {
+            let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
+            let mut lock = game.write().await;
+            lock.try_join(self.id, self.tx.clone(), name)
+        };
 
         match result {
             Ok(msg) => Ok(ResponseMessage::Joined {
@@ -316,32 +276,22 @@ impl Session {
 
     async fn host_action(&mut self, action: HostAction) -> Result<ResponseMessage, ServerError> {
         let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
-        let game = Games::get_game(game)
-            .await
-            .ok_or(ServerError::InvalidToken)?;
-
         let mut lock = game.write().await;
+
         lock.host_action(self.id, action)?;
         Ok(ResponseMessage::Ok)
     }
 
     async fn answer(&mut self, answer: Answer) -> Result<ResponseMessage, ServerError> {
         let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
-        let game = Games::get_game(game)
-            .await
-            .ok_or(ServerError::InvalidToken)?;
-
         let mut lock = game.write().await;
+
         lock.answer(self.id, answer)?;
         Ok(ResponseMessage::Ok)
     }
 
     async fn kick(&mut self, target_id: SessionId) -> Result<ResponseMessage, ServerError> {
         let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
-        let game = Games::get_game(game)
-            .await
-            .ok_or(ServerError::InvalidToken)?;
-
         let mut lock = game.write().await;
         lock.remove_player(self.id, target_id, RemoveReason::RemovedByHost)?;
 
@@ -350,12 +300,52 @@ impl Session {
 
     async fn ready(&mut self) -> Result<ResponseMessage, ServerError> {
         let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
-        let game = Games::get_game(game)
-            .await
-            .ok_or(ServerError::InvalidToken)?;
-
         let mut lock = game.write().await;
         lock.ready(self.id);
+
         Ok(ResponseMessage::Ok)
+    }
+}
+
+/// Wrapper around server events to allow for owned
+/// and shared access
+enum EventMessage {
+    /// Owned server event
+    Owned(ServerEvent),
+    /// Server event behind an Arc shared for many players
+    Shared(Arc<ServerEvent>),
+}
+
+impl EventMessage {
+    /// Obtains a reference to the server event stored
+    /// in this message
+    fn as_ref(&self) -> &ServerEvent {
+        match self {
+            EventMessage::Owned(value) => value,
+            EventMessage::Shared(value) => value.as_ref(),
+        }
+    }
+}
+
+/// Wrapper around the session sender to allow sending server
+/// events to the sessions
+#[derive(Clone)]
+pub struct EventTarget(mpsc::UnboundedSender<EventMessage>);
+
+impl EventTarget {
+    /// Sends an owned message over the event sender
+    ///
+    /// # Arguments
+    /// * event - The server event to send
+    pub fn send(&self, event: ServerEvent) {
+        let _ = self.0.send(EventMessage::Owned(event));
+    }
+
+    /// Sends a shared message behind an Arc over the event sender
+    ///
+    /// # Arguments
+    /// * event - The server event to send
+    pub fn send_shared(&self, event: Arc<ServerEvent>) {
+        let _ = self.0.send(EventMessage::Shared(event));
     }
 }
