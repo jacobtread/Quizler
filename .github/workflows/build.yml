@@ -8,7 +8,17 @@ env:
   CARGO_TERM_COLOR: always
 jobs:
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        include:
+          - os: ubuntu-latest,
+            file: quizler
+          - os: windows-latest
+            file: quizler.exe
+    runs-on: ${{ matrix.os }}
+
     steps:
       - uses: actions/checkout@v3
       - name: Build Frontend
@@ -20,3 +30,8 @@ jobs:
       - name: Run tests
         working-directory: ./backend
         run: cargo test --verbose
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: Binary
+          path: "./backend/target/release/${{ matrix.file }}"
