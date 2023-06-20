@@ -1,9 +1,10 @@
-use std::{net::Ipv4Addr, process::exit};
-
 use crate::games::Games;
-use actix_web::{App, HttpServer};
 use dotenvy::dotenv;
 use log::{error, info, LevelFilter};
+use std::{
+    net::{Ipv4Addr, SocketAddr, SocketAddrV4},
+    process::exit,
+};
 
 mod game;
 mod games;
@@ -15,7 +16,7 @@ mod types;
 // Cargo package version
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-#[actix::main]
+#[tokio::main]
 async fn main() {
     // Load environment variables
     dotenv().ok();
@@ -38,31 +39,22 @@ async fn main() {
 
     info!("Starting Quizler on port {} (v{})", port, VERSION);
 
-    let server = HttpServer::new(move || {
-        // Include CORS support for debug builds
-        #[cfg(debug_assertions)]
-        {
-            use actix_cors::Cors;
-            let cors = Cors::permissive();
-            App::new().wrap(cors).configure(http::configure)
-        }
-        // Release builds don't require CORS
-        #[cfg(not(debug_assertions))]
-        {
-            App::new().configure(http::configure)
-        }
-    });
+    #[allow(unused_mut)]
+    let mut router = http::router();
 
-    let server = match server.bind((Ipv4Addr::UNSPECIFIED, port)) {
-        Ok(value) => value,
-        Err(error) => {
-            error!("Failed to start server: {}", error);
-            exit(1);
-        }
-    };
+    // Add CORS layer to the router in debug mode
+    #[cfg(debug_assertions)]
+    {
+        router = router.layer(tower_http::cors::CorsLayer::very_permissive());
+    }
 
-    if let Err(error) = server.run().await {
-        error!("Server error: {}", error);
+    let addr = SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, port));
+
+    if let Err(err) = axum::Server::bind(&addr)
+        .serve(router.into_make_service())
+        .await
+    {
+        error!("Server error: {}", err);
         exit(1);
     }
 }

@@ -14,7 +14,7 @@ This is the improved version of my [Quizler](https://github.com/jacobtread/Quizl
 
 This version aims to improve upon the downfalls of the previous app (Written in Go) along with providing new features. I aim to make this version more stable and performant using my better understanding of the [Rust](https://www.rust-lang.org/) language.
 
-This new version makes use of [Rust](https://www.rust-lang.org/) for the backend with the [Actix](https://actix.rs) web framework and [Svelte](https://svelte.dev/) for the frontend. The previous version used [Go](https://go.dev/) for the backend and [VueJS](https://vuejs.org/) for the frontend.
+This new version makes use of [Rust](https://www.rust-lang.org/) for the backend with the [Axum](https://docs.rs/axum/latest/axum/) web framework and [Svelte](https://svelte.dev/) for the frontend. The previous version used [Go](https://go.dev/) for the backend and [VueJS](https://vuejs.org/) for the frontend.
 
 ## 🛫 Deploying
 
@@ -39,13 +39,36 @@ Prebuilt binaries are available for download here
 -->
 
 
+## 📸 Screenshots
+
+### Home screen
+
+This is the screen which allows the users to select between joining a quiz and
+creating their own
+
+![Home Screen](assets/home.png)
+
+### Create screen
+
+This is the screen for creating a new quiz
+
+![Create Screen](assets/create.png)
+
+### Join screen
+
+This is the screen for creating a new quiz
+
+![Join Screen](assets/join.png)
+
+
+
 ## ⚙️ Features
 
 - [x] Different quesiton types
     - Single: Can have multiple correct answer but only lets the players select one option
     - Multiple: Can have many correct answers and lets the players select more than one answer
 - [x] Small and performant, the binary size is super small and is quick to download and move around. From manual testing games could easily handle 15 players in a single game (It can likely handle a far greater number of players however this is untested)
-    - Windows binary:  4.6mb 
+    - Windows binary:  3.8mb 
     - Linux binary: 4.5mb
 - [x] Name filtering levels
     - You are able to select different levels of filtering for what usernames are allowed by the players on a quiz by quiz basis (None, Low, Medium, High)
@@ -73,28 +96,36 @@ Prebuilt binaries are available for download here
   - The server can be run on both Windows or Linux, and can be connected to by any device with a web browser (Its recommended that a up to date browser be used as some older browsers might incorrectly render the page) 
   - Any other platform can run the server within a Docker container
 
+## ⚒ Build Instructions
 
-## 📸 Screenshots
+First you must build the frontend as the backend depends on embedding resources created by the frontend build process
 
-### Home screen
+> **Note** 
+> These commands are from within the context of the repository directory. If you haven't already download the repository and cd to the directory before running the commands below
 
-This is the screen which allows the users to select between joining a quiz and
-creating their own
+```shell
+# Move to the frontend directory
+cd frontend
+# Install the dependencies (NPM: npm install)
+yarn install
+# Run the dist commands (NPM: npm run dist)
+yarn dist
+# Move out of the frontend directory
+cd ..
+```
+Then you can build the backend
 
-![Home Screen](assets/home.png)
+```shell
+# Move to the backend directory
+cd backend
+# Build the release binary
+cargo build --release
+```
 
-### Create screen
+After building the backend the binary will be at
+```backend/target/rlease/quizler[.exe]```
 
-This is the screen for creating a new quiz
-
-![Create Screen](assets/create.png)
-
-### Join screen
-
-This is the screen for creating a new quiz
-
-![Join Screen](assets/join.png)
-
+If you would like to Build within Docker this repository contains a Build.Dockerfile which does this for you
 
 ## 🧾 License
 

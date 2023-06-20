@@ -1,22 +1,22 @@
-use actix::Message;
 use bytes::Bytes;
-use mime::Mime;
+use rand_core::{OsRng, RngCore};
 use serde::{ser::SerializeMap, Deserialize, Serialize};
-use std::time::Duration;
+use std::{collections::HashMap, fmt::Display, hash::Hash, str::FromStr, time::Duration};
 use uuid::Uuid;
 
-use crate::session::SessionId;
+use crate::{game::GameRef, session::SessionId};
 
 /// Immutable string type
 pub type ImStr = Box<str>;
 
-#[derive(Message, Debug, Copy, Clone, Serialize)]
-#[rtype(result = "()")]
+#[derive(Debug, Copy, Clone, Serialize)]
 pub enum ServerError {
-    /// The last proivded message was malformed
+    /// Provided message was malformed
     MalformedMessage,
     /// The provided token didn't match up to any game
     InvalidToken,
+    /// The provided username doesn't meet the requirements
+    InvalidNameLength,
     /// The provided username is already in use
     UsernameTaken,
     /// Provided name was not allowed/inappropriate
@@ -36,6 +36,8 @@ pub enum ServerError {
     UnexpectedMessage,
     /// Provided answer is not valid for the type of question
     InvalidAnswer,
+    /// Game is already stopped
+    GameStopped,
 }
 
 /// Type for the different levels of profanity filtering
@@ -95,7 +97,7 @@ pub type ImageRef = Uuid;
 #[derive(Debug, Clone)]
 pub struct Image {
     /// Mime type for the image
-    pub mime: Mime,
+    pub mime: Box<str>,
     /// The image data bytes
     pub data: Bytes,
 }
@@ -118,6 +120,23 @@ pub struct Question {
     pub bonus_score_time: u32,
     /// The point scoring for the question
     pub scoring: Scoring,
+}
+
+impl Question {
+    const MAX_QUESTION_LENGTH: usize = 400;
+
+    /// Validates that the game configuration is valid
+    /// and can be used for a game
+    pub fn validate(&self) -> bool {
+        let text_length = self.text.len();
+
+        // Question text cannot be empty
+        if text_length == 0 || text_length > Self::MAX_QUESTION_LENGTH {
+            return false;
+        }
+
+        self.data.validate()
+    }
 }
 
 /// Structure of a question image, contains the
@@ -185,6 +204,42 @@ pub enum QuestionData {
         #[serde(skip_serializing)]
         ignore_case: bool,
     },
+}
+
+impl QuestionData {
+    const MAX_ANSWERS: usize = 8;
+    const MAX_ANSWER_LENGTH: usize = 150;
+
+    /// Validates that the game configuration is valid
+    /// and can be used for a game
+    pub fn validate(&self) -> bool {
+        match self {
+            QuestionData::Single { answers } | QuestionData::Multiple { answers, .. } => {
+                let answers_length = answers.len();
+                if answers_length == 0 || answers_length > Self::MAX_ANSWERS {
+                    return false;
+                }
+
+                answers.iter().all(|answer| {
+                    let length = answer.value.len();
+                    length > 0 && length < Self::MAX_ANSWER_LENGTH
+                })
+            }
+
+            QuestionData::TrueFalse { .. } => true,
+            QuestionData::Typer { answers, .. } => {
+                let answers_length = answers.len();
+                if answers_length == 0 || answers_length > Self::MAX_ANSWERS {
+                    return false;
+                }
+
+                answers.iter().all(|answer| {
+                    let length = answer.len();
+                    length > 0 && length < Self::MAX_ANSWER_LENGTH
+                })
+            }
+        }
+    }
 }
 
 /// Game settings for global min/max scoring along with
@@ -293,5 +348,96 @@ impl Serialize for ScoreCollection {
         }
 
         map.end()
+    }
+}
+
+/// Token abstraction to store tokens as fixed length byte
+/// slices rather than strings. This makes them easier to
+/// compare,generate, and serialize
+#[derive(PartialEq, Eq, Clone, Copy)]
+pub struct GameToken([u8; GameToken::LENGTH]);
+
+impl Hash for GameToken {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.0.hash(state);
+    }
+}
+
+impl GameToken {
+    /// Length of tokens that will be created
+    const LENGTH: usize = 5;
+    /// Set of chars that can be used as game tokens
+    const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+    /// Creates a unique random token that isn't present in the
+    /// provided collect of games
+    pub fn unique_token(map: &HashMap<GameToken, GameRef>) -> GameToken {
+        /// Length of the charset
+        const RANGE: usize = GameToken::CHARSET.len();
+
+        let mut rand = OsRng;
+        let mut token = Self([0u8; Self::LENGTH]);
+
+        loop {
+            for at in token.0.iter_mut() {
+                loop {
+                    // Obtain a random number
+                    let var = (rand.next_u32() >> (32 - 6)) as usize;
+
+                    // If the value is in the charset break the loop
+                    if var < RANGE {
+                        *at = Self::CHARSET[var];
+                        break;
+                    }
+                }
+            }
+
+            // Check that the token isn't already taken
+            if !map.contains_key(&token) {
+                return token;
+            }
+        }
+    }
+}
+
+impl Serialize for GameToken {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        // Game tokens are simply serialized as strings by casting the type
+        let token = unsafe { std::str::from_utf8_unchecked(&self.0) };
+        serializer.serialize_str(token)
+    }
+}
+
+impl FromStr for GameToken {
+    type Err = ServerError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.len() != GameToken::LENGTH {
+            return Err(ServerError::InvalidToken);
+        }
+
+        let bytes = s.as_bytes();
+
+        // Handle invalid characters
+        if bytes
+            .iter()
+            .any(|value| !GameToken::CHARSET.contains(value))
+        {
+            return Err(ServerError::InvalidToken);
+        }
+
+        let mut output = [0u8; GameToken::LENGTH];
+        output.copy_from_slice(bytes);
+        Ok(Self(output))
+    }
+}
+
+impl Display for GameToken {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let token = unsafe { std::str::from_utf8_unchecked(&self.0) };
+        f.write_str(token)
     }
 }

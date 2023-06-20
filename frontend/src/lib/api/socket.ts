@@ -1,41 +1,43 @@
 import { writable } from "svelte/store";
 import { onDestroy, onMount } from "svelte";
 import {
-  ServerMessage,
-  type ServerMessageOf as ServerMessageOf,
-  type ServerMessageSchema,
+  ServerEvent,
+  type ServerEventOf as ServerEventOf,
   ServerError,
-  type ResponseMessage,
+  ServerResponse,
   ClientMessage,
-  type ClientMessageOf
+  type ClientMessageOf,
+  type ServerResponseOf,
+  type ServerMessage
 } from "$api/models";
 import { setHome } from "$stores/state";
 import { getServerURL } from "$api/http";
 
 // Handler function that expects a specific server message type
-type MessageHandler<Type> = (msg: ServerMessageOf<Type>) => void;
+type ServerEventHandler<Type> = (msg: ServerEventOf<Type>) => void;
+// Handler function that expects a specific server message type
+type ServerResponseHandler<Type> = (msg: ServerResponseOf<Type>) => void;
 
 // Type of a handler for handling a message response
 interface RequestHandler<T> {
   // Handler resolve callback with the response
-  resolve: MessageHandler<T>;
+  resolve: ServerResponseHandler<T>;
   // Handler reject callback with a server error
   reject(err: ServerError): void;
 }
 
-// The next request ID to use
-let requestHandle: number = 0;
-// Handlers from requests awaiting responses
-let requestHandles: Partial<Record<number, RequestHandler<unknown>>> = {};
+// Handler for the next response
+let responseHandle: RequestHandler<unknown> | null = null;
 // Queue of messages that haven't yet been handled
-let messageQueue: ServerMessageSchema[] = [];
+let messageQueue: ServerMessage[] = [];
 
 // Reference to the socket
 let socket: WebSocket = createSocket();
 
 // Currently set message handlers for handling messages
-const messageHandlers: Partial<Record<ServerMessage, MessageHandler<unknown>>> =
-  {};
+const messageHandlers: Partial<
+  Record<ServerEvent, ServerEventHandler<unknown>>
+> = {};
 
 // Socket readiness state
 export const socketReady = writable<boolean>(false);
@@ -49,21 +51,21 @@ export const socketReady = writable<boolean>(false);
  * @param ty
  * @param handler
  */
-export function setHandler<T extends ServerMessage>(
+export function setHandler<T extends ServerEvent>(
   ty: T,
-  handler: MessageHandler<T>
+  handler: ServerEventHandler<T>
 ) {
   // Append the handler on mount
   onMount(() => {
     // @ts-ignore
     messageHandlers[ty] = handler;
-    console.log("Added handler for", ty);
+    console.debug("Added handler for", ty);
 
     // Process matching queued messages
     messageQueue = messageQueue.filter((msg) => {
       if (msg.ty === ty) {
         // Handle messages that match the handler type
-        handler(msg as ServerMessageOf<T>);
+        handler(msg as ServerEventOf<T>);
         return false;
       } else {
         return true;
@@ -112,8 +114,6 @@ function createSocket(): WebSocket {
     if (ws.readyState == WebSocket.OPEN) {
       console.debug("Connected to socket");
       socketReady.set(true);
-    } else {
-      console.log(ws.readyState);
     }
   };
 
@@ -137,8 +137,7 @@ function createSocket(): WebSocket {
 
 function onDisconnected() {
   // Reset the state
-  requestHandle = 0;
-  requestHandles = {};
+  responseHandle = null;
   clearMessageQueue();
 
   // Return to the home screen
@@ -172,15 +171,12 @@ function queueReconnect() {
  */
 export function send<T extends ClientMessage>(
   msg: ClientMessageOf<T>
-): Promise<ResponseMessage<T>> {
+): Promise<ServerResponseOf<T>> {
   return new Promise((resolve, reject) => {
     console.debug("Sending message to server", msg);
 
-    // Set the return ID and increase it for the next request
-    msg.rid = requestHandle++;
-
-    requestHandles[msg.rid] = {
-      resolve: resolve as MessageHandler<unknown>,
+    responseHandle = {
+      resolve: resolve as ServerResponseHandler<unknown>,
       reject
     };
 
@@ -189,9 +185,9 @@ export function send<T extends ClientMessage>(
       socket.send(data);
     } catch (e) {
       console.error("Failed to send message", e);
-      delete requestHandles[msg.rid];
+      responseHandle = null;
       reject({
-        ty: ServerMessage.Error,
+        ty: ServerResponse.Error,
         error: "Unexpected"
       });
     }
@@ -206,7 +202,7 @@ export function send<T extends ClientMessage>(
  */
 function onMessage({ data }: MessageEvent) {
   // Parse the message
-  const msg: ServerMessageSchema = JSON.parse(data);
+  const msg: ServerMessage = JSON.parse(data);
 
   // Ensure the message type is specified
   if (msg.ty === undefined) {
@@ -214,29 +210,27 @@ function onMessage({ data }: MessageEvent) {
     return;
   }
 
-  // Handle messages with return IDs
-  const rid = msg.rid;
-  if (rid !== undefined) {
-    const handle = requestHandles[rid];
-    if (handle === undefined) {
-      console.error(`Missing return handle ${rid} for message`, msg);
+  // Handle messages marked as responses
+  if (msg.ret === 1) {
+    if (responseHandle === null) {
+      console.error("Missing response handle for message", msg);
       return;
     }
 
     // Compare the message type
-    if (msg.ty === ServerMessage.Error) {
+    if (msg.ty === ServerResponse.Error) {
       // If the types didn't match it must've been an error
-      handle.reject(msg.error);
+      responseHandle.reject(msg.error);
     } else {
       // Reoslve with the correct result
-      handle.resolve(msg);
+      responseHandle.resolve(msg);
     }
+
+    return;
   }
 
   // Find the handler for the message
-  const handler = messageHandlers[msg.ty] as
-    | MessageHandler<typeof msg.ty>
-    | undefined;
+  const handler = messageHandlers[msg.ty];
   if (handler !== undefined) {
     // Call the handler with the mesasge
     handler(msg);

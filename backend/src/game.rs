@@ -1,13 +1,12 @@
 use crate::{
-    games::{GameToken, Games, RemoveGameMessage},
-    msg::ServerMessage,
-    session::{ClearGameMessage, Session, SessionId},
+    games::Games,
+    msg::ServerEvent,
+    session::{EventTarget, SessionId},
     types::{
-        Answer, AnswerData, HostAction, ImStr, Image, ImageRef, NameFiltering, Question,
+        Answer, AnswerData, GameToken, HostAction, ImStr, Image, ImageRef, NameFiltering, Question,
         QuestionData, RemoveReason, Score, ScoreCollection, ServerError,
     },
 };
-use actix::{Actor, ActorContext, Addr, AsyncContext, Context, Handler, Message, SpawnHandle};
 use log::debug;
 use rustrict::CensorStr;
 use serde::Serialize;
@@ -16,7 +15,11 @@ use std::{
     sync::Arc,
     time::{Duration, Instant},
 };
+use tokio::{sync::RwLock, task::AbortHandle, time::sleep};
 use uuid::Uuid;
+
+/// Reference to a game behind an Arc and a RwLock
+pub type GameRef = Arc<RwLock<Game>>;
 
 pub struct Game {
     /// The token this game is stored behind
@@ -33,7 +36,7 @@ pub struct Game {
     question_index: usize,
 
     /// Spawn handle for delayed tasks
-    task_handle: Option<SpawnHandle>,
+    task_handle: Option<AbortHandle>,
 
     /// Start time updated for each question
     start_time: Instant,
@@ -61,6 +64,55 @@ pub enum GameState {
 
     /// The game has finished
     Finished,
+
+    /// The game has completely stopped
+    Stopped,
+}
+
+/// Configuration data for a game
+#[derive(Serialize)]
+pub struct GameConfig {
+    /// The name of the game
+    pub name: ImStr,
+    /// Text displayed under the game name
+    pub text: ImStr,
+    /// Maximum number of players allowed in this game
+    pub max_players: usize,
+    /// Filtering on names
+    #[serde(skip)]
+    pub filtering: NameFiltering,
+    /// The game questions
+    #[serde(skip)]
+    pub questions: Box<[Arc<Question>]>,
+    /// Map of uploaded image UUIDs to their respective
+    /// image data
+    #[serde(skip)]
+    pub images: HashMap<ImageRef, Image>,
+}
+
+impl GameConfig {
+    const MAX_TITLE_LENGTH: usize = 70;
+    const MAX_DESCRIPTION_LENGTH: usize = 300;
+    const MAX_QUESTIONS: usize = 50;
+
+    /// Validates that the game configuration is valid
+    /// and can be used for a game
+    pub fn validate(&self) -> bool {
+        if self.name.len() > Self::MAX_TITLE_LENGTH {
+            return false;
+        }
+
+        if self.text.len() > Self::MAX_DESCRIPTION_LENGTH {
+            return false;
+        }
+
+        let questions_length = self.questions.len();
+        if questions_length == 0 || questions_length > Self::MAX_QUESTIONS {
+            return false;
+        }
+
+        self.questions.iter().all(|value| value.validate())
+    }
 }
 
 impl Game {
@@ -68,7 +120,7 @@ impl Game {
     pub fn new(
         token: GameToken,
         host_id: SessionId,
-        host_addr: Addr<Session>,
+        host_addr: EventTarget,
         config: Arc<GameConfig>,
     ) -> Self {
         Self {
@@ -88,32 +140,37 @@ impl Game {
     ///
     /// `duration` The duration to wait before moving states
     /// `ctx`      The actor context
-    fn timed_next_state(&mut self, duration: Duration, ctx: &mut Context<Self>) {
-        self.task_handle = Some(ctx.run_later(duration, |act, ctx| {
-            // Clear the task handle
-            act.task_handle = None;
+    fn timed_next_state(&mut self, duration: Duration) {
+        let token = self.token;
+        let handle = tokio::spawn(async move {
+            sleep(duration).await;
+            let game = Games::get_game(&token).await;
+            if let Some(game) = game {
+                let lock = &mut *game.write().await;
+                lock.task_handle = None;
+                lock.next_state();
+            }
+        });
 
-            // Move to the next state
-            act.next_state(ctx);
-        }));
+        self.task_handle = Some(handle.abort_handle());
 
         // Send timer message with the duration time
-        self.send_all(ServerMessage::Timer {
+        self.send_all(ServerEvent::Timer {
             value: duration.as_millis() as u32,
         });
     }
 
     /// Cancels a expected task if the handle is present
-    fn cancel_task(&mut self, ctx: &mut Context<Self>) {
+    fn cancel_task(&mut self) {
         if let Some(task_handle) = self.task_handle.take() {
-            ctx.cancel_future(task_handle);
+            task_handle.abort();
         }
     }
 
     /// Moves the game to the next state based on its current state
-    fn next_state(&mut self, ctx: &mut Context<Self>) {
+    fn next_state(&mut self) {
         // If a task handle still exists cancel it
-        self.cancel_task(ctx);
+        self.cancel_task();
 
         match self.state {
             // Next state after lobby is starting
@@ -121,7 +178,7 @@ impl Game {
                 const START_DURATION: Duration = Duration::from_secs(5);
 
                 self.set_state(GameState::Starting);
-                self.timed_next_state(START_DURATION, ctx);
+                self.timed_next_state(START_DURATION);
             }
 
             // Next state after starting is question
@@ -133,7 +190,7 @@ impl Game {
             GameState::AwaitingReady => {
                 const START_DURATION: Duration = Duration::from_secs(5);
                 self.set_state(GameState::PreQuestion);
-                self.timed_next_state(START_DURATION, ctx);
+                self.timed_next_state(START_DURATION);
             }
 
             // Next state after pre-question is awaiting answers
@@ -145,7 +202,7 @@ impl Game {
                 self.start_time = Instant::now();
 
                 let question = &self.config.questions[self.question_index];
-                self.timed_next_state(Duration::from_millis(question.answer_time), ctx);
+                self.timed_next_state(Duration::from_millis(question.answer_time));
             }
 
             // Next state after awaiting answers is marking
@@ -161,23 +218,25 @@ impl Game {
 
             // Next state after finished is a reset game
             GameState::Finished => {
-                self.reset_completely(ctx);
+                self.reset_completely();
             }
+
+            GameState::Stopped => {}
         }
     }
 
     /// Send a message to all clients
-    fn send_all(&self, message: ServerMessage) {
+    fn send_all(&self, message: ServerEvent) {
         // Wrap the message in an Arc to prevent cloning lots of heap data
         let message = Arc::new(message);
 
         // Send the message to all the players
         for player in &self.players {
-            player.addr.do_send(message.clone());
+            player.addr.send_shared(message.clone());
         }
 
         // Send the message to the host
-        self.host.addr.do_send(message);
+        self.host.addr.send_shared(message);
     }
 
     /// Sets the current game state to the provided `state` and
@@ -185,12 +244,12 @@ impl Game {
     /// the host
     fn set_state(&mut self, state: GameState) {
         self.state = state;
-        self.send_all(ServerMessage::GameState { state });
+        self.send_all(ServerEvent::GameState { state });
     }
 
     /// Resets the game state and all the player data to its initial values
-    fn reset_completely(&mut self, ctx: &mut Context<Self>) {
-        self.cancel_task(ctx);
+    fn reset_completely(&mut self) {
+        self.cancel_task();
 
         self.question_index = 0;
 
@@ -206,18 +265,18 @@ impl Game {
     }
 
     /// Handles updating state post removing a player
-    fn on_remove(&mut self, ctx: &mut Context<Self>) {
-        self.update_ready(ctx);
+    fn on_remove(&mut self) {
+        self.update_ready();
 
         // Reset the game if everyone disconected while in progress
         if self.state != GameState::Finished && self.players.is_empty() {
-            self.reset_completely(ctx);
+            self.reset_completely();
         }
     }
 
     /// Updates the current state checking if all the players are ready
     /// then if they are progresses the state to [`GameState::AwaitingAnswers`]
-    fn update_ready(&mut self, ctx: &mut Context<Self>) {
+    fn update_ready(&mut self) {
         // Ignore if we aren't expecting ready states
         if self.state != GameState::AwaitingReady {
             return;
@@ -229,7 +288,7 @@ impl Game {
             return;
         }
 
-        self.next_state(ctx)
+        self.next_state()
     }
 
     fn next_question(&mut self) {
@@ -258,7 +317,7 @@ impl Game {
         let question = self.config.questions[self.question_index].clone();
 
         // Send the question contents to the clients
-        self.send_all(ServerMessage::Question { question });
+        self.send_all(ServerEvent::Question { question });
 
         // Begin awaiting for ready messages
         self.set_state(GameState::AwaitingReady);
@@ -279,7 +338,7 @@ impl Game {
                 // Increase the player score
                 player.score += score.value();
 
-                player.addr.do_send(ServerMessage::Score { score });
+                player.addr.send(ServerEvent::Score { score });
 
                 (player.id, player.score)
             })
@@ -287,63 +346,60 @@ impl Game {
         let scores = ScoreCollection(scores);
 
         // Update everyones scores
-        self.send_all(ServerMessage::Scores { scores });
+        self.send_all(ServerEvent::Scores { scores });
 
         // Set state to marked
         self.set_state(GameState::Marked);
     }
-}
 
-impl Actor for Game {
-    type Context = Context<Self>;
-
-    /// Handle stopping of a game actor
-    fn stopped(&mut self, _ctx: &mut Self::Context) {
-        debug!("Game stopped: {}", self.token);
+    fn stop(&mut self) {
+        // Don't try and stop the game twice
+        if let GameState::Stopped = &self.state {
+            return;
+        }
 
         // Remove the game from the list of games
-        Games::get().do_send(RemoveGameMessage { token: self.token });
+        tokio::spawn(Games::remove_game(self.token));
 
         // Tell all the players they've been kicked
         for player in &self.players {
             // Send the visual kick message
-            player.addr.do_send(ServerMessage::Kicked {
+            player.addr.send(ServerEvent::Kicked {
                 id: player.id,
                 reason: RemoveReason::HostDisconnect,
             });
-
-            // Notify the session that its been kicked
-            player.addr.do_send(ClearGameMessage);
         }
+
+        self.host.addr.send(ServerEvent::Kicked {
+            id: self.host.id,
+            reason: RemoveReason::Disconnected,
+        });
+
+        self.state = GameState::Stopped;
+
+        debug!("Game stopped: {}", self.token);
     }
-}
 
-/// Message to attempt to connect from a new client
-#[derive(Message)]
-#[rtype(result = "Result<JoinedMessage, ServerError>")]
-pub struct JoinMessage {
-    /// The session ID of the session trying to connect
-    pub id: SessionId,
-    /// The address of the session connecting
-    pub addr: Addr<Session>,
-    /// The name for the connecting player
-    pub name: String,
-}
+    pub fn join(
+        &mut self,
+        id: SessionId,
+        listener: EventTarget,
+        name: String,
+    ) -> Result<JoinedMessage, ServerError> {
+        if let GameState::Stopped = &self.state {
+            return Err(ServerError::GameStopped);
+        }
 
-/// Message containing the connected details for a connected player
-pub struct JoinedMessage {
-    /// The uniquely generated game token (e.g A3DLM)
-    pub token: GameToken,
-    /// Copy of the game configuration to send back
-    pub config: Arc<GameConfig>,
-}
+        const MIN_NAME_LENGTH: usize = 1;
+        const MAX_NAME_LENGTH: usize = 30;
 
-impl Handler<JoinMessage> for Game {
-    type Result = Result<JoinedMessage, ServerError>;
-
-    fn handle(&mut self, msg: JoinMessage, _ctx: &mut Self::Context) -> Self::Result {
         // Trim name padding
-        let name = msg.name.trim();
+        let name = name.trim();
+
+        let name_length = name.len();
+        if !(MIN_NAME_LENGTH..=MAX_NAME_LENGTH).contains(&name_length) {
+            return Err(ServerError::InvalidNameLength);
+        }
 
         // Name filtering
         if let Some(filter_type) = self.config.filtering.type_of() {
@@ -372,32 +428,28 @@ impl Handler<JoinMessage> for Game {
         }
 
         // Create the player
-        let game_player = PlayerSession::new(
-            msg.id,
-            msg.addr,
-            Box::from(name),
-            self.config.questions.len(),
-        );
+        let game_player =
+            PlayerSession::new(id, listener, Box::from(name), self.config.questions.len());
 
         // Message sent to existing players for this player
-        let joiner_message = Arc::new(ServerMessage::PlayerData {
+        let joiner_message = Arc::new(ServerEvent::PlayerData {
             id: game_player.id,
-            name: game_player.name.to_string(),
+            name: game_player.name.clone(),
         });
 
         // Notify all players of the existence of eachother
         for player in &self.players {
-            player.addr.do_send(joiner_message.clone());
+            player.addr.send_shared(joiner_message.clone());
 
             // Message describing the other player
-            game_player.addr.do_send(ServerMessage::PlayerData {
+            game_player.addr.send(ServerEvent::PlayerData {
                 id: player.id,
-                name: player.name.to_string(),
+                name: player.name.clone(),
             });
         }
 
         // Notify the host of the join
-        self.host.addr.do_send(joiner_message);
+        self.host.addr.send_shared(joiner_message);
 
         self.players.push(game_player);
 
@@ -406,102 +458,53 @@ impl Handler<JoinMessage> for Game {
             config: self.config.clone(),
         })
     }
-}
 
-/// Message from the host to complete an
-/// action on the game
-#[derive(Message)]
-#[rtype(result = "Result<(), ServerError>")]
-pub struct HostActionMessage {
-    /// The ID of the session sending the action
-    pub id: SessionId,
-    /// The action
-    pub action: HostAction,
-}
-
-impl Handler<HostActionMessage> for Game {
-    type Result = Result<(), ServerError>;
-
-    fn handle(&mut self, msg: HostActionMessage, ctx: &mut Self::Context) -> Self::Result {
+    pub fn host_action(&mut self, id: SessionId, action: HostAction) -> Result<(), ServerError> {
         // Handle messages that aren't from the game host
-        if self.host.id != msg.id {
+        if self.host.id != id {
             return Err(ServerError::InvalidPermission);
         }
 
-        match msg.action {
-            HostAction::Reset => self.reset_completely(ctx),
-            HostAction::Next => self.next_state(ctx),
+        match action {
+            HostAction::Reset => self.reset_completely(),
+            HostAction::Next => self.next_state(),
         };
 
         Ok(())
     }
-}
 
-/// Request to inform that a player is ready
-#[derive(Message)]
-#[rtype(result = "()")]
-pub struct ReadyMessage {
-    pub id: SessionId,
-}
-
-impl Handler<ReadyMessage> for Game {
-    type Result = ();
-
-    fn handle(&mut self, msg: ReadyMessage, ctx: &mut Self::Context) -> Self::Result {
-        if msg.id == self.host.id {
+    pub fn ready(&mut self, id: SessionId) {
+        if id == self.host.id {
             self.host.ready = true;
         } else {
-            let player = self.players.iter_mut().find(|player| player.id == msg.id);
+            let player = self.players.iter_mut().find(|player| player.id == id);
             if let Some(player) = player {
                 player.ready = true;
             }
         }
 
-        self.update_ready(ctx);
+        self.update_ready();
     }
-}
 
-/// Message asking to remove a player from the game
-#[derive(Message)]
-#[rtype(result = "Option<Image>")]
-pub struct GetImageMessage {
-    pub uuid: Uuid,
-}
-
-impl Handler<GetImageMessage> for Game {
-    type Result = Option<Image>;
-
-    fn handle(&mut self, msg: GetImageMessage, _ctx: &mut Self::Context) -> Self::Result {
-        self.config.images.get(&msg.uuid).cloned()
+    pub fn get_image(&self, uuid: Uuid) -> Option<Image> {
+        self.config.images.get(&uuid).cloned()
     }
-}
 
-/// Message asking to remove a player from the game
-#[derive(Message)]
-#[rtype(result = "Result<(), ServerError>")]
-pub struct RemovePlayerMessage {
-    /// Reference of who is attempting to remove the player
-    /// (Unless the server is removing)
-    pub id: SessionId,
-    /// The ID of the player to remove
-    pub target_id: SessionId,
-    /// Reason for the player removal (Sent to clients)
-    pub reason: RemoveReason,
-}
-
-impl Handler<RemovePlayerMessage> for Game {
-    type Result = Result<(), ServerError>;
-
-    fn handle(&mut self, msg: RemovePlayerMessage, ctx: &mut Self::Context) -> Self::Result {
+    pub fn remove_player(
+        &mut self,
+        id: SessionId,
+        target_id: SessionId,
+        mut reason: RemoveReason,
+    ) -> Result<(), ServerError> {
         // Handle messages that aren't from the game host
-        if msg.target_id != msg.id && self.host.id != msg.id {
+        if target_id != id && self.host.id != id {
             return Err(ServerError::InvalidPermission);
         }
 
         // Host is removing itself (Game is stopping)
-        if msg.target_id == self.host.id {
+        if target_id == self.host.id {
             // Stop the game
-            ctx.stop();
+            self.stop();
             return Ok(());
         }
 
@@ -509,54 +512,36 @@ impl Handler<RemovePlayerMessage> for Game {
         let index = self
             .players
             .iter()
-            .position(|player| player.id == msg.target_id)
+            .position(|player| player.id == target_id)
             .ok_or(ServerError::UnknownPlayer)?;
 
-        let mut reason = msg.reason;
-
         // Replace host remove reason for non hosts
-        if RemoveReason::RemovedByHost == reason && msg.id != self.host.id {
+        if RemoveReason::RemovedByHost == reason && id != self.host.id {
             reason = RemoveReason::Disconnected;
         }
 
-        let kick_msg = Arc::new(ServerMessage::Kicked {
-            id: msg.target_id,
+        let kick_msg = Arc::new(ServerEvent::Kicked {
+            id: target_id,
             reason,
         });
 
         // Inform each player of the removal
         self.players
             .iter()
-            .for_each(|player| player.addr.do_send(kick_msg.clone()));
+            .for_each(|player| player.addr.send_shared(kick_msg.clone()));
 
         // Inform the host of the player removal
-        self.host.addr.do_send(kick_msg);
+        self.host.addr.send_shared(kick_msg);
 
         // Remove the player
-        let target = self.players.remove(index);
-        // Tell the session itself that its been kicked
-        target.addr.do_send(ClearGameMessage);
+        self.players.remove(index);
 
-        self.on_remove(ctx);
+        self.on_remove();
 
         Ok(())
     }
-}
 
-/// Message asking to remove a player from the game
-#[derive(Message)]
-#[rtype(result = "Result<(), ServerError>")]
-pub struct PlayerAnswerMessage {
-    /// The ID of the session who answered
-    pub id: SessionId,
-    /// Answer to the question
-    pub answer: Answer,
-}
-
-impl Handler<PlayerAnswerMessage> for Game {
-    type Result = Result<(), ServerError>;
-
-    fn handle(&mut self, msg: PlayerAnswerMessage, ctx: &mut Self::Context) -> Self::Result {
+    pub fn answer(&mut self, id: SessionId, answer: Answer) -> Result<(), ServerError> {
         let elapsed = self.start_time.elapsed();
 
         // Answers are not being accepted at the current time
@@ -570,22 +555,18 @@ impl Handler<PlayerAnswerMessage> for Game {
         let player = self
             .players
             .iter_mut()
-            .find(|player| player.id == msg.id)
+            .find(|player| player.id == id)
             .ok_or(ServerError::UnknownPlayer)?;
 
         // Ensure the answer is the right type of answer
-        if !msg.answer.is_valid(&question.data) {
+        if !answer.is_valid(&question.data) {
             return Err(ServerError::InvalidAnswer);
         }
 
         // Set the player answer
-        player.answers.set_answer(
-            self.question_index,
-            AnswerData {
-                elapsed,
-                answer: msg.answer,
-            },
-        );
+        player
+            .answers
+            .set_answer(self.question_index, AnswerData { elapsed, answer });
 
         // If all the players have answered we can advance the state
         let all_answered = self
@@ -594,24 +575,38 @@ impl Handler<PlayerAnswerMessage> for Game {
             .all(|player| player.answers.has_answer(self.question_index));
 
         if all_answered {
-            self.next_state(ctx);
+            self.next_state();
         }
 
         Ok(())
     }
 }
 
+impl Drop for Game {
+    fn drop(&mut self) {
+        debug!("Game dropped: {}", self.token);
+    }
+}
+
+/// Message containing the connected details for a connected player
+pub struct JoinedMessage {
+    /// The uniquely generated game token (e.g A3DLM)
+    pub token: GameToken,
+    /// Copy of the game configuration to send back
+    pub config: Arc<GameConfig>,
+}
+
 pub struct HostSession {
     /// The ID of the referenced session
     id: SessionId,
     /// The addr to the session
-    addr: Addr<Session>,
+    addr: EventTarget,
     /// The player ready state
     ready: bool,
 }
 
 impl HostSession {
-    pub fn new(id: SessionId, addr: Addr<Session>) -> Self {
+    pub fn new(id: SessionId, addr: EventTarget) -> Self {
         Self {
             id,
             addr,
@@ -624,7 +619,7 @@ pub struct PlayerSession {
     /// The ID of the referenced session
     id: SessionId,
     /// The addr to the session
-    addr: Addr<Session>,
+    addr: EventTarget,
     /// The player ready state
     ready: bool,
 
@@ -634,6 +629,19 @@ pub struct PlayerSession {
     answers: PlayerAnswers,
     /// The player total score
     score: u32,
+}
+
+impl PlayerSession {
+    pub fn new(id: SessionId, addr: EventTarget, name: ImStr, question_len: usize) -> Self {
+        Self {
+            id,
+            addr,
+            name,
+            ready: false,
+            answers: PlayerAnswers::new(question_len),
+            score: 0,
+        }
+    }
 }
 
 /// Structure storing the player answers. Fixed length to
@@ -826,38 +834,4 @@ impl PlayerAnswer {
             _ => Score::Incorrect,
         }
     }
-}
-
-impl PlayerSession {
-    pub fn new(id: SessionId, addr: Addr<Session>, name: ImStr, question_len: usize) -> Self {
-        Self {
-            id,
-            addr,
-            name,
-            ready: false,
-            answers: PlayerAnswers::new(question_len),
-            score: 0,
-        }
-    }
-}
-
-/// Configuration data for a game
-#[derive(Serialize)]
-pub struct GameConfig {
-    /// The name of the game
-    pub name: ImStr,
-    /// Text displayed under the game name
-    pub text: ImStr,
-    /// Maximum number of players allowed in this game
-    pub max_players: usize,
-    /// Filtering on names
-    #[serde(skip)]
-    pub filtering: NameFiltering,
-    /// The game questions
-    #[serde(skip)]
-    pub questions: Box<[Arc<Question>]>,
-    /// Map of uploaded image UUIDs to their respective
-    /// image data
-    #[serde(skip)]
-    pub images: HashMap<ImageRef, Image>,
 }

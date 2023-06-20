@@ -2,27 +2,30 @@
 
 use crate::{
     game::{GameConfig, GameState},
-    games::GameToken,
     session::SessionId,
-    types::{Answer, HostAction, Question, RemoveReason, Score, ScoreCollection, ServerError},
+    types::{
+        Answer, GameToken, HostAction, ImStr, Question, RemoveReason, Score, ScoreCollection,
+        ServerError,
+    },
 };
-use actix::Message;
-use serde::{Deserialize, Serialize};
+use serde::{ser::SerializeMap, Deserialize, Serialize, __private::ser::FlatMapSerializer};
 use std::sync::Arc;
 use uuid::Uuid;
 
-#[derive(Deserialize)]
-pub struct ClientRequest {
-    pub rid: u32,
-    #[serde(flatten)]
-    pub msg: ClientMessage,
-}
+/// Wrapper around the response message type to include
+/// "ret": 1, which is used to indicate this is a response
+pub struct ServerResponse(pub ResponseMessage);
 
-#[derive(Serialize)]
-pub struct ServerResponse {
-    pub rid: u32,
-    #[serde(flatten)]
-    pub msg: ServerMessage,
+impl Serialize for ServerResponse {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let mut map = serializer.serialize_map(None)?;
+        map.serialize_entry("ret", &1)?;
+        self.0.serialize(FlatMapSerializer(&mut map))?;
+        map.end()
+    }
 }
 
 /// Messages recieved from the client
@@ -34,19 +37,16 @@ pub enum ClientMessage {
         /// The UUID of the game to initialize
         uuid: Uuid,
     },
-
     // Message to associate the session with the provided game
     Connect {
         /// The game token to try and connect to (e.g. W2133)
         token: String,
     },
-
     /// Message to attempt to join the game using the provided name
     Join {
         /// The name to attempt to access with
         name: String,
     },
-
     /// Message indicating the client is ready to play
     ///
     /// (This is done internally by clients once everything has been loaded)
@@ -62,11 +62,9 @@ pub enum ClientMessage {
     },
 }
 
-/// Messages sent by the server
-#[derive(Message, Serialize)]
-#[rtype(result = "()")]
+#[derive(Serialize)]
 #[serde(tag = "ty")]
-pub enum ServerMessage {
+pub enum ResponseMessage {
     /// Message indicating a complete successful connection
     Joined {
         /// The session ID
@@ -76,39 +74,29 @@ pub enum ServerMessage {
         /// Copy of the game configuration to send back
         config: Arc<GameConfig>,
     },
+    /// Ok message response
     Ok,
+    /// Server error
+    Error { error: ServerError },
+}
+
+/// Messages sent by the server
+#[derive(Serialize)]
+#[serde(tag = "ty")]
+pub enum ServerEvent {
     /// Message providing information about another player in
     /// the game
-    PlayerData {
-        id: SessionId,
-        name: String,
-    },
+    PlayerData { id: SessionId, name: ImStr },
     /// Message indicating the current state of the game
-    GameState {
-        state: GameState,
-    },
+    GameState { state: GameState },
     /// Message for telling clients the current countdown timer
-    Timer {
-        value: u32,
-    },
+    Timer { value: u32 },
     /// Question data for the next question
-    Question {
-        question: Arc<Question>,
-    },
+    Question { question: Arc<Question> },
     /// Updates the player scores with the new scores
-    Scores {
-        scores: ScoreCollection,
-    },
-
+    Scores { scores: ScoreCollection },
     /// Message telling the player the score that they obtained
-    Score {
-        score: Score,
-    },
-
-    /// Server error
-    Error {
-        error: ServerError,
-    },
+    Score { score: Score },
     /// Player has been kicked from the game
     Kicked {
         /// The ID of the player that was kicked

@@ -1,46 +1,30 @@
 use crate::{
-    game::{Game, GameConfig},
-    session::{Session, SessionId},
-    types::ServerError,
+    game::{Game, GameConfig, GameRef},
+    session::{EventTarget, SessionId},
+    types::{GameToken, ServerError},
 };
-use actix::{Actor, Addr, AsyncContext, Context, Handler, Message, MessageResult};
-use log::debug;
-use rand_core::{OsRng, RngCore};
-use serde::Serialize;
 use std::{
     collections::HashMap,
-    fmt::Display,
-    hash::Hash,
-    str::FromStr,
     sync::Arc,
     time::{Duration, Instant},
 };
+use tokio::{
+    sync::{RwLock, RwLockReadGuard, RwLockWriteGuard},
+    time::{interval, MissedTickBehavior},
+};
 use uuid::Uuid;
 
-static mut GAMES: Option<Addr<Games>> = None;
+/// Global instance for storing games
+static mut GAMES: Option<RwLock<Games>> = None;
 
 /// Central store for storing all the references to the individual
 /// games that are currently running
 #[derive(Default)]
 pub struct Games {
     /// Map of the game tokens to the actual game itself
-    games: HashMap<GameToken, Addr<Game>>,
+    games: HashMap<GameToken, GameRef>,
     /// Map of UUID's to game configurations that are preparing to start
     preparing: HashMap<Uuid, PreparingGame>,
-}
-
-impl Games {
-    pub fn init() {
-        let value = Self::start_default();
-        unsafe { GAMES = Some(value) }
-    }
-
-    pub fn get() -> &'static Addr<Games> {
-        match unsafe { &GAMES } {
-            Some(value) => value,
-            None => panic!("Games not initialized"),
-        }
-    }
 }
 
 /// Game state for a game thats been created from the HTTP
@@ -52,161 +36,6 @@ pub struct PreparingGame {
     created: Instant,
 }
 
-impl Actor for Games {
-    type Context = Context<Self>;
-
-    fn started(&mut self, ctx: &mut Self::Context) {
-        /// Interval to check for expired game prepares (5mins)
-        const PREPARE_CHECK_INTERVAL: Duration = Duration::from_secs(60 * 5);
-
-        /// The amount of time that must pass for a prepared game to be
-        /// considered expired (20mins)
-        const GAME_EXPIRY_TIME: Duration = Duration::from_secs(60 * 20);
-
-        ctx.run_interval(PREPARE_CHECK_INTERVAL, |act, _| {
-            debug!("Collecting expired game prepares");
-
-            act.preparing.retain(|_, value| {
-                let elapsed = value.created.elapsed();
-                elapsed < GAME_EXPIRY_TIME
-            });
-        });
-    }
-}
-
-/// Token abstraction to store tokens as fixed length byte
-/// slices rather than strings. This makes them easier to
-/// compare,generate, and serialize
-#[derive(PartialEq, Eq, Clone, Copy)]
-pub struct GameToken([u8; GameToken::LENGTH]);
-
-impl Hash for GameToken {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.0.hash(state);
-    }
-}
-
-impl GameToken {
-    /// Length of tokens that will be created
-    const LENGTH: usize = 5;
-    /// Set of chars that can be used as game tokens
-    const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-
-    /// Creates a unique random token that isn't present in the
-    /// provided collect of games
-    fn unique_token(games: &HashMap<GameToken, Addr<Game>>) -> GameToken {
-        /// Length of the charset
-        const RANGE: usize = GameToken::CHARSET.len();
-
-        let mut rand = OsRng;
-        let mut token = Self([0u8; Self::LENGTH]);
-
-        loop {
-            for at in token.0.iter_mut() {
-                loop {
-                    // Obtain a random number
-                    let var = (rand.next_u32() >> (32 - 6)) as usize;
-
-                    // If the value is in the charset break the loop
-                    if var < RANGE {
-                        *at = Self::CHARSET[var];
-                        break;
-                    }
-                }
-            }
-
-            // Check that the token isn't already taken
-            if !games.contains_key(&token) {
-                return token;
-            }
-        }
-    }
-}
-
-impl Serialize for GameToken {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        // Game tokens are simply serialized as strings by casting the type
-        let token = unsafe { std::str::from_utf8_unchecked(&self.0) };
-        serializer.serialize_str(token)
-    }
-}
-
-impl FromStr for GameToken {
-    type Err = ServerError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.len() != GameToken::LENGTH {
-            return Err(ServerError::InvalidToken);
-        }
-
-        let bytes = s.as_bytes();
-
-        // Handle invalid characters
-        if bytes
-            .iter()
-            .any(|value| !GameToken::CHARSET.contains(value))
-        {
-            return Err(ServerError::InvalidToken);
-        }
-
-        let mut output = [0u8; GameToken::LENGTH];
-        output.copy_from_slice(bytes);
-        Ok(Self(output))
-    }
-}
-
-impl Display for GameToken {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let token = unsafe { std::str::from_utf8_unchecked(&self.0) };
-        f.write_str(token)
-    }
-}
-
-/// Requests that the games manager prepares for initalizing
-/// of a new game with the provided [`GameConfig`]. Responds
-/// with a UUID that the host can use to start the game.
-///
-/// This request comes from the HTTP API
-#[derive(Message)]
-#[rtype(result = "Uuid")]
-pub struct PrepareGameMessage {
-    /// The configuration to store as prepared
-    pub config: GameConfig,
-}
-
-impl Handler<PrepareGameMessage> for Games {
-    type Result = MessageResult<PrepareGameMessage>;
-
-    fn handle(&mut self, msg: PrepareGameMessage, _ctx: &mut Self::Context) -> Self::Result {
-        let id = Uuid::new_v4();
-
-        self.preparing.insert(
-            id,
-            PreparingGame {
-                config: msg.config,
-                created: Instant::now(),
-            },
-        );
-        MessageResult(id)
-    }
-}
-
-/// Message for handling the connection of a host to a preparing game.
-/// This creates the actual game and is done through the WebSocket API
-#[derive(Message)]
-#[rtype(result = "Result<InitializedMessage, ServerError>")]
-pub struct InitializeMessage {
-    /// The UUID of the prepared game configuration to start
-    pub uuid: Uuid,
-    /// The ID of the referenced session
-    pub id: SessionId,
-    /// The addr to the session
-    pub addr: Addr<Session>,
-}
-
 /// Message containing the details of a game that has been successfully
 /// connected to by the host (The game has finished being prepared)
 pub struct InitializedMessage {
@@ -214,29 +43,116 @@ pub struct InitializedMessage {
     pub token: GameToken,
     /// The full game config to be used while playing
     pub config: Arc<GameConfig>,
-    /// The address to the game
-    pub game: Addr<Game>,
+    /// Reference to the created game
+    pub game: GameRef,
 }
 
-impl Handler<InitializeMessage> for Games {
-    type Result = Result<InitializedMessage, ServerError>;
+impl Games {
+    /// Initializes the games global state and starts the
+    /// tick_cleanup task
+    pub fn init() {
+        unsafe {
+            GAMES = Some(RwLock::new(Games::default()));
+        }
 
-    fn handle(&mut self, msg: InitializeMessage, _ctx: &mut Self::Context) -> Self::Result {
-        // Find the config data from the pre init list
-        let prep = self
+        // Spawn the cleanup future
+        tokio::spawn(Self::tick_cleanup());
+    }
+
+    /// Handles cleaning up games that have expired from the
+    /// preparing set runs every 10 minutes
+    async fn tick_cleanup() {
+        /// Interval to check for expired game prepares (5mins)
+        const PREPARE_CHECK_INTERVAL: Duration = Duration::from_secs(60 * 5);
+
+        /// The amount of time that must pass for a prepared game to be
+        /// considered expired (10mins)
+        const GAME_EXPIRY_TIME: Duration = Duration::from_secs(60 * 10);
+
+        // Create the interval future
+        let mut interval = interval(PREPARE_CHECK_INTERVAL);
+        interval.set_missed_tick_behavior(MissedTickBehavior::Delay);
+
+        loop {
+            // Wait until the desired time has passed
+            interval.tick().await;
+
+            // Obtain a write lock and remove all expired games
+            let mut games = Self::write().await;
+            games.preparing.retain(|_, value| {
+                let elapsed = value.created.elapsed();
+                elapsed < GAME_EXPIRY_TIME
+            });
+        }
+    }
+
+    /// Aquires a read lock over the games structure
+    /// returning the lock guard
+    async fn read() -> RwLockReadGuard<'static, Games> {
+        match unsafe { &GAMES } {
+            Some(value) => value.read().await,
+            None => panic!("Global games instance not initialized"),
+        }
+    }
+
+    /// Aquires a write lock over the games structure
+    /// returning the lock guard
+    async fn write() -> RwLockWriteGuard<'static, Games> {
+        match unsafe { &GAMES } {
+            Some(value) => value.write().await,
+            None => panic!("Global games instance not initialized"),
+        }
+    }
+
+    /// Prepares a new Quiz for creation. Stores the uploaded config
+    /// with a UUID provided the UUID for the host to connect with
+    ///
+    /// # Arguments
+    /// * config - The config for the quiz
+    pub async fn prepare(config: GameConfig) -> Uuid {
+        let id = Uuid::new_v4();
+        let created = Instant::now();
+
+        let mut games = Self::write().await;
+        games
             .preparing
-            .remove(&msg.uuid)
-            .ok_or(ServerError::InvalidToken)?;
+            .insert(id, PreparingGame { config, created });
 
-        let config = prep.config;
+        id
+    }
 
-        let config = Arc::new(config);
+    /// Initializes a prepared game using the provided host details and
+    /// prepare config UUID
+    ///
+    /// # Arguments
+    /// * uuid - The UUID of the prepared config
+    /// * host_id - The session ID of the host player
+    /// * host_target - The event target for the host player
+    pub async fn initialize(
+        uuid: Uuid,
+        host_id: SessionId,
+        host_target: EventTarget,
+    ) -> Result<InitializedMessage, ServerError> {
+        // Write lock is required for updating state
+        let mut games = Self::write().await;
+
+        // Consume the provided prepared config
+        let config = games
+            .preparing
+            .remove(&uuid)
+            .ok_or(ServerError::InvalidToken)?
+            .config;
 
         // Create a new game token
-        let token = GameToken::unique_token(&self.games);
+        let token = GameToken::unique_token(&games.games);
 
-        let game = Game::new(token, msg.id, msg.addr, config.clone()).start();
-        self.games.insert(token, game.clone());
+        // Create the game
+        let config = Arc::new(config);
+        let game = Game::new(token, host_id, host_target, config.clone());
+        let game = Arc::new(RwLock::new(game));
+
+        // Insert the game into the games map
+        games.games.insert(token, game.clone());
 
         Ok(InitializedMessage {
             token,
@@ -244,42 +160,19 @@ impl Handler<InitializeMessage> for Games {
             game,
         })
     }
-}
 
-/// Message to request an addr to a game
-#[derive(Message)]
-#[rtype(result = "Result<Addr<Game>, ServerError>")]
-pub struct GetGameMessage {
-    /// The raw string token
-    pub token: String,
-}
-
-impl Handler<GetGameMessage> for Games {
-    type Result = Result<Addr<Game>, ServerError>;
-
-    fn handle(&mut self, msg: GetGameMessage, _ctx: &mut Self::Context) -> Self::Result {
-        // Parse the token ensuring it is valid
-        let token: GameToken = msg.token.parse()?;
-
-        self.games
-            .get(&token)
-            .cloned()
-            .ok_or(ServerError::InvalidToken)
+    /// Obtains a cloned Arc for a game with the specific token
+    /// if one exists
+    ///
+    /// # Arguments
+    /// * token - The token of the game to get
+    pub async fn get_game(token: &GameToken) -> Option<GameRef> {
+        Self::read().await.games.get(token).cloned()
     }
-}
 
-/// Message to remove a game
-#[derive(Message)]
-#[rtype(result = "()")]
-pub struct RemoveGameMessage {
-    /// The token of the game to remove
-    pub token: GameToken,
-}
-
-impl Handler<RemoveGameMessage> for Games {
-    type Result = ();
-
-    fn handle(&mut self, msg: RemoveGameMessage, _ctx: &mut Self::Context) -> Self::Result {
-        self.games.remove(&msg.token);
+    /// Removes the game with the provided [`GameToken`] from
+    /// the map of games
+    pub async fn remove_game(token: GameToken) {
+        Self::write().await.games.remove(&token);
     }
 }

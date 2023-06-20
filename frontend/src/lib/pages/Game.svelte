@@ -17,7 +17,7 @@
 
 <script lang="ts">
   import {
-    ServerMessage,
+    ServerEvent,
     type PlayerData,
     GameState,
     type Question,
@@ -95,14 +95,14 @@
   }
 
   // Hook the handlers for the different message types
-  socket.setHandler(ServerMessage.PlayerData, (msg) => {
+  socket.setHandler(ServerEvent.PlayerData, (msg) => {
     console.debug("Other player message", msg);
     // Add to the players list
     players.push(msg);
     players = players;
   });
 
-  socket.setHandler(ServerMessage.GameState, (msg) => {
+  socket.setHandler(ServerEvent.GameState, (msg) => {
     console.debug("Game state message", msg);
     gameState = msg.state;
 
@@ -128,7 +128,7 @@
     }
   });
 
-  socket.setHandler(ServerMessage.Timer, (msg) => {
+  socket.setHandler(ServerEvent.Timer, (msg) => {
     console.debug("Time sync message", msg);
 
     lastUpdateTime = performance.now();
@@ -137,7 +137,7 @@
     updateTimer();
   });
 
-  socket.setHandler(ServerMessage.Question, async (msg) => {
+  socket.setHandler(ServerEvent.Question, async (msg) => {
     console.debug("Question message", msg);
     question = msg.question;
 
@@ -162,7 +162,7 @@
     console.debug("Server acknowledged ready state");
   });
 
-  socket.setHandler(ServerMessage.Scores, (msg) => {
+  socket.setHandler(ServerEvent.Scores, (msg) => {
     console.debug("Score message", msg);
     scores = msg.scores;
 
@@ -171,16 +171,12 @@
     players = players.sort((a, b) => getScore(b.id) - getScore(a.id));
   });
 
-  socket.setHandler(ServerMessage.Score, (msg) => {
+  socket.setHandler(ServerEvent.Score, (msg) => {
     console.debug("Score message", msg);
     score = msg.score;
   });
 
-  socket.setHandler(ServerMessage.Error, (msg) => {
-    console.error("Server error", msg.error);
-  });
-
-  socket.setHandler(ServerMessage.Kicked, (msg) => {
+  socket.setHandler(ServerEvent.Kicked, (msg) => {
     console.debug("Kick message", msg);
     // Remove from the players list
     players = players.filter((player) => player.id !== msg.id);

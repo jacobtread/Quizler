@@ -1,96 +1,76 @@
 use crate::{
-    game::{GameConfig, GetImageMessage},
-    games::{Games, GetGameMessage, PrepareGameMessage},
+    game::GameConfig,
+    games::Games,
     session::Session,
-    types::{ImStr, Image, NameFiltering, Question},
+    types::{GameToken, ImStr, Image, NameFiltering, Question},
 };
-use actix_multipart::{Multipart, MultipartError};
-use actix_web::{
-    get,
-    http::StatusCode,
-    post,
-    web::{self, ServiceConfig},
-    HttpRequest, HttpResponse, Responder, ResponseError,
+use axum::{
+    body::Full,
+    extract::{multipart::MultipartError, Multipart, Path, WebSocketUpgrade},
+    response::{IntoResponse, Response},
+    routing::{get, post},
+    Json, Router,
 };
-use actix_web_actors::ws::{self};
 use bytes::BytesMut;
 use embeddy::Embedded;
 use futures_util::TryStreamExt;
+use hyper::{header::CONTENT_TYPE, http::HeaderValue, Request, StatusCode};
 use log::debug;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
+    convert::Infallible,
     fmt::Display,
-    sync::{
-        atomic::{AtomicU32, Ordering},
-        Arc,
-    },
-    time::Instant,
+    future::{ready, Ready},
+    sync::Arc,
+    task::{Context, Poll},
 };
+use tower::Service;
 use uuid::Uuid;
 
 /// Configuration function for configuring
 /// all the routes
-pub fn configure(cfg: &mut ServiceConfig) {
-    cfg.service(create_quiz);
-    cfg.service(quiz_image);
-    cfg.service(quiz_socket);
-    cfg.service(public);
+pub fn router() -> Router {
+    Router::new()
+        .route("/api/quiz", post(create_quiz))
+        .route("/api/quiz/:token/:image", get(quiz_image))
+        .route("/api/quiz/socket", get(quiz_socket))
+        .fallback_service(Assets)
 }
 
-/// Embedded assets for serving the frontend of the application
-#[derive(Embedded)]
-#[folder = "public"]
-struct Assets;
-
-#[get("/{path:.*}")]
-async fn public(path: web::Path<String>) -> impl Responder {
-    let path = path.into_inner();
-    let (file, content_type) = if let Some(file) = Assets::get(&path) {
-        let path = std::path::Path::new(&path);
-        // Find a matching content type or default to text/plain
-        let content_type = path
-            .extension()
-            .and_then(|ext| {
-                if ext == "js" {
-                    Some(mime::APPLICATION_JAVASCRIPT)
-                } else if ext == "css" {
-                    Some(mime::TEXT_CSS)
-                } else if ext == "html" {
-                    Some(mime::TEXT_HTML)
-                } else {
-                    None
-                }
-            })
-            .unwrap_or(mime::TEXT_PLAIN);
-
-        (file, content_type)
-    } else {
-        // Fallback to the index.html file for all unknown pages
-        let index = Assets::get("index.html").expect("Missing index.html from build");
-        (index, mime::TEXT_HTML)
-    };
-    HttpResponse::Ok().content_type(content_type).body(file)
-}
-
+/// Intermediate structure for GameConfigs parsed from
+/// quiz upload form data
 #[derive(Deserialize)]
-pub struct GameConfigUpload {
-    pub name: ImStr,
-    pub text: ImStr,
-    pub max_players: usize,
-    pub filtering: NameFiltering,
-    pub questions: Box<[Arc<Question>]>,
+struct GameConfigUpload {
+    /// The quiz name
+    name: ImStr,
+    /// The quiz description
+    text: ImStr,
+    /// The max number of quiz players
+    max_players: usize,
+    /// The quiz name filter
+    filtering: NameFiltering,
+    /// The quiz questions
+    questions: Box<[Arc<Question>]>,
 }
 
+/// Errors that can occur when creating a quiz
 #[derive(Debug)]
-pub enum CreateError {
+enum CreateError {
+    /// Quiz was missing its config
     MissingConfig,
+    /// Quiz config was invalid
     InvalidConfig(serde_json::Error),
+    /// Quiz failed server validation
+    ValidationFailed,
+    /// Uploaded image had an invalid ID
     InvalidImageUuid(uuid::Error),
+    /// Image was missing its mime type
     MissingImageType(Uuid),
+    /// Multipart read error
     Multipart(MultipartError),
+    /// Content was too large
     TooLarge,
-    MissingQuestions,
 }
 
 #[derive(Serialize)]
@@ -98,33 +78,34 @@ struct QuizCreated {
     uuid: Uuid,
 }
 
-/// Endpoint for creating a new quiz
-#[post("/api/quiz")]
-async fn create_quiz(mut payload: Multipart) -> Result<impl Responder, CreateError> {
+/// # POST /api/quiz
+///
+/// Endpoint for uploading and creating a new Quiz.
+async fn create_quiz(mut payload: Multipart) -> Result<Response, CreateError> {
     // Configuration data
     let mut config: Option<GameConfigUpload> = None;
     // Map of stored uploaded images
     let mut images = HashMap::new();
 
-    while let Some(mut field) = payload.try_next().await? {
+    while let Some(mut field) = payload.next_field().await? {
         /// Cap the upload max size to 15mb
         const MAX_BUFFER_SIZE_BYTES: usize = 1024 * 1024 * 15;
 
-        // Read all the buffered content for the config message
+        // Read the field content until the max buffer size
         let mut buffer = BytesMut::new();
-        loop {
+        while let Some(chunk) = field.try_next().await? {
+            buffer.extend_from_slice(&chunk);
+
             if buffer.len() >= MAX_BUFFER_SIZE_BYTES {
                 return Err(CreateError::TooLarge);
             }
-
-            let chunk = match field.try_next().await? {
-                Some(value) => value,
-                None => break,
-            };
-            buffer.extend_from_slice(&chunk);
         }
 
-        let name = field.name();
+        let name = match field.name() {
+            Some(value) => value,
+            // Skip un-named fields
+            None => continue,
+        };
 
         // Handle the config
         if name == "config" {
@@ -137,8 +118,7 @@ async fn create_quiz(mut payload: Multipart) -> Result<impl Responder, CreateErr
         let uuid: Uuid = name.parse().map_err(CreateError::InvalidImageUuid)?;
         let mime = field
             .content_type()
-            .ok_or_else(|| CreateError::MissingImageType(uuid))?
-            .clone();
+            .ok_or(CreateError::MissingImageType(uuid))?;
 
         debug!(
             "Recieved uploaded file (UUID: {}, Mime: {}, Size: {})",
@@ -150,7 +130,7 @@ async fn create_quiz(mut payload: Multipart) -> Result<impl Responder, CreateErr
         images.insert(
             uuid,
             Image {
-                mime,
+                mime: mime.into(),
                 data: buffer.freeze(),
             },
         );
@@ -158,11 +138,6 @@ async fn create_quiz(mut payload: Multipart) -> Result<impl Responder, CreateErr
 
     // Create the full configuration
     let config = config.ok_or(CreateError::MissingConfig)?;
-
-    // Validate the config is correct
-    if config.questions.is_empty() {
-        return Err(CreateError::MissingQuestions);
-    }
 
     let config = GameConfig {
         name: config.name,
@@ -173,102 +148,158 @@ async fn create_quiz(mut payload: Multipart) -> Result<impl Responder, CreateErr
         images,
     };
 
-    let uuid = Games::get()
-        .send(PrepareGameMessage { config })
-        .await
-        .expect("Games service is not running");
+    // Validate the config is acceptable
+    if !config.validate() {
+        return Err(CreateError::ValidationFailed);
+    }
+
+    let uuid = Games::prepare(config).await;
 
     debug!("Created new prepared game {}", uuid);
 
-    Ok(HttpResponse::Created().json(QuizCreated { uuid }))
+    Ok((StatusCode::CREATED, Json(QuizCreated { uuid })).into_response())
 }
 
 #[derive(Debug)]
-pub enum ImageError {
+enum ImageError {
     UnknownGame,
     UnknownImage,
+    InvalidImageMime,
 }
 
-#[get("/api/quiz/{token}/{image}")]
-async fn quiz_image(path: web::Path<(String, Uuid)>) -> Result<impl Responder, ImageError> {
-    let (token, uuid) = path.into_inner();
-
-    let game = Games::get()
-        .send(GetGameMessage { token })
+/// # GET /api/quiz/:token/:uuid
+///
+/// Endpoint for getting the contents of an image from
+/// a quiz
+async fn quiz_image(Path((token, uuid)): Path<(String, Uuid)>) -> Result<Response, ImageError> {
+    let token: GameToken = token.parse().map_err(|_| ImageError::UnknownGame)?;
+    let game = Games::get_game(&token)
         .await
-        .expect("Games service is not running")
-        .map_err(|_| ImageError::UnknownGame)?;
+        .ok_or(ImageError::UnknownGame)?;
 
     let image = game
-        .send(GetImageMessage { uuid })
+        .read()
         .await
-        .map_err(|_| ImageError::UnknownGame)?
+        .get_image(uuid)
         .ok_or(ImageError::UnknownImage)?;
 
-    Ok(HttpResponse::Ok().content_type(image.mime).body(image.data))
+    let mut res = Full::from(image.data).into_response();
+    let content_type =
+        HeaderValue::from_str(&image.mime).map_err(|_| ImageError::InvalidImageMime)?;
+    res.headers_mut().insert(CONTENT_TYPE, content_type);
+
+    Ok(res)
 }
 
-static SESSION_ID: AtomicU32 = AtomicU32::new(0);
+/// # GET /api/quiz/socket
+///
+/// Endpoint for creating a new websocket session
+async fn quiz_socket(ws: WebSocketUpgrade) -> Response {
+    ws.on_upgrade(Session::start)
+}
 
-#[get("/api/quiz/socket")]
-async fn quiz_socket(
-    req: HttpRequest,
-    stream: web::Payload,
-) -> Result<impl Responder, actix_web::Error> {
-    let session_id = SESSION_ID.fetch_add(1, Ordering::AcqRel);
-    debug!("Starting new socket {}", session_id);
-    ws::start(
-        Session {
-            id: session_id,
-            game: None,
-            hb: Instant::now(),
-        },
-        &req,
-        stream,
-    )
+/// Embedded assets for serving the frontend of the application
+#[derive(Embedded, Clone)]
+#[folder = "public"]
+struct Assets;
+
+/// Fallback service implementation for using the assets from within
+/// the embedded data
+impl<T> Service<Request<T>> for Assets {
+    type Response = Response;
+    type Error = Infallible;
+    type Future = Ready<Result<Self::Response, Self::Error>>;
+
+    fn poll_ready(&mut self, _cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        Poll::Ready(Ok(()))
+    }
+
+    fn call(&mut self, req: Request<T>) -> Self::Future {
+        let path = req.uri().path();
+        // Strip the leading slash in order to match paths correctly
+        let path = match path.strip_prefix('/') {
+            Some(value) => value,
+            None => path,
+        };
+
+        let std_path = std::path::Path::new(path);
+
+        let (file, content_type) = if let Some(file) = Assets::get(path) {
+            // Find a matching content type or default to text/plain
+            let content_type = std_path
+                .extension()
+                .and_then(|ext| {
+                    if ext == "js" {
+                        Some("application/javascript")
+                    } else if ext == "css" {
+                        Some("text/css")
+                    } else if ext == "html" {
+                        Some("text/html")
+                    } else {
+                        None
+                    }
+                })
+                .unwrap_or("text/plain");
+
+            (file, content_type)
+        } else {
+            // Fallback to the index.html file for all unknown pages
+            let index = Assets::get("index.html").expect("Missing index.html from build");
+            (index, "text/html")
+        };
+
+        let mut res = Full::from(file).into_response();
+        res.headers_mut()
+            .insert(CONTENT_TYPE, HeaderValue::from_static(content_type));
+
+        ready(Ok(res))
+    }
 }
 
 impl From<MultipartError> for CreateError {
     fn from(value: MultipartError) -> Self {
-        CreateError::Multipart(value)
+        Self::Multipart(value)
     }
 }
 
 impl Display for CreateError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            CreateError::MissingConfig => f.write_str("Missing config data"),
-            CreateError::InvalidConfig(err) => err.fmt(f),
-            CreateError::InvalidImageUuid(err) => err.fmt(f),
-            CreateError::MissingImageType(uuid) => {
+            Self::MissingConfig => f.write_str("Missing config data"),
+            Self::InvalidConfig(err) => err.fmt(f),
+            Self::InvalidImageUuid(err) => err.fmt(f),
+            Self::MissingImageType(uuid) => {
                 write!(f, "Missing image mime type for {}", uuid)
             }
-            CreateError::Multipart(err) => err.fmt(f),
-            CreateError::TooLarge => f.write_str("Uploaded content was too large"),
-            CreateError::MissingQuestions => f.write_str("Quiz must have atleast 1 question"),
+            Self::Multipart(err) => err.fmt(f),
+            Self::TooLarge => f.write_str("Uploaded content was too large"),
+            Self::ValidationFailed => f.write_str("Validation failure incorrect values"),
         }
     }
 }
 
-impl ResponseError for CreateError {
-    fn status_code(&self) -> StatusCode {
-        StatusCode::BAD_REQUEST
+impl IntoResponse for CreateError {
+    fn into_response(self) -> Response {
+        (StatusCode::BAD_REQUEST, self.to_string()).into_response()
     }
 }
 
 impl Display for ImageError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ImageError::UnknownGame => f.write_str("The target game could not be found"),
-            ImageError::UnknownImage => f.write_str("The target image could not be found"),
+            Self::UnknownGame => f.write_str("The target game could not be found"),
+            Self::UnknownImage => f.write_str("The target image could not be found"),
+            Self::InvalidImageMime => f.write_str("Image mime type was invalid"),
         }
     }
 }
 
-impl ResponseError for ImageError {
-    fn status_code(&self) -> StatusCode {
-        match self {
-            ImageError::UnknownGame | ImageError::UnknownImage => StatusCode::BAD_REQUEST,
-        }
+impl IntoResponse for ImageError {
+    fn into_response(self) -> Response {
+        let status_code = match self {
+            Self::UnknownGame | Self::UnknownImage => StatusCode::BAD_REQUEST,
+            Self::InvalidImageMime => StatusCode::INTERNAL_SERVER_ERROR,
+        };
+        (status_code, self.to_string()).into_response()
     }
 }
