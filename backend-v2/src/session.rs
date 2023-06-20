@@ -97,17 +97,18 @@ impl Session {
     }
 
     async fn cleanup(&mut self) {
-        todo!("Proper cleanup remove from game")
-        // debug!("Session stopped: {}", self.id);
-        // // Take the game to attempt removing if present
-        // if let Some(game) = self.game.take() {
-        //     // Inform game to remove self
-        //     game.do_send(RemovePlayerMessage {
-        //         id: self.id,
-        //         target_id: self.id,
-        //         reason: RemoveReason::LostConnection,
-        //     });
-        // }
+        debug!("Session stopped: {}", self.id);
+        // Take the game to attempt removing if present
+        if let Some(game) = self.game.take() {
+            let game = Games::get_game(&game).await;
+
+            if let Some(game) = game {
+                let mut lock = game.write().await;
+
+                // Inform game to remove self
+                let _ = lock.remove_player(self.id, self.id, RemoveReason::LostConnection);
+            }
+        }
     }
 
     async fn process(mut self) {

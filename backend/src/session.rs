@@ -300,14 +300,6 @@ impl Handler<Arc<ServerEvent>> for Session {
     }
 }
 
-impl Handler<ClientMessage> for Session {
-    type Result = ResponseActFuture;
-
-    fn handle(&mut self, msg: ClientMessage, ctx: &mut Self::Context) -> Self::Result {
-        todo!()
-    }
-}
-
 /// Stream handler for processing incoming websocket messages, and
 /// responding accordingly. Text packet messages are decoded and
 /// send onto the [`Session::handle_message`] function to be proccessed
