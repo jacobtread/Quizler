@@ -13,7 +13,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         include:
-          - os: ubuntu-latest,
+          - os: ubuntu-latest
             file: quizler
           - os: windows-latest
             file: quizler.exe
