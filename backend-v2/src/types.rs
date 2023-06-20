@@ -1,18 +1,19 @@
-use actix::Message;
 use bytes::Bytes;
 use mime::Mime;
+use rand_core::OsRng;
 use serde::{ser::SerializeMap, Deserialize, Serialize};
-use std::time::Duration;
+use std::{fmt::Display, hash::Hash, str::FromStr, time::Duration};
 use uuid::Uuid;
 
-use crate::session::SessionId;
+use crate::{games::Games, session::SessionId};
 
 /// Immutable string type
 pub type ImStr = Box<str>;
 
-#[derive(Message, Debug, Copy, Clone, Serialize)]
-#[rtype(result = "()")]
+#[derive(Debug, Copy, Clone, Serialize)]
 pub enum ServerError {
+    /// Message was malformed
+    MalformedMessage,
     /// The provided token didn't match up to any game
     InvalidToken,
     /// The provided username is already in use
@@ -291,5 +292,96 @@ impl Serialize for ScoreCollection {
         }
 
         map.end()
+    }
+}
+
+/// Token abstraction to store tokens as fixed length byte
+/// slices rather than strings. This makes them easier to
+/// compare,generate, and serialize
+#[derive(PartialEq, Eq, Clone, Copy)]
+pub struct GameToken([u8; GameToken::LENGTH]);
+
+impl Hash for GameToken {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.0.hash(state);
+    }
+}
+
+impl GameToken {
+    /// Length of tokens that will be created
+    const LENGTH: usize = 5;
+    /// Set of chars that can be used as game tokens
+    const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+    /// Creates a unique random token that isn't present in the
+    /// provided collect of games
+    pub async fn unique_token() -> GameToken {
+        /// Length of the charset
+        const RANGE: usize = GameToken::CHARSET.len();
+
+        let mut rand = OsRng;
+        let mut token = Self([0u8; Self::LENGTH]);
+
+        loop {
+            for at in token.0.iter_mut() {
+                loop {
+                    // Obtain a random number
+                    let var = (rand.next_u32() >> (32 - 6)) as usize;
+
+                    // If the value is in the charset break the loop
+                    if var < RANGE {
+                        *at = Self::CHARSET[var];
+                        break;
+                    }
+                }
+            }
+
+            // Check that the token isn't already taken
+            if !Games::is_game(&token).await {
+                return token;
+            }
+        }
+    }
+}
+
+impl Serialize for GameToken {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        // Game tokens are simply serialized as strings by casting the type
+        let token = unsafe { std::str::from_utf8_unchecked(&self.0) };
+        serializer.serialize_str(token)
+    }
+}
+
+impl FromStr for GameToken {
+    type Err = ServerError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.len() != GameToken::LENGTH {
+            return Err(ServerError::InvalidToken);
+        }
+
+        let bytes = s.as_bytes();
+
+        // Handle invalid characters
+        if bytes
+            .iter()
+            .any(|value| !GameToken::CHARSET.contains(value))
+        {
+            return Err(ServerError::InvalidToken);
+        }
+
+        let mut output = [0u8; GameToken::LENGTH];
+        output.copy_from_slice(bytes);
+        Ok(Self(output))
+    }
+}
+
+impl Display for GameToken {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let token = unsafe { std::str::from_utf8_unchecked(&self.0) };
+        f.write_str(token)
     }
 }

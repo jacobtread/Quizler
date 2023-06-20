@@ -4,12 +4,12 @@ use crate::{
         RemovePlayerMessage,
     },
     games::{Games, GetGameMessage, InitializeMessage},
-    msg::{ClientMessage, ClientRequest, ServerMessage, ServerResponse},
+    msg::{ClientMessage, ClientRequest, ResponseMessage, ServerEvent, ServerResponse},
     types::{Answer, HostAction, RemoveReason, ServerError},
 };
 use actix::{
     fut::LocalBoxActorFuture, Actor, ActorContext, ActorFutureExt, Addr, AsyncContext, Handler,
-    Message, StreamHandler, WrapFuture,
+    Message, ResponseActFuture, StreamHandler, WrapFuture,
 };
 use actix_web_actors::ws;
 use log::{debug, error};
@@ -65,7 +65,7 @@ impl Actor for Session {
     }
 }
 
-type RespFut = LocalBoxActorFuture<Session, Result<ServerMessage, ServerError>>;
+type RespFut = LocalBoxActorFuture<Session, Result<ResponseMessage, ServerError>>;
 
 impl Session {
     // Time intervals to check heartbeats
@@ -119,7 +119,7 @@ impl Session {
         .map(|result, act, _| {
             result.map(|msg| {
                 act.game = Some(msg.game);
-                ServerMessage::Joined {
+                ResponseMessage::Joined {
                     id: act.id,
                     config: msg.config,
                     token: msg.token,
@@ -142,7 +142,7 @@ impl Session {
         .map(|result, act, _| {
             result.map(|game| {
                 act.game = Some(game);
-                ServerMessage::Ok
+                ResponseMessage::Ok
             })
         })
         .boxed_local()
@@ -167,7 +167,7 @@ impl Session {
                     act.game = None;
                     err
                 })?
-                .map(|msg| ServerMessage::Joined {
+                .map(|msg| ResponseMessage::Joined {
                     id: act.id,
                     token: msg.token,
                     config: msg.config,
@@ -186,7 +186,7 @@ impl Session {
             game.send(HostActionMessage { id, action })
                 .await
                 .map_err(|_| ServerError::Unexpected)?
-                .map(|_| ServerMessage::Ok)
+                .map(|_| ResponseMessage::Ok)
         }
         .into_actor(self)
         .boxed_local()
@@ -202,7 +202,7 @@ impl Session {
             game.send(PlayerAnswerMessage { id, answer })
                 .await
                 .map_err(|_| ServerError::Unexpected)?
-                .map(|_| ServerMessage::Ok)
+                .map(|_| ResponseMessage::Ok)
         }
         .into_actor(self)
         .boxed_local()
@@ -222,7 +222,7 @@ impl Session {
             })
             .await
             .map_err(|_| ServerError::Unexpected)?
-            .map(|_| ServerMessage::Ok)
+            .map(|_| ResponseMessage::Ok)
         }
         .into_actor(self)
         .boxed_local()
@@ -238,7 +238,7 @@ impl Session {
             game.send(ReadyMessage { id })
                 .await
                 .map_err(|_| ServerError::Unexpected)
-                .map(|_| ServerMessage::Ok)
+                .map(|_| ResponseMessage::Ok)
         }
         .into_actor(self)
         .boxed_local()
@@ -271,7 +271,7 @@ impl Session {
         let fut = fut.map(move |result, _, ctx| {
             let msg = match result {
                 Ok(value) => value,
-                Err(error) => ServerMessage::Error { error },
+                Err(error) => ResponseMessage::Error { error },
             };
 
             let res: ServerResponse = ServerResponse { rid: req.rid, msg };
@@ -283,20 +283,28 @@ impl Session {
 }
 
 /// Handle writing server messages
-impl Handler<ServerMessage> for Session {
+impl Handler<ServerEvent> for Session {
     type Result = ();
 
-    fn handle(&mut self, msg: ServerMessage, ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: ServerEvent, ctx: &mut Self::Context) -> Self::Result {
         Self::write_message(ctx, &msg);
     }
 }
 
 /// Handle writing shared references to a server message
-impl Handler<Arc<ServerMessage>> for Session {
+impl Handler<Arc<ServerEvent>> for Session {
     type Result = ();
 
-    fn handle(&mut self, msg: Arc<ServerMessage>, ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: Arc<ServerEvent>, ctx: &mut Self::Context) -> Self::Result {
         Self::write_message(ctx, &msg);
+    }
+}
+
+impl Handler<ClientMessage> for Session {
+    type Result = ResponseActFuture;
+
+    fn handle(&mut self, msg: ClientMessage, ctx: &mut Self::Context) -> Self::Result {
+        todo!()
     }
 }
 
@@ -342,14 +350,6 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Session {
             Ok(value) => value,
             Err(err) => {
                 error!("Unable to decode client message: {}", err);
-
-                Self::write_message(
-                    ctx,
-                    &ServerMessage::Error {
-                        error: ServerError::MalformedMessage,
-                    },
-                );
-
                 return;
             }
         };

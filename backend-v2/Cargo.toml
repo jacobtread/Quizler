@@ -1,0 +1,59 @@
+[package]
+name = "quizler"
+version = "0.1.0-alpha2"
+edition = "2021"
+description = "Offline quiz game"
+license = "MIT"
+authors = ["Jacobtread <jacobtread@gmail.com>"]
+repository = "https://github.com/jacobtread/Quizler-v2"
+readme = "../README.md"
+keywords = ["quizler", "game"]
+
+[dependencies]
+axum = { version = "^0.6", features = ["ws", "multipart"] }
+hyper = { version = "^0.14", features = ["full"] }
+tokio = { version = "^1", features = ["full"] }
+tower = "0.4"
+tower-http = { version = "0.4", features = ["full"] }
+
+
+# Mimetypes
+mime = "0.3"
+
+# Logging
+log = "0.4"
+env_logger = "0.10"
+
+# Loading environment variables
+dotenvy = "0.15"
+
+# Utilities for working with futures
+futures-util = "0.3"
+
+# Cheaply clonable byte types
+bytes = "1.4"
+
+# Serialization and JSON
+serde = { version = "1", features = ["derive", "rc"] }
+serde_json = "1"
+
+# Random number generation
+rand_core = "0.6"
+
+# Public assets embedding
+embeddy = "0.1.1"
+
+# Inappropriate / profanity filtering
+rustrict = "0.7.6"
+
+[dependencies.uuid]
+version = "1.3.2"
+features = ["v4", "fast-rng", "serde"]
+
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1
+# Optionally optimize for binary size:
+# opt-level = "z"

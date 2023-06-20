@@ -262,53 +262,66 @@ export type ClientMessageSchema = {
 export type ClientMessageOf<T> = Extract<ClientMessageSchema, { ty: T }>;
 
 // Server message types
-export const enum ServerMessage {
-  Joined = "Joined",
-  Ok = "Ok",
+export const enum ServerEvent {
   PlayerData = "PlayerData",
   GameState = "GameState",
   Timer = "Timer",
   Question = "Question",
   Scores = "Scores",
   Score = "Score",
-  Error = "Error",
   Kicked = "Kicked"
 }
 
+// Server response message type
+export const enum ServerResponse {
+  Joined = "Joined",
+  Ok = "Ok",
+  Error = "Error"
+}
+
 // Server message schema based on each message type
-export type ServerMessageSchema = {
-  rid?: number;
-} & (
-  | { ty: ServerMessage.Joined; id: number; token: string; config: GameConfig }
-  | { ty: ServerMessage.PlayerData; id: number; name: string }
-  | { ty: ServerMessage.GameState; state: GameState }
+export type ServerEventSchema = { rid: undefined } & (
+  | { ty: ServerEvent.PlayerData; id: number; name: string }
+  | { ty: ServerEvent.GameState; state: GameState }
   | {
-      ty: ServerMessage.Timer;
+      ty: ServerEvent.Timer;
       value: number;
     }
-  | { ty: ServerMessage.Question; question: Question }
-  | { ty: ServerMessage.Scores; scores: Scores }
-  | { ty: ServerMessage.Score; score: Score }
-  | { ty: ServerMessage.Error; error: ServerError }
-  | { ty: ServerMessage.Kicked; id: number; reason: RemoveReason }
-  | { ty: ServerMessage.Ok }
+  | { ty: ServerEvent.Question; question: Question }
+  | { ty: ServerEvent.Scores; scores: Scores }
+  | { ty: ServerEvent.Score; score: Score }
+  | { ty: ServerEvent.Kicked; id: number; reason: RemoveReason }
 );
 
 // Server message type extractor
-export type ServerMessageOf<T> = Extract<ServerMessageSchema, { ty: T }>;
+export type ServerEventOf<T> = Extract<ServerEventSchema, { ty: T }>;
+
+export type ServerResponseSchema = { rid: number } & (
+  | { ty: ServerResponse.Joined; id: number; token: string; config: GameConfig }
+  | { ty: ServerResponse.Ok }
+  | { ty: ServerResponse.Error; error: ServerError }
+);
+
+export type ServerMessage = ServerResponseSchema | ServerEventSchema;
 
 // Mapping between client messages and the server message type
 export type MessagePairs =
-  | { left: ClientMessage.Initialize; right: ServerMessage.Joined }
-  | { left: ClientMessage.Join; right: ServerMessage.Joined }
-  | { left: ClientMessage.Connect; right: ServerMessage.Ok }
-  | { left: ClientMessage.Ready; right: ServerMessage.Ok }
-  | { left: ClientMessage.HostAction; right: ServerMessage.Ok }
-  | { left: ClientMessage.Answer; right: ServerMessage.Ok }
-  | { left: ClientMessage.Kick; right: ServerMessage.Ok };
+  | { left: ClientMessage.Initialize; right: ServerResponse.Joined }
+  | { left: ClientMessage.Join; right: ServerResponse.Joined }
+  | { left: ClientMessage.Connect; right: ServerResponse.Ok }
+  | { left: ClientMessage.Ready; right: ServerResponse.Ok }
+  | { left: ClientMessage.HostAction; right: ServerResponse.Ok }
+  | { left: ClientMessage.Answer; right: ServerResponse.Ok }
+  | { left: ClientMessage.Kick; right: ServerResponse.Ok };
 
-// Converts from client message to server message type
-export type ServerResponseOf<T> = Extract<MessagePairs, { left: T }>["right"];
+// Server message type extractor
+export type ServerResponseOf<T> = Extract<
+  ServerResponseSchema,
+  {
+    ty: // Type is extracted by using the mapping to locate the right hand side
+    Extract<MessagePairs, { left: T }>["right"];
+  }
+>;
 
 // Response message type from the client message
-export type ResponseMessage<T> = ServerMessageOf<ServerResponseOf<T>>;
+export type ResponseMessage<T> = ServerEventOf<ServerResponseOf<T>>;

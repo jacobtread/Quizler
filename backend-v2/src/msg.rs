@@ -6,7 +6,6 @@ use crate::{
     session::SessionId,
     types::{Answer, HostAction, Question, RemoveReason, Score, ScoreCollection, ServerError},
 };
-use actix::Message;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use uuid::Uuid;
@@ -81,8 +80,7 @@ pub enum ResponseMessage {
 }
 
 /// Messages sent by the server
-#[derive(Message, Serialize)]
-#[rtype(result = "()")]
+#[derive(Serialize)]
 #[serde(tag = "ty")]
 pub enum ServerEvent {
     /// Message providing information about another player in
