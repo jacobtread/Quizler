@@ -38,25 +38,39 @@ pub fn router() -> Router {
         .fallback_service(Assets)
 }
 
+/// Intermediate structure for GameConfigs parsed from
+/// quiz upload form data
 #[derive(Deserialize)]
-pub struct GameConfigUpload {
-    pub name: ImStr,
-    pub text: ImStr,
-    pub max_players: usize,
-    pub filtering: NameFiltering,
-    pub questions: Box<[Arc<Question>]>,
+struct GameConfigUpload {
+    /// The quiz name
+    name: ImStr,
+    /// The quiz description
+    text: ImStr,
+    /// The max number of quiz players
+    max_players: usize,
+    /// The quiz name filter
+    filtering: NameFiltering,
+    /// The quiz questions
+    questions: Box<[Arc<Question>]>,
 }
 
+/// Errors that can occur when creating a quiz
 #[derive(Debug)]
-pub enum CreateError {
+enum CreateError {
+    /// Quiz was missing its config
     MissingConfig,
+    /// Quiz config was invalid
     InvalidConfig(serde_json::Error),
+    /// Quiz failed server validation
     ValidationFailed,
+    /// Uploaded image had an invalid ID
     InvalidImageUuid(uuid::Error),
+    /// Image was missing its mime type
     MissingImageType(Uuid),
+    /// Multipart read error
     Multipart(MultipartError),
+    /// Content was too large
     TooLarge,
-    MissingQuestions,
 }
 
 #[derive(Serialize)]
@@ -64,7 +78,9 @@ struct QuizCreated {
     uuid: Uuid,
 }
 
-/// Endpoint for creating a new quiz
+/// # POST /api/quiz
+///
+/// Endpoint for uploading and creating a new Quiz.
 async fn create_quiz(mut payload: Multipart) -> Result<Response, CreateError> {
     // Configuration data
     let mut config: Option<GameConfigUpload> = None;
@@ -75,18 +91,14 @@ async fn create_quiz(mut payload: Multipart) -> Result<Response, CreateError> {
         /// Cap the upload max size to 15mb
         const MAX_BUFFER_SIZE_BYTES: usize = 1024 * 1024 * 15;
 
-        // Read all the buffered content for the config message
+        // Read the field content until the max buffer size
         let mut buffer = BytesMut::new();
-        loop {
+        while let Some(chunk) = field.try_next().await? {
+            buffer.extend_from_slice(&chunk);
+
             if buffer.len() >= MAX_BUFFER_SIZE_BYTES {
                 return Err(CreateError::TooLarge);
             }
-
-            let chunk = match field.try_next().await? {
-                Some(value) => value,
-                None => break,
-            };
-            buffer.extend_from_slice(&chunk);
         }
 
         let name = match field.name() {
@@ -127,11 +139,6 @@ async fn create_quiz(mut payload: Multipart) -> Result<Response, CreateError> {
     // Create the full configuration
     let config = config.ok_or(CreateError::MissingConfig)?;
 
-    // Validate the config is correct
-    if config.questions.is_empty() {
-        return Err(CreateError::MissingQuestions);
-    }
-
     let config = GameConfig {
         name: config.name,
         text: config.text,
@@ -154,11 +161,16 @@ async fn create_quiz(mut payload: Multipart) -> Result<Response, CreateError> {
 }
 
 #[derive(Debug)]
-pub enum ImageError {
+enum ImageError {
     UnknownGame,
     UnknownImage,
+    InvalidImageMime,
 }
 
+/// # GET /api/quiz/:token/:uuid
+///
+/// Endpoint for getting the contents of an image from
+/// a quiz
 async fn quiz_image(Path((token, uuid)): Path<(String, Uuid)>) -> Result<Response, ImageError> {
     let token: GameToken = token.parse().map_err(|_| ImageError::UnknownGame)?;
     let game = Games::get_game(&token)
@@ -172,14 +184,16 @@ async fn quiz_image(Path((token, uuid)): Path<(String, Uuid)>) -> Result<Respons
         .ok_or(ImageError::UnknownImage)?;
 
     let mut res = Full::from(image.data).into_response();
-    res.headers_mut().insert(
-        CONTENT_TYPE,
-        HeaderValue::from_str(&image.mime).expect("Failed to create mime header"),
-    );
+    let content_type =
+        HeaderValue::from_str(&image.mime).map_err(|_| ImageError::InvalidImageMime)?;
+    res.headers_mut().insert(CONTENT_TYPE, content_type);
 
     Ok(res)
 }
 
+/// # POST /api/quiz/socket
+///
+/// Endpoint for uploading and creating a new Quiz.
 async fn quiz_socket(ws: WebSocketUpgrade) -> Response {
     ws.on_upgrade(Session::start)
 }
@@ -189,6 +203,8 @@ async fn quiz_socket(ws: WebSocketUpgrade) -> Response {
 #[folder = "public"]
 struct Assets;
 
+/// Fallback service implementation for using the assets from within
+/// the embedded data
 impl<T> Service<Request<T>> for Assets {
     type Response = Response;
     type Error = Infallible;
@@ -242,23 +258,22 @@ impl<T> Service<Request<T>> for Assets {
 
 impl From<MultipartError> for CreateError {
     fn from(value: MultipartError) -> Self {
-        CreateError::Multipart(value)
+        Self::Multipart(value)
     }
 }
 
 impl Display for CreateError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            CreateError::MissingConfig => f.write_str("Missing config data"),
-            CreateError::InvalidConfig(err) => err.fmt(f),
-            CreateError::InvalidImageUuid(err) => err.fmt(f),
-            CreateError::MissingImageType(uuid) => {
+            Self::MissingConfig => f.write_str("Missing config data"),
+            Self::InvalidConfig(err) => err.fmt(f),
+            Self::InvalidImageUuid(err) => err.fmt(f),
+            Self::MissingImageType(uuid) => {
                 write!(f, "Missing image mime type for {}", uuid)
             }
-            CreateError::Multipart(err) => err.fmt(f),
-            CreateError::TooLarge => f.write_str("Uploaded content was too large"),
-            CreateError::MissingQuestions => f.write_str("Quiz must have atleast 1 question"),
-            CreateError::ValidationFailed => f.write_str("Validation failure incorrect values"),
+            Self::Multipart(err) => err.fmt(f),
+            Self::TooLarge => f.write_str("Uploaded content was too large"),
+            Self::ValidationFailed => f.write_str("Validation failure incorrect values"),
         }
     }
 }
@@ -272,18 +287,19 @@ impl IntoResponse for CreateError {
 impl Display for ImageError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ImageError::UnknownGame => f.write_str("The target game could not be found"),
-            ImageError::UnknownImage => f.write_str("The target image could not be found"),
+            Self::UnknownGame => f.write_str("The target game could not be found"),
+            Self::UnknownImage => f.write_str("The target image could not be found"),
+            Self::InvalidImageMime => f.write_str("Image mime type was invalid"),
         }
     }
 }
 
 impl IntoResponse for ImageError {
     fn into_response(self) -> Response {
-        match self {
-            ImageError::UnknownGame | ImageError::UnknownImage => {
-                (StatusCode::BAD_REQUEST).into_response()
-            }
-        }
+        let status_code = match self {
+            Self::UnknownGame | Self::UnknownImage => StatusCode::BAD_REQUEST,
+            Self::InvalidImageMime => StatusCode::INTERNAL_SERVER_ERROR,
+        };
+        (status_code, self.to_string()).into_response()
     }
 }

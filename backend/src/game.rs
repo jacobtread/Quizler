@@ -386,6 +386,10 @@ impl Game {
         listener: EventTarget,
         name: String,
     ) -> Result<JoinedMessage, ServerError> {
+        if let GameState::Stopped = &self.state {
+            return Err(ServerError::GameStopped);
+        }
+
         const MIN_NAME_LENGTH: usize = 1;
         const MAX_NAME_LENGTH: usize = 30;
 

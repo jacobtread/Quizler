@@ -14,9 +14,7 @@ use uuid::Uuid;
 
 /// Wrapper around the response message type to include
 /// "ret": 1, which is used to indicate this is a response
-pub struct ServerResponse {
-    pub msg: ResponseMessage,
-}
+pub struct ServerResponse(pub ResponseMessage);
 
 impl Serialize for ServerResponse {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -25,7 +23,7 @@ impl Serialize for ServerResponse {
     {
         let mut map = serializer.serialize_map(None)?;
         map.serialize_entry("ret", &1)?;
-        self.msg.serialize(FlatMapSerializer(&mut map))?;
+        self.0.serialize(FlatMapSerializer(&mut map))?;
         map.end()
     }
 }
@@ -39,19 +37,16 @@ pub enum ClientMessage {
         /// The UUID of the game to initialize
         uuid: Uuid,
     },
-
     // Message to associate the session with the provided game
     Connect {
         /// The game token to try and connect to (e.g. W2133)
         token: String,
     },
-
     /// Message to attempt to join the game using the provided name
     Join {
         /// The name to attempt to access with
         name: String,
     },
-
     /// Message indicating the client is ready to play
     ///
     /// (This is done internally by clients once everything has been loaded)

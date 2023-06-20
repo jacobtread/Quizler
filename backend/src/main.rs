@@ -44,6 +44,7 @@ async fn main() {
     #[allow(unused_mut)]
     let mut router = http::router();
 
+    // Add CORS layer to the router in debug mode
     #[cfg(debug_assertions)]
     {
         router = router.layer(tower_http::cors::CorsLayer::very_permissive());

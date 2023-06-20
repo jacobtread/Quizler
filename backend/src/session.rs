@@ -1,10 +1,9 @@
 use crate::{
     game::GameRef,
-    games::Games,
+    games::{Games, InitializedMessage},
     msg::{ClientMessage, ResponseMessage, ServerEvent, ServerResponse},
     types::{Answer, GameToken, HostAction, RemoveReason, ServerError},
 };
-
 use axum::extract::ws::{Message, WebSocket};
 use log::{debug, error};
 use serde::Serialize;
@@ -28,6 +27,7 @@ pub type SessionId = u32;
 /// Atomic provider for session IDs
 static SESSION_ID: AtomicU32 = AtomicU32::new(0);
 
+/// Structure of a session connected to the server
 pub struct Session {
     /// Unique ID of the session
     id: SessionId,
@@ -51,6 +51,10 @@ const HB_INTERVAL: Duration = Duration::from_secs(5);
 const TIMEOUT: Duration = Duration::from_secs(15);
 
 impl Session {
+    /// Handler for starting a new session from the provided websocket
+    ///
+    /// # Arguments
+    /// * socket - The websocket to use for the session
     pub async fn start(socket: WebSocket) {
         let (tx, rx) = mpsc::unbounded_channel();
         let id = SESSION_ID.fetch_add(1, Ordering::AcqRel);
@@ -67,31 +71,7 @@ impl Session {
         this.process().await;
     }
 
-    /// Heartbeat returns false if connection is failed
-    async fn heartbeat(&mut self) -> bool {
-        let elapsed = self.hb.elapsed();
-        if elapsed >= TIMEOUT {
-            // Connection lost timeout
-            false
-        } else {
-            self.socket
-                .send(Message::Ping(Vec::with_capacity(0)))
-                .await
-                .is_ok()
-        }
-    }
-
-    async fn cleanup(&mut self) {
-        debug!("Session stopped: {}", self.id);
-        // Take the game to attempt removing if present
-        if let Some(game) = self.game.take() {
-            let mut lock = game.write().await;
-
-            // Inform game to remove self
-            let _ = lock.remove_player(self.id, self.id, RemoveReason::LostConnection);
-        }
-    }
-
+    /// Handles processing all events for the session
     async fn process(mut self) {
         // Heartbeat interval ticking
         let mut hb_interval = interval(HB_INTERVAL);
@@ -137,19 +117,40 @@ impl Session {
         self.cleanup().await;
     }
 
-    async fn send<S: Serialize>(&mut self, msg: &S) -> Result<(), axum::Error> {
-        let value = serde_json::to_string(msg).map_err(|err| axum::Error::new(Box::new(err)))?;
-        self.socket.send(Message::Text(value)).await
-    }
-
-    async fn disconnect(&mut self) {
-        // If already in a game infrom the game that we've left
-        if let Some(game) = self.game.take() {
-            let mut lock = game.write().await;
-            let _ = lock.remove_player(self.id, self.id, RemoveReason::Disconnected);
+    /// Heartbeat returns false if connection is failed
+    async fn heartbeat(&mut self) -> bool {
+        let elapsed = self.hb.elapsed();
+        if elapsed >= TIMEOUT {
+            // Connection lost timeout
+            false
+        } else {
+            self.socket
+                .send(Message::Ping(Vec::with_capacity(0)))
+                .await
+                .is_ok()
         }
     }
 
+    /// Handles cleaning up the session after processing has
+    /// terminated.
+    ///
+    /// Removes the player from its game if its present
+    async fn cleanup(&mut self) {
+        debug!("Session stopped: {}", self.id);
+        // Take the game to attempt removing if present
+        if let Some(game) = self.game.take() {
+            let mut lock = game.write().await;
+
+            // Inform game to remove self
+            let _ = lock.remove_player(self.id, self.id, RemoveReason::LostConnection);
+        }
+    }
+
+    /// Handles server events received by this session, processes the
+    /// events then sends them to the client
+    ///
+    /// # Arguments
+    /// * event - The event to handle
     async fn handle_event(&mut self, event: EventMessage) -> Result<(), axum::Error> {
         let value = event.as_ref();
 
@@ -163,6 +164,11 @@ impl Session {
         self.send(value).await
     }
 
+    /// Handles processing websocket messages, updating heartbeat, and forwading
+    /// along parsed messages to handle_request
+    ///
+    /// # Arguments
+    /// * msg - The websocket message
     async fn handle_message(&mut self, msg: Message) -> Result<bool, axum::Error> {
         // Update heartbeat
         self.hb = Instant::now();
@@ -187,11 +193,9 @@ impl Session {
             Err(err) => {
                 error!("Unable to decode client message: {}", err);
 
-                self.send(&ServerResponse {
-                    msg: ResponseMessage::Error {
-                        error: ServerError::MalformedMessage,
-                    },
-                })
+                self.send(&ServerResponse(ResponseMessage::Error {
+                    error: ServerError::MalformedMessage,
+                }))
                 .await?;
 
                 return Ok(true);
@@ -203,27 +207,20 @@ impl Session {
         Ok(true)
     }
 
-    /// Handles a recieved client message
-    async fn handle_request(&mut self, req: ClientMessage) -> Result<(), axum::Error> {
-        let res = match req {
-            // Handle initializing new games
+    /// Handles processing client messages and sending the response
+    /// for the message
+    ///
+    /// # Arguments
+    /// * msg - The client message being processed
+    ///
+    async fn handle_request(&mut self, msg: ClientMessage) -> Result<(), axum::Error> {
+        let res = match msg {
             ClientMessage::Initialize { uuid } => self.initialize(uuid).await,
-
-            // Handle try connect messages
             ClientMessage::Connect { token } => self.connect(token).await,
-
-            // Handle join messages
             ClientMessage::Join { name } => self.join(name).await,
-
             ClientMessage::HostAction { action } => self.host_action(action).await,
-
-            // Handle message for an answer to the current question
             ClientMessage::Answer { answer } => self.answer(answer).await,
-
-            // Handle message for kicking a player
             ClientMessage::Kick { id } => self.kick(id).await,
-
-            // Handle client ready messages
             ClientMessage::Ready => self.ready().await,
         };
 
@@ -232,14 +229,29 @@ impl Session {
             Err(error) => ResponseMessage::Error { error },
         };
 
-        let res: ServerResponse = ServerResponse { msg };
+        let res: ServerResponse = ServerResponse(msg);
         self.send(&res).await
     }
 
+    /// Converts the provided message to JSON writing it as a text frame
+    /// to the websocket
+    ///
+    /// # Arguments
+    /// * msg - The message to send
+    async fn send<S: Serialize>(&mut self, msg: &S) -> Result<(), axum::Error> {
+        let value = serde_json::to_string(msg).map_err(|err| axum::Error::new(Box::new(err)))?;
+        self.socket.send(Message::Text(value)).await
+    }
+
+    /// Handler for initialize messages to attempt to initialize a new game.
+    /// On success the game reference on this session will be updated.
+    ///
+    /// # Arguments
+    /// * uuid - The UUID of the prepared config
     async fn initialize(&mut self, uuid: Uuid) -> Result<ResponseMessage, ServerError> {
         self.disconnect().await;
 
-        let msg = Games::initialize(uuid, self.id, self.tx.clone()).await?;
+        let msg: InitializedMessage = Games::initialize(uuid, self.id, self.tx.clone()).await?;
         self.game = Some(msg.game);
 
         Ok(ResponseMessage::Joined {
@@ -249,6 +261,11 @@ impl Session {
         })
     }
 
+    /// Handler for connect messages to attempt to connect to a game.
+    /// On success the game reference on this session will be updated.
+    ///
+    /// # Arguments
+    /// * uuid - The UUID of the prepared config
     async fn connect(&mut self, token: String) -> Result<ResponseMessage, ServerError> {
         self.disconnect().await;
 
@@ -262,11 +279,27 @@ impl Session {
         Ok(ResponseMessage::Ok)
     }
 
+    /// Disconnects the session from their current game if they
+    /// are already in one
+    async fn disconnect(&mut self) {
+        // If already in a game infrom the game that we've left
+        if let Some(game) = self.game.take() {
+            let mut lock = game.write().await;
+            let _ = lock.remove_player(self.id, self.id, RemoveReason::Disconnected);
+        }
+    }
+
+    /// Handler for join messages to attempt to join the game reference
+    /// by the session game field
+    ///
+    /// # Arguments
+    /// * name - The name to attempt to join with
     async fn join(&mut self, name: String) -> Result<ResponseMessage, ServerError> {
         let result = {
             let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
-            let mut lock = game.write().await;
-            lock.join(self.id, self.tx.clone(), name)
+            let mut game = game.write().await;
+
+            game.join(self.id, self.tx.clone(), name)
         };
 
         match result {
@@ -276,41 +309,57 @@ impl Session {
                 config: msg.config,
             }),
             Err(err) => {
-                self.game = None;
+                // Clear the game reference if stopped
+                if let ServerError::GameStopped = &err {
+                    self.game = None;
+                }
                 Err(err)
             }
         }
     }
 
+    /// Handler for host action messages
+    ///
+    /// # Arguments
+    /// * action - The host action to execute
     async fn host_action(&mut self, action: HostAction) -> Result<ResponseMessage, ServerError> {
         let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
-        let mut lock = game.write().await;
+        let mut game = game.write().await;
 
-        lock.host_action(self.id, action)?;
+        game.host_action(self.id, action)?;
         Ok(ResponseMessage::Ok)
     }
 
+    /// Handler for answer messages
+    ///
+    /// # Arguments
+    /// * answer - The player answer
     async fn answer(&mut self, answer: Answer) -> Result<ResponseMessage, ServerError> {
         let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
-        let mut lock = game.write().await;
+        let mut game = game.write().await;
 
-        lock.answer(self.id, answer)?;
+        game.answer(self.id, answer)?;
         Ok(ResponseMessage::Ok)
     }
 
+    /// Handler for kick messages
+    ///
+    /// # Arguments
+    /// * target_id - The ID of the player to kick
     async fn kick(&mut self, target_id: SessionId) -> Result<ResponseMessage, ServerError> {
         let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
-        let mut lock = game.write().await;
-        lock.remove_player(self.id, target_id, RemoveReason::RemovedByHost)?;
+        let mut game = game.write().await;
 
+        game.remove_player(self.id, target_id, RemoveReason::RemovedByHost)?;
         Ok(ResponseMessage::Ok)
     }
 
+    /// Handler for ready messages
     async fn ready(&mut self) -> Result<ResponseMessage, ServerError> {
         let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
-        let mut lock = game.write().await;
-        lock.ready(self.id);
+        let mut game = game.write().await;
 
+        game.ready(self.id);
         Ok(ResponseMessage::Ok)
     }
 }

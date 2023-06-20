@@ -6,7 +6,7 @@
 
 > Real time quiz application
 
-> **Note**
+> **Note:**
 > This project is in early alpha stages, currenlty it is fully functional however all of the features and logic may not be entirely polished yet, this project is under active development
 
 
@@ -95,6 +95,36 @@ This is the screen for creating a new quiz
 
 ![Join Screen](assets/join.png)
 
+
+## ⚒ Build Instructions
+
+First you must build the frontend as the backend depends on embedding resources created by the frontend build process
+
+> **Note:** These commands are from within the context of the repository directory. If you haven't already download the repository and cd to the directory before running the commands below
+
+```shell
+# Move to the frontend directory
+cd frontend
+# Install the dependencies (NPM: npm install)
+yarn install
+# Run the dist commands (NPM: npm run dist)
+yarn dist
+# Move out of the frontend directory
+cd ..
+```
+Then you can build the backend
+
+```shell
+# Move to the backend directory
+cd backend
+# Build the release binary
+cargo build --release
+```
+
+After building the backend the binary will be at
+```backend/target/rlease/quizler[.exe]```
+
+If you would like to Build within Docker this repository contains a Build.Dockerfile which does this for you
 
 ## 🧾 License
 
