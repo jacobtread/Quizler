@@ -41,6 +41,7 @@ async fn main() {
 
     info!("Starting Quizler on port {} (v{})", port, VERSION);
 
+    #[allow(unused_mut)]
     let mut router = http::router();
 
     #[cfg(debug_assertions)]

@@ -14,7 +14,7 @@ This is the improved version of my [Quizler](https://github.com/jacobtread/Quizl
 
 This version aims to improve upon the downfalls of the previous app (Written in Go) along with providing new features. I aim to make this version more stable and performant using my better understanding of the [Rust](https://www.rust-lang.org/) language.
 
-This new version makes use of [Rust](https://www.rust-lang.org/) for the backend with the [Actix](https://actix.rs) web framework and [Svelte](https://svelte.dev/) for the frontend. The previous version used [Go](https://go.dev/) for the backend and [VueJS](https://vuejs.org/) for the frontend.
+This new version makes use of [Rust](https://www.rust-lang.org/) for the backend with the [Axum](https://docs.rs/axum/latest/axum/) web framework and [Svelte](https://svelte.dev/) for the frontend. The previous version used [Go](https://go.dev/) for the backend and [VueJS](https://vuejs.org/) for the frontend.
 
 ## 🛫 Deploying
 
@@ -45,7 +45,7 @@ Prebuilt binaries are available for download here
     - Single: Can have multiple correct answer but only lets the players select one option
     - Multiple: Can have many correct answers and lets the players select more than one answer
 - [x] Small and performant, the binary size is super small and is quick to download and move around. From manual testing games could easily handle 15 players in a single game (It can likely handle a far greater number of players however this is untested)
-    - Windows binary:  4.6mb 
+    - Windows binary:  3.8mb 
     - Linux binary: 4.5mb
 - [x] Name filtering levels
     - You are able to select different levels of filtering for what usernames are allowed by the players on a quiz by quiz basis (None, Low, Medium, High)
