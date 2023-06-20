@@ -176,10 +176,6 @@
     score = msg.score;
   });
 
-  socket.setHandler(ServerEvent.Error, (msg) => {
-    console.error("Server error", msg.error);
-  });
-
   socket.setHandler(ServerEvent.Kicked, (msg) => {
     console.debug("Kick message", msg);
     // Remove from the players list

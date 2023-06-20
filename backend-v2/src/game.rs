@@ -332,7 +332,7 @@ impl Game {
 
         self.host.addr.send(ServerEvent::Kicked {
             id: self.host.id,
-            reason: RemoveReason::HostDisconnect,
+            reason: RemoveReason::Disconnected,
         });
 
         self.state = GameState::Stopped;
