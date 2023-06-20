@@ -1,7 +1,7 @@
 use crate::{
     games::Games,
     msg::ServerEvent,
-    session::{EventListener, SessionId},
+    session::{EventTarget, SessionId},
     types::{
         Answer, AnswerData, GameToken, HostAction, ImStr, Image, ImageRef, NameFiltering, Question,
         QuestionData, RemoveReason, Score, ScoreCollection, ServerError,
@@ -71,7 +71,7 @@ impl Game {
     pub fn new(
         token: GameToken,
         host_id: SessionId,
-        host_addr: EventListener,
+        host_addr: EventTarget,
         config: Arc<GameConfig>,
     ) -> Self {
         Self {
@@ -92,7 +92,7 @@ impl Game {
     /// `duration` The duration to wait before moving states
     /// `ctx`      The actor context
     fn timed_next_state(&mut self, duration: Duration) {
-        let token = self.token.clone();
+        let token = self.token;
         let handle = tokio::spawn(async move {
             sleep(duration).await;
             let game = Games::get_game(&token).await;
@@ -183,11 +183,11 @@ impl Game {
 
         // Send the message to all the players
         for player in &self.players {
-            player.addr.do_send(message.clone());
+            player.addr.send_shared(message.clone());
         }
 
         // Send the message to the host
-        self.host.addr.do_send(message);
+        self.host.addr.send_shared(message);
     }
 
     /// Sets the current game state to the provided `state` and
@@ -289,7 +289,7 @@ impl Game {
                 // Increase the player score
                 player.score += score.value();
 
-                player.addr.do_send(Arc::new(ServerEvent::Score { score }));
+                player.addr.send(ServerEvent::Score { score });
 
                 (player.id, player.score)
             })
@@ -304,9 +304,14 @@ impl Game {
     }
 
     fn stop(&mut self) {
+        // Don't try and stop the game twice
+        if let GameState::Stopped = &self.state {
+            return;
+        }
+
         debug!("Game stopped: {}", self.token);
 
-        let token = self.token.clone();
+        let token = self.token;
 
         tokio::spawn(async move {
             // Remove the game from the list of games
@@ -316,17 +321,19 @@ impl Game {
         // Tell all the players they've been kicked
         for player in &self.players {
             // Send the visual kick message
-            player.addr.do_send(Arc::new(ServerEvent::Kicked {
+            player.addr.send(ServerEvent::Kicked {
                 id: player.id,
                 reason: RemoveReason::HostDisconnect,
-            }));
+            });
         }
+
+        self.state = GameState::Stopped;
     }
 
     pub fn try_join(
         &mut self,
         id: SessionId,
-        listener: EventListener,
+        listener: EventTarget,
         name: String,
     ) -> Result<JoinedMessage, ServerError> {
         // Trim name padding
@@ -370,17 +377,17 @@ impl Game {
 
         // Notify all players of the existence of eachother
         for player in &self.players {
-            player.addr.do_send(joiner_message.clone());
+            player.addr.send_shared(joiner_message.clone());
 
             // Message describing the other player
-            game_player.addr.do_send(Arc::new(ServerEvent::PlayerData {
+            game_player.addr.send(ServerEvent::PlayerData {
                 id: player.id,
                 name: player.name.clone(),
-            }));
+            });
         }
 
         // Notify the host of the join
-        self.host.addr.do_send(joiner_message);
+        self.host.addr.send_shared(joiner_message);
 
         self.players.push(game_player);
 
@@ -459,10 +466,13 @@ impl Game {
         // Inform each player of the removal
         self.players
             .iter()
-            .for_each(|player| player.addr.do_send(kick_msg.clone()));
+            .for_each(|player| player.addr.send_shared(kick_msg.clone()));
 
         // Inform the host of the player removal
-        self.host.addr.do_send(kick_msg);
+        self.host.addr.send_shared(kick_msg);
+
+        // Remove the player
+        self.players.remove(index);
 
         self.on_remove();
 
@@ -522,13 +532,13 @@ pub struct HostSession {
     /// The ID of the referenced session
     id: SessionId,
     /// The addr to the session
-    addr: EventListener,
+    addr: EventTarget,
     /// The player ready state
     ready: bool,
 }
 
 impl HostSession {
-    pub fn new(id: SessionId, addr: EventListener) -> Self {
+    pub fn new(id: SessionId, addr: EventTarget) -> Self {
         Self {
             id,
             addr,
@@ -541,7 +551,7 @@ pub struct PlayerSession {
     /// The ID of the referenced session
     id: SessionId,
     /// The addr to the session
-    addr: EventListener,
+    addr: EventTarget,
     /// The player ready state
     ready: bool,
 
@@ -554,7 +564,7 @@ pub struct PlayerSession {
 }
 
 impl PlayerSession {
-    pub fn new(id: SessionId, addr: EventListener, name: ImStr, question_len: usize) -> Self {
+    pub fn new(id: SessionId, addr: EventTarget, name: ImStr, question_len: usize) -> Self {
         Self {
             id,
             addr,

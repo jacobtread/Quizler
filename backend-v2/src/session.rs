@@ -21,25 +21,41 @@ use tokio::{
 };
 use uuid::Uuid;
 
-pub enum SocketEvent {
-    Event(Arc<ServerEvent>),
-    Message(Message),
-    Heartbeat,
-}
-
 /// Type alias for numbers that represent Session ID's
 pub type SessionId = u32;
 
 /// Atomic provider for session IDs
 static SESSION_ID: AtomicU32 = AtomicU32::new(0);
 
+/// Wrapper around server events to allow for owned
+/// and shared access
+pub enum EventMessage {
+    /// Owned server event
+    Owned(ServerEvent),
+    /// Server event behind an Arc shared for many players
+    Shared(Arc<ServerEvent>),
+}
+
+impl EventMessage {
+    fn as_ref(&self) -> &ServerEvent {
+        match self {
+            EventMessage::Owned(value) => value,
+            EventMessage::Shared(value) => value.as_ref(),
+        }
+    }
+}
+
 ///
 #[derive(Clone)]
-pub struct EventListener(mpsc::UnboundedSender<Arc<ServerEvent>>);
+pub struct EventTarget(mpsc::UnboundedSender<EventMessage>);
 
-impl EventListener {
-    pub fn do_send(&self, msg: Arc<ServerEvent>) {
-        self.0.send(msg);
+impl EventTarget {
+    pub fn send(&self, msg: ServerEvent) {
+        let _ = self.0.send(EventMessage::Owned(msg));
+    }
+
+    pub fn send_shared(&self, msg: Arc<ServerEvent>) {
+        let _ = self.0.send(EventMessage::Shared(msg));
     }
 }
 
@@ -55,9 +71,9 @@ pub struct Session {
     socket: WebSocket,
 
     /// Receiver for receiving server events
-    rx: mpsc::UnboundedReceiver<Arc<ServerEvent>>,
+    rx: mpsc::UnboundedReceiver<EventMessage>,
     /// Sender for server events
-    tx: mpsc::UnboundedSender<Arc<ServerEvent>>,
+    tx: EventTarget,
 }
 
 // Time intervals to check heartbeats
@@ -77,7 +93,7 @@ impl Session {
             hb,
             socket,
             rx,
-            tx,
+            tx: EventTarget(tx),
         };
         this.process().await;
     }
@@ -117,79 +133,41 @@ impl Session {
         hb_interval.set_missed_tick_behavior(MissedTickBehavior::Delay);
 
         loop {
-            let event = select! {
+            select! {
                 // Server events
                 event = self.rx.recv() => {
                     let event = match event {
                         Some(event) => event,
                         None => break,
                     };
-                    SocketEvent::Event(event)
+
+                    if self.handle_event(event).await.is_err() {
+                        // Failed to send the response
+                        break;
+                    }
                 }
                 // Client requests
                 req = self.socket.recv() => {
-                    let req: Message = match req {
+                    let msg: Message = match req {
                         Some(Ok(value)) => value,
                         // Error while reading body (Skip the message)
-                        Some(Err(error)) => continue,
+                        Some(Err(_)) => continue,
                         // Connection is closed break from processing
                         None => break,
                     };
 
-                    SocketEvent::Message(req)
+                    match self.handle_message(msg).await {
+                        Ok(false) | Err(_) => break,
+                        Ok(true )=> {}
+                    }
                 }
                 // Heartbeat
                 _ = hb_interval.tick() => {
-                    SocketEvent::Heartbeat
-                }
-            };
-
-            match event {
-                SocketEvent::Event(event) => {
-                    // Handle self kicked
-                    if let ServerEvent::Kicked { id, reason } = event.as_ref() {
-                        if *id == self.id {
-                            self.game = None;
-                        }
-                    }
-
-                    // TODO: Handle error
-                    self.send(event.as_ref()).await;
-                }
-                SocketEvent::Message(msg) => {
-                    // Update heartbeat
-                    self.hb = Instant::now();
-
-                    // Handle different message types
-                    let text = match msg {
-                        Message::Text(value) => value,
-                        Message::Ping(ping) => {
-                            self.socket.send(Message::Pong(ping)).await;
-                            continue;
-                        }
-                        Message::Close(reason) => {
-                            break;
-                        }
-                        _ => continue,
-                    };
-
-                    // Decode the recieved client message
-                    let req = match serde_json::from_str::<ClientRequest>(&text) {
-                        Ok(value) => value,
-                        Err(err) => {
-                            error!("Unable to decode client message: {}", err);
-                            return;
-                        }
-                    };
-
-                    self.handle_message(req).await;
-                }
-                SocketEvent::Heartbeat => {
                     if !self.heartbeat().await {
                         break;
                     }
                 }
-            }
+            };
         }
         self.cleanup().await;
     }
@@ -205,112 +183,56 @@ impl Session {
             let game = Games::get_game(&game).await;
             if let Some(game) = game {
                 let mut lock = game.write().await;
-                lock.remove_player(self.id, self.id, RemoveReason::Disconnected);
+                let _ = lock.remove_player(self.id, self.id, RemoveReason::Disconnected);
             }
         }
     }
 
-    async fn initialize(&mut self, uuid: Uuid) -> Result<ResponseMessage, ServerError> {
-        self.disconnect();
-
-        let listener = EventListener(self.tx.clone());
-
-        let msg = Games::initialize(uuid, self.id, listener).await?;
-        self.game = Some(msg.token);
-
-        Ok(ResponseMessage::Joined {
-            id: self.id,
-            config: msg.config,
-            token: msg.token,
-        })
-    }
-
-    async fn connect(&mut self, token: String) -> Result<ResponseMessage, ServerError> {
-        self.disconnect();
-
-        let token: GameToken = token.parse().map_err(|_| ServerError::InvalidToken)?;
-
-        let game = Games::is_game(&token).await;
-
-        if game {
-            self.game = Some(token);
-            Ok(ResponseMessage::Ok)
-        } else {
-            Err(ServerError::InvalidToken)
-        }
-    }
-
-    async fn join(&mut self, name: String) -> Result<ResponseMessage, ServerError> {
-        let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
-        let game = Games::get_game(&game)
-            .await
-            .ok_or(ServerError::InvalidToken)?;
-
-        let listener = EventListener(self.tx.clone());
-
-        let mut lock = game.write().await;
-        let result = lock.try_join(self.id, listener, name);
-
-        match result {
-            Ok(msg) => Ok(ResponseMessage::Joined {
-                id: self.id,
-                token: msg.token,
-                config: msg.config,
-            }),
-            Err(err) => {
+    async fn handle_event(&mut self, event: EventMessage) -> Result<(), axum::Error> {
+        // Handle self kicked
+        if let ServerEvent::Kicked { id, .. } = event.as_ref() {
+            if *id == self.id {
                 self.game = None;
-                Err(err)
             }
         }
+
+        self.send(event.as_ref()).await
     }
 
-    async fn host_action(&mut self, action: HostAction) -> Result<ResponseMessage, ServerError> {
-        let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
-        let game = Games::get_game(&game)
-            .await
-            .ok_or(ServerError::InvalidToken)?;
+    async fn handle_message(&mut self, msg: Message) -> Result<bool, axum::Error> {
+        // Update heartbeat
+        self.hb = Instant::now();
 
-        let mut lock = game.write().await;
-        lock.host_action(self.id, action)?;
-        Ok(ResponseMessage::Ok)
-    }
+        // Handle different message types
+        let text = match msg {
+            Message::Text(value) => value,
+            Message::Ping(ping) => {
+                // If sending pong failed break
+                if self.socket.send(Message::Pong(ping)).await.is_err() {
+                    return Ok(false);
+                }
+                return Ok(true);
+            }
+            Message::Close(_) => return Ok(false),
+            _ => return Ok(true),
+        };
 
-    async fn answer(&mut self, answer: Answer) -> Result<ResponseMessage, ServerError> {
-        let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
-        let game = Games::get_game(&game)
-            .await
-            .ok_or(ServerError::InvalidToken)?;
+        // Decode the recieved client message
+        let req = match serde_json::from_str::<ClientRequest>(&text) {
+            Ok(value) => value,
+            Err(err) => {
+                error!("Unable to decode client message: {}", err);
+                return Ok(true);
+            }
+        };
 
-        let mut lock = game.write().await;
-        lock.answer(self.id, answer)?;
-        Ok(ResponseMessage::Ok)
-    }
+        self.handle_request(req).await?;
 
-    async fn kick(&mut self, target_id: SessionId) -> Result<ResponseMessage, ServerError> {
-        let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
-        let game = Games::get_game(&game)
-            .await
-            .ok_or(ServerError::InvalidToken)?;
-
-        let mut lock = game.write().await;
-        lock.remove_player(self.id, target_id, RemoveReason::RemovedByHost)?;
-
-        Ok(ResponseMessage::Ok)
-    }
-
-    async fn ready(&mut self) -> Result<ResponseMessage, ServerError> {
-        let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
-        let game = Games::get_game(&game)
-            .await
-            .ok_or(ServerError::InvalidToken)?;
-
-        let mut lock = game.write().await;
-        lock.ready(self.id);
-        Ok(ResponseMessage::Ok)
+        Ok(true)
     }
 
     /// Handles a recieved client message
-    async fn handle_message(&mut self, req: ClientRequest) {
+    async fn handle_request(&mut self, req: ClientRequest) -> Result<(), axum::Error> {
         let res = match req.msg {
             // Handle initializing new games
             ClientMessage::Initialize { uuid } => self.initialize(uuid).await,
@@ -339,6 +261,101 @@ impl Session {
         };
 
         let res: ServerResponse = ServerResponse { rid: req.rid, msg };
-        self.send(&res).await;
+        self.send(&res).await
+    }
+
+    async fn initialize(&mut self, uuid: Uuid) -> Result<ResponseMessage, ServerError> {
+        self.disconnect().await;
+
+        let msg = Games::initialize(uuid, self.id, self.tx.clone()).await?;
+        self.game = Some(msg.token);
+
+        Ok(ResponseMessage::Joined {
+            id: self.id,
+            config: msg.config,
+            token: msg.token,
+        })
+    }
+
+    async fn connect(&mut self, token: String) -> Result<ResponseMessage, ServerError> {
+        self.disconnect().await;
+
+        let token: GameToken = token.parse().map_err(|_| ServerError::InvalidToken)?;
+
+        let game = Games::is_game(&token).await;
+
+        if game {
+            self.game = Some(token);
+            Ok(ResponseMessage::Ok)
+        } else {
+            Err(ServerError::InvalidToken)
+        }
+    }
+
+    async fn join(&mut self, name: String) -> Result<ResponseMessage, ServerError> {
+        let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
+        let game = Games::get_game(game)
+            .await
+            .ok_or(ServerError::InvalidToken)?;
+
+        let mut lock = game.write().await;
+        let result = lock.try_join(self.id, self.tx.clone(), name);
+
+        match result {
+            Ok(msg) => Ok(ResponseMessage::Joined {
+                id: self.id,
+                token: msg.token,
+                config: msg.config,
+            }),
+            Err(err) => {
+                self.game = None;
+                Err(err)
+            }
+        }
+    }
+
+    async fn host_action(&mut self, action: HostAction) -> Result<ResponseMessage, ServerError> {
+        let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
+        let game = Games::get_game(game)
+            .await
+            .ok_or(ServerError::InvalidToken)?;
+
+        let mut lock = game.write().await;
+        lock.host_action(self.id, action)?;
+        Ok(ResponseMessage::Ok)
+    }
+
+    async fn answer(&mut self, answer: Answer) -> Result<ResponseMessage, ServerError> {
+        let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
+        let game = Games::get_game(game)
+            .await
+            .ok_or(ServerError::InvalidToken)?;
+
+        let mut lock = game.write().await;
+        lock.answer(self.id, answer)?;
+        Ok(ResponseMessage::Ok)
+    }
+
+    async fn kick(&mut self, target_id: SessionId) -> Result<ResponseMessage, ServerError> {
+        let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
+        let game = Games::get_game(game)
+            .await
+            .ok_or(ServerError::InvalidToken)?;
+
+        let mut lock = game.write().await;
+        lock.remove_player(self.id, target_id, RemoveReason::RemovedByHost)?;
+
+        Ok(ResponseMessage::Ok)
+    }
+
+    async fn ready(&mut self) -> Result<ResponseMessage, ServerError> {
+        let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
+        let game = Games::get_game(game)
+            .await
+            .ok_or(ServerError::InvalidToken)?;
+
+        let mut lock = game.write().await;
+        lock.ready(self.id);
+        Ok(ResponseMessage::Ok)
     }
 }

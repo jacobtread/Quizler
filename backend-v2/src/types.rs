@@ -1,5 +1,4 @@
 use bytes::Bytes;
-use mime::Mime;
 use rand_core::{OsRng, RngCore};
 use serde::{ser::SerializeMap, Deserialize, Serialize};
 use std::{fmt::Display, hash::Hash, str::FromStr, time::Duration};
@@ -12,8 +11,6 @@ pub type ImStr = Box<str>;
 
 #[derive(Debug, Copy, Clone, Serialize)]
 pub enum ServerError {
-    /// Message was malformed
-    MalformedMessage,
     /// The provided token didn't match up to any game
     InvalidToken,
     /// The provided username is already in use

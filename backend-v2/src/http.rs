@@ -67,8 +67,6 @@ impl<T> Service<Request<T>> for Assets {
             let content_type = std_path
                 .extension()
                 .and_then(|ext| {
-                    dbg!(ext);
-
                     if ext == "js" {
                         Some("application/javascript")
                     } else if ext == "css" {

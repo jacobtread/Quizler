@@ -1,6 +1,6 @@
 use crate::{
     game::{Game, GameConfig},
-    session::{EventListener, SessionId},
+    session::{EventTarget, SessionId},
     types::{GameToken, ServerError},
 };
 
@@ -66,7 +66,7 @@ impl Games {
     pub async fn initialize(
         uuid: Uuid,
         id: SessionId,
-        listener: EventListener,
+        listener: EventTarget,
     ) -> Result<InitializedMessage, ServerError> {
         let prep = Self::take_prepare(uuid)
             .await
