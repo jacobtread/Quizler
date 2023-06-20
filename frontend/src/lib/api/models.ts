@@ -49,6 +49,7 @@ export interface GameConfig {
 export const enum ServerError {
   MalformedMessage = "MalformedMessage",
   InvalidToken = "InvalidToken",
+  InvalidNameLength = "InvalidNameLength",
   UsernameTaken = "UsernameTaken",
   InappropriateName = "InappropriateName",
   NotJoinable = "NotJoinable",
@@ -64,6 +65,7 @@ export const enum ServerError {
 export const errorText: Record<ServerError, string> = {
   [ServerError.MalformedMessage]: "Unknown client sent invalid message",
   [ServerError.InvalidToken]: "Invalid token provided",
+  [ServerError.InvalidNameLength]: "Invalid name length",
   [ServerError.UsernameTaken]: "Username already in use",
   [ServerError.InappropriateName]:
     "That name is not allowed/inappropriate choose another name",
