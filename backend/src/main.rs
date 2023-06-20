@@ -1,19 +1,17 @@
+use crate::games::Games;
+use dotenvy::dotenv;
+use log::{error, info, LevelFilter};
 use std::{
     net::{Ipv4Addr, SocketAddr, SocketAddrV4},
     process::exit,
 };
 
-use dotenvy::dotenv;
-use log::{error, info, LevelFilter};
-
-use crate::games::Games;
-
-pub(crate) mod game;
-pub(crate) mod games;
-pub(crate) mod http;
-pub(crate) mod msg;
-pub(crate) mod session;
-pub(crate) mod types;
+mod game;
+mod games;
+mod http;
+mod msg;
+mod session;
+mod types;
 
 // Cargo package version
 const VERSION: &str = env!("CARGO_PKG_VERSION");
