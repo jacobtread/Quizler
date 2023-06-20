@@ -344,8 +344,16 @@ impl Game {
         listener: EventTarget,
         name: String,
     ) -> Result<JoinedMessage, ServerError> {
+        const MIN_NAME_LENGTH: usize = 1;
+        const MAX_NAME_LENGTH: usize = 30;
+
         // Trim name padding
         let name = name.trim();
+
+        let name_length = name.len();
+        if !(MIN_NAME_LENGTH..=MAX_NAME_LENGTH).contains(&name_length) {
+            return Err(ServerError::InvalidNameLength);
+        }
 
         // Name filtering
         if let Some(filter_type) = self.config.filtering.type_of() {
@@ -801,4 +809,29 @@ pub struct GameConfig {
     /// image data
     #[serde(skip)]
     pub images: HashMap<ImageRef, Image>,
+}
+
+impl GameConfig {
+    const MAX_TITLE_LENGTH: usize = 70;
+    const MAX_DESCRIPTION_LENGTH: usize = 300;
+    const MAX_QUESTIONS: usize = 50;
+
+    /// Validates that the game configuration is valid
+    /// and can be used for a game
+    pub fn validate(&self) -> bool {
+        if self.name.len() > Self::MAX_TITLE_LENGTH {
+            return false;
+        }
+
+        if self.text.len() > Self::MAX_DESCRIPTION_LENGTH {
+            return false;
+        }
+
+        let questions_length = self.questions.len();
+        if questions_length == 0 || questions_length > Self::MAX_QUESTIONS {
+            return false;
+        }
+
+        self.questions.iter().all(|value| value.validate())
+    }
 }

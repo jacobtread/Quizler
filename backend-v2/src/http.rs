@@ -51,6 +51,7 @@ pub struct GameConfigUpload {
 pub enum CreateError {
     MissingConfig,
     InvalidConfig(serde_json::Error),
+    ValidationFailed,
     InvalidImageUuid(uuid::Error),
     MissingImageType(Uuid),
     Multipart(MultipartError),
@@ -139,6 +140,11 @@ async fn create_quiz(mut payload: Multipart) -> Result<Response, CreateError> {
         questions: config.questions,
         images,
     };
+
+    // Validate the config is acceptable
+    if !config.validate() {
+        return Err(CreateError::ValidationFailed);
+    }
 
     let uuid = Games::prepare(config).await;
 
@@ -252,6 +258,7 @@ impl Display for CreateError {
             CreateError::Multipart(err) => err.fmt(f),
             CreateError::TooLarge => f.write_str("Uploaded content was too large"),
             CreateError::MissingQuestions => f.write_str("Quiz must have atleast 1 question"),
+            CreateError::ValidationFailed => f.write_str("Validation failure incorrect values"),
         }
     }
 }

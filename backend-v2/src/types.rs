@@ -13,6 +13,8 @@ pub type ImStr = Box<str>;
 pub enum ServerError {
     /// The provided token didn't match up to any game
     InvalidToken,
+    /// The provided username doesn't meet the requirements
+    InvalidNameLength,
     /// The provided username is already in use
     UsernameTaken,
     /// Provided name was not allowed/inappropriate
@@ -116,6 +118,23 @@ pub struct Question {
     pub scoring: Scoring,
 }
 
+impl Question {
+    const MAX_QUESTION_LENGTH: usize = 400;
+
+    /// Validates that the game configuration is valid
+    /// and can be used for a game
+    pub fn validate(&self) -> bool {
+        let text_length = self.text.len();
+
+        // Question text cannot be empty
+        if text_length == 0 || text_length > Self::MAX_QUESTION_LENGTH {
+            return false;
+        }
+
+        self.data.validate()
+    }
+}
+
 /// Structure of a question image, contains the
 /// UUID of the image aswell as its fit mode
 #[derive(Serialize, Deserialize)]
@@ -181,6 +200,42 @@ pub enum QuestionData {
         #[serde(skip_serializing)]
         ignore_case: bool,
     },
+}
+
+impl QuestionData {
+    const MAX_ANSWERS: usize = 8;
+    const MAX_ANSWER_LENGTH: usize = 150;
+
+    /// Validates that the game configuration is valid
+    /// and can be used for a game
+    pub fn validate(&self) -> bool {
+        match self {
+            QuestionData::Single { answers } | QuestionData::Multiple { answers, .. } => {
+                let answers_length = answers.len();
+                if answers_length == 0 || answers_length > Self::MAX_ANSWERS {
+                    return false;
+                }
+
+                answers.iter().all(|answer| {
+                    let length = answer.value.len();
+                    length > 0 && length < Self::MAX_ANSWER_LENGTH
+                })
+            }
+
+            QuestionData::TrueFalse { .. } => true,
+            QuestionData::Typer { answers, .. } => {
+                let answers_length = answers.len();
+                if answers_length == 0 || answers_length > Self::MAX_ANSWERS {
+                    return false;
+                }
+
+                answers.iter().all(|answer| {
+                    let length = answer.len();
+                    length > 0 && length < Self::MAX_ANSWER_LENGTH
+                })
+            }
+        }
+    }
 }
 
 /// Game settings for global min/max scoring along with
