@@ -826,7 +826,6 @@ dependencies = [
  "futures-util",
  "hyper",
  "log",
- "mime",
  "rand_core",
  "rustrict",
  "serde",
