@@ -312,14 +312,8 @@ impl Game {
             return;
         }
 
-        debug!("Game stopped: {}", self.token);
-
-        let token = self.token;
-
-        tokio::spawn(async move {
-            // Remove the game from the list of games
-            Games::remove_game(&token).await;
-        });
+        // Remove the game from the list of games
+        tokio::spawn(Games::remove_game(self.token));
 
         // Tell all the players they've been kicked
         for player in &self.players {
@@ -336,6 +330,8 @@ impl Game {
         });
 
         self.state = GameState::Stopped;
+
+        debug!("Game stopped: {}", self.token);
     }
 
     pub fn try_join(

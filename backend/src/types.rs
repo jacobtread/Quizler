@@ -1,10 +1,10 @@
 use bytes::Bytes;
 use rand_core::{OsRng, RngCore};
 use serde::{ser::SerializeMap, Deserialize, Serialize};
-use std::{fmt::Display, hash::Hash, str::FromStr, time::Duration};
+use std::{collections::HashMap, fmt::Display, hash::Hash, str::FromStr, time::Duration};
 use uuid::Uuid;
 
-use crate::{games::Games, session::SessionId};
+use crate::{game::GameRef, session::SessionId};
 
 /// Immutable string type
 pub type ImStr = Box<str>;
@@ -367,7 +367,7 @@ impl GameToken {
 
     /// Creates a unique random token that isn't present in the
     /// provided collect of games
-    pub async fn unique_token() -> GameToken {
+    pub fn unique_token(map: &HashMap<GameToken, GameRef>) -> GameToken {
         /// Length of the charset
         const RANGE: usize = GameToken::CHARSET.len();
 
@@ -389,7 +389,7 @@ impl GameToken {
             }
 
             // Check that the token isn't already taken
-            if !Games::is_game(&token).await {
+            if !map.contains_key(&token) {
                 return token;
             }
         }
