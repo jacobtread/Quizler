@@ -6,7 +6,7 @@
 
 > Real time quiz application
 
-> **Note:**
+> **Note**
 > This project is in early alpha stages, currenlty it is fully functional however all of the features and logic may not be entirely polished yet, this project is under active development
 
 
@@ -100,7 +100,8 @@ This is the screen for creating a new quiz
 
 First you must build the frontend as the backend depends on embedding resources created by the frontend build process
 
-> **Note:** These commands are from within the context of the repository directory. If you haven't already download the repository and cd to the directory before running the commands below
+> **Note** 
+> These commands are from within the context of the repository directory. If you haven't already download the repository and cd to the directory before running the commands below
 
 ```shell
 # Move to the frontend directory
