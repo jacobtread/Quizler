@@ -36,8 +36,6 @@ pub enum ServerError {
     UnexpectedMessage,
     /// Provided answer is not valid for the type of question
     InvalidAnswer,
-    /// Game is already stopped
-    GameStopped,
 }
 
 /// Type for the different levels of profanity filtering

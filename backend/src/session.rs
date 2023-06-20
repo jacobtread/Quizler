@@ -295,27 +295,18 @@ impl Session {
     /// # Arguments
     /// * name - The name to attempt to join with
     async fn join(&mut self, name: String) -> Result<ResponseMessage, ServerError> {
-        let result = {
+        let msg = {
             let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
             let mut game = game.write().await;
 
             game.join(self.id, self.tx.clone(), name)
-        };
+        }?;
 
-        match result {
-            Ok(msg) => Ok(ResponseMessage::Joined {
-                id: self.id,
-                token: msg.token,
-                config: msg.config,
-            }),
-            Err(err) => {
-                // Clear the game reference if stopped
-                if let ServerError::GameStopped = &err {
-                    self.game = None;
-                }
-                Err(err)
-            }
-        }
+        Ok(ResponseMessage::Joined {
+            id: self.id,
+            token: msg.token,
+            config: msg.config,
+        })
     }
 
     /// Handler for host action messages

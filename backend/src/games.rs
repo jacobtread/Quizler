@@ -29,7 +29,7 @@ pub struct Games {
 
 /// Game state for a game thats been created from the HTTP
 /// API but hasn't yet been initialized by a host socket
-pub struct PreparingGame {
+struct PreparingGame {
     /// The config being prepared
     config: GameConfig,
     /// Creation time of this prepared game

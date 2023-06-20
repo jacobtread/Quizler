@@ -3,8 +3,8 @@ use crate::{
     msg::ServerEvent,
     session::{EventTarget, SessionId},
     types::{
-        Answer, AnswerData, GameToken, HostAction, ImStr, Image, ImageRef, NameFiltering, Question,
-        QuestionData, RemoveReason, Score, ScoreCollection, ServerError,
+        Answer, AnswerData, AnswerValue, GameToken, HostAction, ImStr, Image, ImageRef,
+        NameFiltering, Question, QuestionData, RemoveReason, Score, ScoreCollection, ServerError,
     },
 };
 use log::debug;
@@ -21,6 +21,7 @@ use uuid::Uuid;
 /// Reference to a game behind an Arc and a RwLock
 pub type GameRef = Arc<RwLock<Game>>;
 
+/// Represents an active quiz
 pub struct Game {
     /// The token this game is stored behind
     token: GameToken,
@@ -34,37 +35,29 @@ pub struct Game {
     state: GameState,
     /// The index of the current question
     question_index: usize,
-
     /// Spawn handle for delayed tasks
     task_handle: Option<AbortHandle>,
-
     /// Start time updated for each question
     start_time: Instant,
 }
 
+/// Different game states
 #[derive(Serialize, Clone, Copy, PartialEq, Eq)]
 pub enum GameState {
     /// The game is in the lobby
     Lobby,
-
     /// The game is starting
     Starting,
-
     /// The game is waiting for ready from all the players
     AwaitingReady,
-
     /// The question is about to start
     PreQuestion,
-
     /// The game has started and is waiting for answers
     AwaitingAnswers,
-
     /// The questions have been marked
     Marked,
-
     /// The game has finished
     Finished,
-
     /// The game has completely stopped
     Stopped,
 }
@@ -117,6 +110,12 @@ impl GameConfig {
 
 impl Game {
     /// Creates a new game instance
+    ///
+    /// # Arguments
+    /// * token - The token for this game
+    /// * host_id - The session ID of the host player
+    /// * host_addr - The event target of the host player
+    /// * config - The config for the game
     pub fn new(
         token: GameToken,
         host_id: SessionId,
@@ -125,7 +124,11 @@ impl Game {
     ) -> Self {
         Self {
             token,
-            host: HostSession::new(host_id, host_addr),
+            host: HostSession {
+                id: host_id,
+                addr: host_addr,
+                ready: false,
+            },
             players: Default::default(),
             config,
             state: GameState::Lobby,
@@ -138,8 +141,8 @@ impl Game {
     /// Creates a new delayed task to move to the next state once the provided
     /// duration has passed. This updates the timer state for clients aswell
     ///
-    /// `duration` The duration to wait before moving states
-    /// `ctx`      The actor context
+    /// # Arguments
+    /// * duration - The duration to wait before moving states
     fn timed_next_state(&mut self, duration: Duration) {
         let token = self.token;
         let handle = tokio::spawn(async move {
@@ -160,17 +163,12 @@ impl Game {
         });
     }
 
-    /// Cancels a expected task if the handle is present
-    fn cancel_task(&mut self) {
+    /// Moves the game to the next state based on its current state
+    fn next_state(&mut self) {
+        // Cancel a delayed task if one is running
         if let Some(task_handle) = self.task_handle.take() {
             task_handle.abort();
         }
-    }
-
-    /// Moves the game to the next state based on its current state
-    fn next_state(&mut self) {
-        // If a task handle still exists cancel it
-        self.cancel_task();
 
         match self.state {
             // Next state after lobby is starting
@@ -212,8 +210,16 @@ impl Game {
 
             // Next state after marking is the next question
             GameState::Marked => {
-                // Move to the next question
-                self.next_question();
+                // Handle reaching the end of the questions
+                if self.question_index + 1 >= self.config.questions.len() {
+                    // Move to the finished state
+                    self.set_state(GameState::Finished);
+                    return;
+                }
+
+                // Increase the question index
+                self.question_index += 1;
+                self.question();
             }
 
             // Next state after finished is a reset game
@@ -225,53 +231,51 @@ impl Game {
         }
     }
 
-    /// Send a message to all clients
-    fn send_all(&self, message: ServerEvent) {
+    /// Sends the provided server event to all the players
+    /// and the host player
+    ///
+    /// # Arguments
+    /// * event - The server event to send
+    fn send_all(&self, event: ServerEvent) {
         // Wrap the message in an Arc to prevent cloning lots of heap data
-        let message = Arc::new(message);
+        let event = Arc::new(event);
 
         // Send the message to all the players
         for player in &self.players {
-            player.addr.send_shared(message.clone());
+            player.addr.send_shared(event.clone());
         }
 
         // Send the message to the host
-        self.host.addr.send_shared(message);
+        self.host.addr.send_shared(event);
     }
 
-    /// Sets the current game state to the provided `state` and
-    /// sends a state update message to all the clients including
-    /// the host
+    /// Sets the current game state to the provided `state`. Emits a
+    /// GameState event to all the listeners
+    ///
+    /// # Arguments
+    /// * state - The state to set
     fn set_state(&mut self, state: GameState) {
         self.state = state;
         self.send_all(ServerEvent::GameState { state });
     }
 
-    /// Resets the game state and all the player data to its initial values
+    /// Completely resets all the game and player state to its initial values
     fn reset_completely(&mut self) {
-        self.cancel_task();
+        // Clear the task handle if present
+        if let Some(task_handle) = self.task_handle.take() {
+            task_handle.abort();
+        }
 
         self.question_index = 0;
 
-        for player in self.players.iter_mut() {
+        self.players.iter_mut().for_each(|player| {
             // Reset the player answers
             player.answers.reset();
-
             // Reset the player score
             player.score = 0;
-        }
+        });
 
         self.set_state(GameState::Lobby);
-    }
-
-    /// Handles updating state post removing a player
-    fn on_remove(&mut self) {
-        self.update_ready();
-
-        // Reset the game if everyone disconected while in progress
-        if self.state != GameState::Finished && self.players.is_empty() {
-            self.reset_completely();
-        }
     }
 
     /// Updates the current state checking if all the players are ready
@@ -283,27 +287,16 @@ impl Game {
         }
 
         // Check all players are ready
-        let all_ready = self.players.iter().all(|player| player.ready);
-        if !all_ready || !self.host.ready {
+        let all_ready = self.players.iter().all(|player| player.ready) && self.host.ready;
+        if !all_ready {
             return;
         }
 
         self.next_state()
     }
 
-    fn next_question(&mut self) {
-        // Handle reaching the end of the questions
-        if self.question_index + 1 >= self.config.questions.len() {
-            // Move to the finished state
-            self.set_state(GameState::Finished);
-            return;
-        }
-
-        // Increase the question index
-        self.question_index += 1;
-        self.question();
-    }
-
+    /// Provides the current question to the all the players, updating
+    /// the ready state and waiting for player readyiness
     fn question(&mut self) {
         // Reset ready states for the players
         self.players
@@ -323,7 +316,8 @@ impl Game {
         self.set_state(GameState::AwaitingReady);
     }
 
-    /// Task for marking the answers
+    /// Marks all the answers provided by players, sends the scores and
+    /// moves to the marked state
     fn mark_answers(&mut self) {
         // Get the current question
         let question = &self.config.questions[self.question_index];
@@ -352,49 +346,39 @@ impl Game {
         self.set_state(GameState::Marked);
     }
 
-    fn stop(&mut self) {
-        // Don't try and stop the game twice
-        if let GameState::Stopped = &self.state {
-            return;
-        }
-
-        // Remove the game from the list of games
-        tokio::spawn(Games::remove_game(self.token));
-
-        // Tell all the players they've been kicked
-        for player in &self.players {
-            // Send the visual kick message
-            player.addr.send(ServerEvent::Kicked {
-                id: player.id,
-                reason: RemoveReason::HostDisconnect,
-            });
-        }
-
-        self.host.addr.send(ServerEvent::Kicked {
-            id: self.host.id,
-            reason: RemoveReason::Disconnected,
-        });
-
-        self.state = GameState::Stopped;
-
-        debug!("Game stopped: {}", self.token);
+    /// Obtains an image instance for the provided UUID
+    ///
+    /// # Arguments
+    /// * uuid - The UUID of the image
+    pub fn get_image(&self, uuid: Uuid) -> Option<Image> {
+        self.config.images.get(&uuid).cloned()
     }
 
+    /// Handles a player attempting to join this game
+    ///
+    /// # Arguments
+    /// * id - The session ID of the joining player
+    /// * addr - The player event target
+    /// * name - The player desired name
     pub fn join(
         &mut self,
         id: SessionId,
-        listener: EventTarget,
+        addr: EventTarget,
         name: String,
     ) -> Result<JoinedMessage, ServerError> {
-        if let GameState::Stopped = &self.state {
-            return Err(ServerError::GameStopped);
+        // Cannot join games that are already started or finished
+        if !matches!(
+            self.state,
+            GameState::Lobby | GameState::Starting | GameState::Stopped
+        ) {
+            return Err(ServerError::NotJoinable);
         }
-
-        const MIN_NAME_LENGTH: usize = 1;
-        const MAX_NAME_LENGTH: usize = 30;
 
         // Trim name padding
         let name = name.trim();
+
+        const MIN_NAME_LENGTH: usize = 1;
+        const MAX_NAME_LENGTH: usize = 30;
 
         let name_length = name.len();
         if !(MIN_NAME_LENGTH..=MAX_NAME_LENGTH).contains(&name_length) {
@@ -406,11 +390,6 @@ impl Game {
             if name.is(filter_type) {
                 return Err(ServerError::InappropriateName);
             }
-        }
-
-        // Cannot join games that are already started or finished
-        if !matches!(self.state, GameState::Lobby | GameState::Starting) {
-            return Err(ServerError::NotJoinable);
         }
 
         // Game already at max capacity
@@ -428,8 +407,15 @@ impl Game {
         }
 
         // Create the player
-        let game_player =
-            PlayerSession::new(id, listener, Box::from(name), self.config.questions.len());
+        let game_player = PlayerSession {
+            id,
+            addr,
+            ready: false,
+
+            name: Box::from(name),
+            answers: PlayerAnswers::new(self.config.questions.len()),
+            score: 0,
+        };
 
         // Message sent to existing players for this player
         let joiner_message = Arc::new(ServerEvent::PlayerData {
@@ -459,6 +445,76 @@ impl Game {
         })
     }
 
+    /// Handles ready messages from a client by ID and updates
+    /// the readyiness accordingly
+    ///
+    /// # Arguments
+    /// * id - The ID of the session that is ready
+    pub fn ready(&mut self, id: SessionId) {
+        if id == self.host.id {
+            self.host.ready = true;
+        } else {
+            let player = self.players.iter_mut().find(|player| player.id == id);
+            if let Some(player) = player {
+                player.ready = true;
+            }
+        }
+
+        self.update_ready();
+    }
+
+    /// Handles players providing answers, validates the answer
+    /// is correct and handles advancing state onces all players
+    /// have answered
+    ///
+    /// # Arguments
+    /// * id - The session ID of the answering player
+    /// * answer - The answer the player provided
+    pub fn answer(&mut self, id: SessionId, answer: Answer) -> Result<(), ServerError> {
+        let elapsed = self.start_time.elapsed();
+
+        // Answers are not being accepted at the current time
+        if self.state != GameState::AwaitingAnswers {
+            return Err(ServerError::UnexpectedMessage);
+        }
+
+        let question = &self.config.questions[self.question_index];
+
+        // Find the player within the game
+        let player = self
+            .players
+            .iter_mut()
+            .find(|player| player.id == id)
+            .ok_or(ServerError::UnknownPlayer)?;
+
+        // Ensure the answer is the right type of answer
+        if !answer.is_valid(&question.data) {
+            return Err(ServerError::InvalidAnswer);
+        }
+
+        // Set the player answer
+        player
+            .answers
+            .set_answer(self.question_index, AnswerData { elapsed, answer });
+
+        // If all the players have answered we can advance the state
+        let all_answered = self
+            .players
+            .iter()
+            .all(|player| player.answers.has_answer(self.question_index));
+
+        if all_answered {
+            self.next_state();
+        }
+
+        Ok(())
+    }
+
+    /// Handles player sending host actions
+    ///
+    /// # Arguments
+    /// * id - The session ID of the player sending the action
+    /// * action - The action the player sent
     pub fn host_action(&mut self, id: SessionId, action: HostAction) -> Result<(), ServerError> {
         // Handle messages that aren't from the game host
         if self.host.id != id {
@@ -473,23 +529,13 @@ impl Game {
         Ok(())
     }
 
-    pub fn ready(&mut self, id: SessionId) {
-        if id == self.host.id {
-            self.host.ready = true;
-        } else {
-            let player = self.players.iter_mut().find(|player| player.id == id);
-            if let Some(player) = player {
-                player.ready = true;
-            }
-        }
-
-        self.update_ready();
-    }
-
-    pub fn get_image(&self, uuid: Uuid) -> Option<Image> {
-        self.config.images.get(&uuid).cloned()
-    }
-
+    /// Handles removing a player from the game, includes stopping the game when
+    /// the host leaves
+    ///
+    /// # Arguments
+    /// * id - The session ID of the player requesting the removal
+    /// * target_id - The session ID of the player to remove
+    /// * reason - The reason for removing the player
     pub fn remove_player(
         &mut self,
         id: SessionId,
@@ -536,49 +582,44 @@ impl Game {
         // Remove the player
         self.players.remove(index);
 
-        self.on_remove();
+        self.update_ready();
+
+        // Reset the game if everyone disconected while in progress
+        if self.state != GameState::Finished && self.players.is_empty() {
+            self.reset_completely();
+        }
 
         Ok(())
     }
 
-    pub fn answer(&mut self, id: SessionId, answer: Answer) -> Result<(), ServerError> {
-        let elapsed = self.start_time.elapsed();
-
-        // Answers are not being accepted at the current time
-        if self.state != GameState::AwaitingAnswers {
-            return Err(ServerError::UnexpectedMessage);
+    /// Handles stopping the quiz, sends remove messages to all the players,
+    /// removes from the games map and sets the state to stopped
+    fn stop(&mut self) {
+        // Don't try and stop the game twice
+        if let GameState::Stopped = &self.state {
+            return;
         }
 
-        let question = &self.config.questions[self.question_index];
+        // Remove the game from the list of games
+        tokio::spawn(Games::remove_game(self.token));
 
-        // Find the player within the game
-        let player = self
-            .players
-            .iter_mut()
-            .find(|player| player.id == id)
-            .ok_or(ServerError::UnknownPlayer)?;
-
-        // Ensure the answer is the right type of answer
-        if !answer.is_valid(&question.data) {
-            return Err(ServerError::InvalidAnswer);
+        // Tell all the players they've been kicked
+        for player in &self.players {
+            // Send the visual kick message
+            player.addr.send(ServerEvent::Kicked {
+                id: player.id,
+                reason: RemoveReason::HostDisconnect,
+            });
         }
 
-        // Set the player answer
-        player
-            .answers
-            .set_answer(self.question_index, AnswerData { elapsed, answer });
+        self.host.addr.send(ServerEvent::Kicked {
+            id: self.host.id,
+            reason: RemoveReason::Disconnected,
+        });
 
-        // If all the players have answered we can advance the state
-        let all_answered = self
-            .players
-            .iter()
-            .all(|player| player.answers.has_answer(self.question_index));
+        self.state = GameState::Stopped;
 
-        if all_answered {
-            self.next_state();
-        }
-
-        Ok(())
+        debug!("Game stopped: {}", self.token);
     }
 }
 
@@ -596,7 +637,8 @@ pub struct JoinedMessage {
     pub config: Arc<GameConfig>,
 }
 
-pub struct HostSession {
+/// Represents a session for the host player
+struct HostSession {
     /// The ID of the referenced session
     id: SessionId,
     /// The addr to the session
@@ -605,17 +647,9 @@ pub struct HostSession {
     ready: bool,
 }
 
-impl HostSession {
-    pub fn new(id: SessionId, addr: EventTarget) -> Self {
-        Self {
-            id,
-            addr,
-            ready: false,
-        }
-    }
-}
-
-pub struct PlayerSession {
+/// Represents a session and associated data
+/// for a player within a quiz
+struct PlayerSession {
     /// The ID of the referenced session
     id: SessionId,
     /// The addr to the session
@@ -629,19 +663,6 @@ pub struct PlayerSession {
     answers: PlayerAnswers,
     /// The player total score
     score: u32,
-}
-
-impl PlayerSession {
-    pub fn new(id: SessionId, addr: EventTarget, name: ImStr, question_len: usize) -> Self {
-        Self {
-            id,
-            addr,
-            name,
-            ready: false,
-            answers: PlayerAnswers::new(question_len),
-            score: 0,
-        }
-    }
 }
 
 /// Structure storing the player answers. Fixed length to
@@ -703,6 +724,8 @@ impl PlayerAnswers {
     }
 }
 
+/// Structure storing a player answer and the score provided
+/// for it
 #[derive(Default)]
 struct PlayerAnswer {
     /// The answer provided by the player
@@ -712,13 +735,23 @@ struct PlayerAnswer {
 }
 
 impl PlayerAnswer {
+    /// Marks the current question updating the stored score
+    /// and returns the score
+    ///
+    /// # Arguments
+    /// * question - The question to mark this answer against
     fn mark(&mut self, question: &Question) -> Score {
-        let score = self.get_score(question);
+        let score = self.mark_impl(question);
         self.score = Some(score);
         score
     }
 
-    fn get_score(&self, question: &Question) -> Score {
+    /// Marking implementation which marks the current answer
+    /// using the provided question as the correct answers.
+    ///
+    /// # Arguments
+    /// * question - The question to mark this answer against
+    fn mark_impl(&self, question: &Question) -> Score {
         let answer = match &self.data {
             Some(value) => value,
             None => return Score::Incorrect,
@@ -746,92 +779,122 @@ impl PlayerAnswer {
 
         match (&answer.answer, &question.data) {
             (A::Single { answer }, Q::Single { answers, .. }) => {
-                let is_valid = answers
-                    .get(*answer)
-                    .map(|value| value.correct)
-                    .unwrap_or(false);
-
-                if is_valid {
-                    Score::Correct { value: base_score }
-                } else {
-                    Score::Incorrect
-                }
+                Self::mark_single(*answer, answers, base_score)
             }
             (A::Multiple { answers: indexes }, Q::Multiple { answers, .. }) => {
-                let count_answers = indexes.len();
-
-                // The total number of actual correct answers
-                let count_expected = answers.iter().filter(|value| value.correct).count();
-
-                // Didn't provide enough answer or provided too many
-                if count_answers < 1 || count_answers > count_expected {
-                    return Score::Incorrect;
-                }
-
-                // Count the number of provided correct answers
-                let count_correct = indexes
-                    .iter()
-                    .filter_map(|index| answers.get(*index))
-                    .filter(|value| value.correct)
-                    .count();
-
-                if count_correct < 1 {
-                    Score::Incorrect
-                } else if count_correct == count_expected {
-                    Score::Correct { value: base_score }
-                } else {
-                    // % correct out of total answers
-                    let percent = count_correct as f32 / count_expected as f32;
-                    let score = ((base_score as f32) * percent).round() as u32;
-                    Score::Partial {
-                        value: score,
-                        count: count_correct as u32,
-                        total: count_expected as u32,
-                    }
-                }
+                Self::mark_multiple(indexes, answers, base_score)
             }
-
-            (
-                A::TrueFalse { answer },
-                Q::TrueFalse {
-                    answer: actual_answer,
-                },
-            ) => {
-                if *answer == *actual_answer {
-                    Score::Correct { value: base_score }
-                } else {
-                    Score::Incorrect
-                }
+            (A::TrueFalse { answer }, Q::TrueFalse { answer: actual }) => {
+                Self::mark_bool(*answer, *actual, base_score)
             }
-
             (
                 A::Typer { answer },
                 Q::Typer {
                     answers,
                     ignore_case,
                 },
-            ) => {
-                // Trim extra whitespace
-                let answer = answer.trim();
-
-                let correct = if *ignore_case {
-                    answers
-                        .iter()
-                        .any(|value| answer.eq_ignore_ascii_case(value))
-                } else {
-                    answers.iter().any(|value| answer.eq(value.as_ref()))
-                };
-
-                if correct {
-                    Score::Correct { value: base_score }
-                } else {
-                    Score::Incorrect
-                }
-            }
-
+            ) => Self::mark_typer(answer, answers, *ignore_case, base_score),
             // Mismatched types shouldn't be possible but
             // will be marked as incorrect
             _ => Score::Incorrect,
+        }
+    }
+
+    /// Marks a single choice question
+    ///
+    /// # Arguments
+    /// * answer - The index of the users answer
+    /// * answers - The answers for the question
+    /// * base_score - The base score for correct answers
+    fn mark_single(answer: usize, answers: &[AnswerValue], base_score: u32) -> Score {
+        let is_valid = answers
+            .get(answer)
+            .map(|value| value.correct)
+            .unwrap_or(false);
+        if is_valid {
+            Score::Correct { value: base_score }
+        } else {
+            Score::Incorrect
+        }
+    }
+
+    /// Marks a multiple choice question
+    ///
+    /// # Arguments
+    /// * indexes - The indexes of the answers the player chose
+    /// * answers - The answers for the question
+    /// * base_score - The base score for correct answers
+    fn mark_multiple(indexes: &[usize], answers: &[AnswerValue], base_score: u32) -> Score {
+        let count_answers = indexes.len();
+
+        // The total number of actual correct answers
+        let count_expected = answers.iter().filter(|value| value.correct).count();
+
+        // Didn't provide enough answer or provided too many
+        if count_answers < 1 || count_answers > count_expected {
+            return Score::Incorrect;
+        }
+
+        // Count the number of provided correct answers
+        let count_correct = indexes
+            .iter()
+            .filter_map(|index| answers.get(*index))
+            .filter(|value| value.correct)
+            .count();
+
+        if count_correct < 1 {
+            Score::Incorrect
+        } else if count_correct == count_expected {
+            Score::Correct { value: base_score }
+        } else {
+            // % correct out of total answers
+            let percent = count_correct as f32 / count_expected as f32;
+            let score = ((base_score as f32) * percent).round() as u32;
+            Score::Partial {
+                value: score,
+                count: count_correct as u32,
+                total: count_expected as u32,
+            }
+        }
+    }
+
+    /// Marks a True / False boolean quesiton
+    ///
+    /// # Arguments
+    /// * answer - The boolean answer the player chose
+    /// * actual - The correct answer for the question
+    /// * base_score - The base score for correct answers
+    fn mark_bool(answer: bool, actual: bool, base_score: u32) -> Score {
+        if answer == actual {
+            Score::Correct { value: base_score }
+        } else {
+            Score::Incorrect
+        }
+    }
+
+    /// Marks a typing question
+    ///
+    /// # Arguments
+    /// * answer - The player typed answer
+    /// * answers - The question valid answers
+    /// * ignore_case - Whether to ignore case when matching
+    /// * base_score - The base score for correct answers
+    fn mark_typer(answer: &str, answers: &[ImStr], ignore_case: bool, base_score: u32) -> Score {
+        // Trim extra whitespace
+        let answer = answer.trim();
+
+        let correct = if ignore_case {
+            answers
+                .iter()
+                .any(|value| answer.eq_ignore_ascii_case(value))
+        } else {
+            answers.iter().any(|value| answer.eq(value.as_ref()))
+        };
+
+        if correct {
+            Score::Correct { value: base_score }
+        } else {
+            Score::Incorrect
         }
     }
 }
