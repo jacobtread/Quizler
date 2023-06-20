@@ -44,7 +44,7 @@ Prebuilt binaries are available for download here
 - [x] Different quesiton types
     - Single: Can have multiple correct answer but only lets the players select one option
     - Multiple: Can have many correct answers and lets the players select more than one answer
-- [x] Small and performant, the binary size is super small and is quick to download and move around. From manual testing games could easily handle 15 players
+- [x] Small and performant, the binary size is super small and is quick to download and move around. From manual testing games could easily handle 15 players in a single game (It can likely handle a far greater number of players however this is untested)
     - Windows binary:  4.6mb 
     - Linux binary: 4.5mb
 - [x] Name filtering levels
