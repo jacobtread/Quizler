@@ -10,23 +10,12 @@ readme = "../README.md"
 keywords = ["quizler", "game"]
 
 [dependencies]
-# Actix async framework
-actix = "0.13"
+axum = { version = "^0.6", features = ["ws", "multipart"] }
+hyper = { version = "^0.14", features = ["full"] }
+tokio = { version = "^1", features = ["full"] }
+tower = "0.4"
+tower-http = { version = "0.4", features = ["full"] }
 
-# Actix Web framework
-actix-web = "4"
-
-# Actix WebSocket actors
-actix-web-actors = "4"
-
-# Multipart form data
-actix-multipart = "0.6"
-
-# CORS 
-actix-cors = "0.6.4"
-
-# Mimetypes
-mime = "0.3"
 
 # Logging
 log = "0.4"

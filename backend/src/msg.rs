@@ -2,11 +2,12 @@
 
 use crate::{
     game::{GameConfig, GameState},
-    games::GameToken,
     session::SessionId,
-    types::{Answer, HostAction, Question, RemoveReason, Score, ScoreCollection, ServerError},
+    types::{
+        Answer, GameToken, HostAction, ImStr, Question, RemoveReason, Score, ScoreCollection,
+        ServerError,
+    },
 };
-use actix::Message;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use uuid::Uuid;
@@ -81,13 +82,12 @@ pub enum ResponseMessage {
 }
 
 /// Messages sent by the server
-#[derive(Message, Serialize)]
-#[rtype(result = "()")]
+#[derive(Serialize)]
 #[serde(tag = "ty")]
 pub enum ServerEvent {
     /// Message providing information about another player in
     /// the game
-    PlayerData { id: SessionId, name: String },
+    PlayerData { id: SessionId, name: ImStr },
     /// Message indicating the current state of the game
     GameState { state: GameState },
     /// Message for telling clients the current countdown timer
