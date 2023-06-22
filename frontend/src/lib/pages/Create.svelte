@@ -137,8 +137,17 @@
           }
         }
       }
-      // TODO: Validate other types
+
+      // Ensure the correct_answers field is correct
+      if (question.ty === QuestionType.Multiple) {
+        let correct = 0;
+        for (const answer of question.answers) {
+          if (answer.correct) correct++;
+        }
+        question.correct_answers = correct;
+      }
     }
+
     return true;
   }
 

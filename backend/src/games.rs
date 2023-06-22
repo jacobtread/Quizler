@@ -5,17 +5,17 @@ use crate::{
 };
 use std::{
     collections::HashMap,
-    sync::Arc,
+    sync::{Arc, OnceLock},
     time::{Duration, Instant},
 };
 use tokio::{
-    sync::{RwLock, RwLockReadGuard, RwLockWriteGuard},
+    sync::RwLock,
     time::{interval, MissedTickBehavior},
 };
 use uuid::Uuid;
 
 /// Global instance for storing games
-static mut GAMES: Option<RwLock<Games>> = None;
+static GAMES: OnceLock<RwLock<Games>> = OnceLock::new();
 
 /// Central store for storing all the references to the individual
 /// games that are currently running
@@ -48,20 +48,15 @@ pub struct InitializedMessage {
 }
 
 impl Games {
-    /// Initializes the games global state and starts the
-    /// tick_cleanup task
-    pub fn init() {
-        unsafe {
-            GAMES = Some(RwLock::new(Games::default()));
-        }
-
-        // Spawn the cleanup future
-        tokio::spawn(Self::tick_cleanup());
+    /// Obtains a static reference to the global
+    /// games store
+    fn get() -> &'static RwLock<Games> {
+        GAMES.get_or_init(Default::default)
     }
 
     /// Handles cleaning up games that have expired from the
     /// preparing set runs every 10 minutes
-    async fn tick_cleanup() {
+    pub async fn tick_cleanup() {
         /// Interval to check for expired game prepares (5mins)
         const PREPARE_CHECK_INTERVAL: Duration = Duration::from_secs(60 * 5);
 
@@ -78,29 +73,11 @@ impl Games {
             interval.tick().await;
 
             // Obtain a write lock and remove all expired games
-            let mut games = Self::write().await;
+            let mut games = Self::get().write().await;
             games.preparing.retain(|_, value| {
                 let elapsed = value.created.elapsed();
                 elapsed < GAME_EXPIRY_TIME
             });
-        }
-    }
-
-    /// Aquires a read lock over the games structure
-    /// returning the lock guard
-    async fn read() -> RwLockReadGuard<'static, Games> {
-        match unsafe { &GAMES } {
-            Some(value) => value.read().await,
-            None => panic!("Global games instance not initialized"),
-        }
-    }
-
-    /// Aquires a write lock over the games structure
-    /// returning the lock guard
-    async fn write() -> RwLockWriteGuard<'static, Games> {
-        match unsafe { &GAMES } {
-            Some(value) => value.write().await,
-            None => panic!("Global games instance not initialized"),
         }
     }
 
@@ -113,7 +90,7 @@ impl Games {
         let id = Uuid::new_v4();
         let created = Instant::now();
 
-        let mut games = Self::write().await;
+        let mut games = Self::get().write().await;
         games
             .preparing
             .insert(id, PreparingGame { config, created });
@@ -134,7 +111,7 @@ impl Games {
         host_target: EventTarget,
     ) -> Result<InitializedMessage, ServerError> {
         // Write lock is required for updating state
-        let mut games = Self::write().await;
+        let mut games = Self::get().write().await;
 
         // Consume the provided prepared config
         let config = games
@@ -167,12 +144,12 @@ impl Games {
     /// # Arguments
     /// * token - The token of the game to get
     pub async fn get_game(token: &GameToken) -> Option<GameRef> {
-        Self::read().await.games.get(token).cloned()
+        Self::get().read().await.games.get(token).cloned()
     }
 
     /// Removes the game with the provided [`GameToken`] from
     /// the map of games
     pub async fn remove_game(token: GameToken) {
-        Self::write().await.games.remove(&token);
+        Self::get().write().await.games.remove(&token);
     }
 }

@@ -27,8 +27,8 @@ async fn main() {
         .parse_default_env()
         .init();
 
-    // Create the games store
-    Games::init();
+    // Spawn the cleanup future
+    tokio::spawn(Games::tick_cleanup());
 
     let port: u16 = match std::env::var("QUIZLER_PORT") {
         Ok(value) => value
