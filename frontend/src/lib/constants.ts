@@ -8,7 +8,7 @@ export const MIN_PLAYER_NAME_LENGTH: number = 1;
 export const MAX_PLAYER_NAME_LENGTH: number = 30;
 
 export const MAX_TITLE_LENGTH: number = 70;
-export const MAX_DESCRIPTION_LENGTH: number = 300;
+export const MAX_DESCRIPTION_LENGTH: number = 150;
 
 const DEFAULT_NAME = "Example Quiz";
 const DEFAULT_DESCRIPTION = "Small description about your quiz";

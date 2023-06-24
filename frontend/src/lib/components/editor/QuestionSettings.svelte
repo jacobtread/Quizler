@@ -108,22 +108,6 @@
 <style lang="scss">
   @import "../../../assets/scheme.scss";
 
-  .section {
-    display: flex;
-    flex-flow: column;
-    border: 1px solid #444;
-    padding: 1rem;
-    border-radius: 0.25rem;
-    &__title {
-      color: #ffffff;
-      margin-bottom: 0.25rem;
-    }
-
-    &__desc {
-      margin-bottom: 0.5rem;
-    }
-  }
-
   .floating-wrapper {
     z-index: 1;
   }
@@ -152,24 +136,7 @@
 
   .field-group {
     display: flex;
-
     gap: 1rem;
-  }
-
-  .field {
-    display: block;
-    background-color: $surface;
-    border-radius: 0.55rem;
-
-    &__name {
-      font-weight: bold;
-      color: #ffffff;
-    }
-
-    &__desc {
-      color: #cccccc;
-      margin-bottom: 0.25rem;
-    }
   }
 
   .input {

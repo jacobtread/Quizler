@@ -85,7 +85,7 @@ pub struct GameConfig {
 
 impl GameConfig {
     const MAX_TITLE_LENGTH: usize = 70;
-    const MAX_DESCRIPTION_LENGTH: usize = 300;
+    const MAX_DESCRIPTION_LENGTH: usize = 150;
     const MAX_QUESTIONS: usize = 50;
 
     /// Validates that the game configuration is valid

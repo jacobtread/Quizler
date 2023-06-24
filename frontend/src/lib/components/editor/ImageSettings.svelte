@@ -18,15 +18,13 @@
     </button>
 
     {#if question.image !== null}
-      <label class="field">
-        <span class="field__name">Image Fit</span>
-        <p class="field__desc">
-          Decide how the image should be best fit for the player screens,
+      <label class="section">
+        <h2 class="section__title">Image Fit</h2>
+        <p class="section__desc">
+          How the image should be fit to devices. It's recommended that you use
+          <b>Contain</b> if its important that they can see the whole image
         </p>
-        <p class="field__desc">
-          It's recommended that you use "Contain" if the full image content is
-          important to be visible
-        </p>
+
         <select class="input" bind:value={question.image.fit}>
           <option value={ImageFit.Contain}>Contain: Fit the entire image</option
           >
@@ -71,22 +69,6 @@
     display: flex;
     flex-flow: column;
     gap: 1rem;
-  }
-
-  .field {
-    display: block;
-    background-color: $surface;
-    border-radius: 0.55rem;
-
-    &__name {
-      font-weight: bold;
-      color: #ffffff;
-    }
-
-    &__desc {
-      color: #cccccc;
-      margin-bottom: 0.25rem;
-    }
   }
 
   .input {

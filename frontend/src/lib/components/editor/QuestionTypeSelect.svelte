@@ -192,22 +192,6 @@
     }
   }
 
-  .section {
-    display: flex;
-    flex-flow: column;
-    border: 1px solid #444;
-    padding: 1rem;
-    border-radius: 0.25rem;
-    &__title {
-      color: #ffffff;
-      margin-bottom: 0.25rem;
-    }
-
-    &__desc {
-      margin-bottom: 0.5rem;
-    }
-  }
-
   .floating-wrapper {
     z-index: 1;
     position: fixed;

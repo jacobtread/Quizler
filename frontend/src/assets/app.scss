@@ -276,3 +276,41 @@ th {
   -webkit-backdrop-filter: blur(5px);
   overflow: auto;
 }
+
+.field {
+  display: block;
+  background-color: $surface;
+  border-radius: 0.55rem;
+
+  &__name {
+    font-weight: bold;
+    color: #ffffff;
+  }
+
+  &__desc {
+    color: #cccccc;
+    margin-bottom: 0.25rem;
+  }
+}
+
+.section {
+  display: flex;
+  flex-flow: column;
+  border: 1px solid #444;
+  padding: 1rem;
+  border-radius: 0.25rem;
+  &__title {
+    color: #ffffff;
+    margin-bottom: 0.25rem;
+  }
+
+  &__desc {
+    margin-bottom: 0.5rem;
+  }
+
+  &__values {
+    display: flex;
+    flex-flow: column;
+    gap: 0.5rem;
+  }
+}
