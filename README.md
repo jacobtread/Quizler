@@ -2,8 +2,8 @@
 
 # Quizler
 
-![License](https://img.shields.io/github/license/jacobtread/Quizler-v2?style=for-the-badge)
-![Build](https://img.shields.io/github/actions/workflow/status/jacobtread/Quizler-v2/build.yml?style=for-the-badge)
+![License](https://img.shields.io/github/license/jacobtread/Quizler?style=for-the-badge)
+![Build](https://img.shields.io/github/actions/workflow/status/jacobtread/Quizler/build.yml?style=for-the-badge)
 
 > Real time quiz application
 
@@ -11,7 +11,7 @@
 > This project is in early alpha stages, currenlty it is fully functional however all of the features and logic may not be entirely polished yet, this project is under active development
 
 
-This is the improved version of my [Quizler](https://github.com/jacobtread/Quizler) app which is intended to be a real time quiz application similar to [Kahoot](https://kahoot.com/) but *OpenSource* and able to be played offline over LAN or self hosted.
+This is the improved version of my [Quizler](https://github.com/jacobtread/Quizler-v1) app which is intended to be a real time quiz application similar to [Kahoot](https://kahoot.com/) but *OpenSource* and able to be played offline over LAN or self hosted.
 
 This version aims to improve upon the downfalls of the previous app (Written in Go) along with providing new features. I aim to make this version more stable and performant using my better understanding of the [Rust](https://www.rust-lang.org/) language.
 
@@ -20,8 +20,7 @@ This new version makes use of [Rust](https://www.rust-lang.org/) for the backend
 ## 🛫 Deploying
 
 Quizler can be quickly and easily deployed to [Render](https://render.com) if you would like to deploy a Free instance to render
-you can follow the guide on the Wiki [Here](https://github.com/jacobtread/Quizler-v2/wiki/Deploying-to-Render)
-
+you can follow the guide on the Wiki [Here](https://github.com/jacobtread/Quizler/wiki/Deploying-to-Render)
 
 ## 📥 Downloads
 
@@ -30,13 +29,13 @@ Prebuilt binaries are available for download here
 > **Note**
 > This project is still in alpha so there may be unexpected bugs in these early releases
 
-| Platform | Download                                                                                                 |
-| -------- | -------------------------------------------------------------------------------------------------------- |
-| Windows  | [Download](https://github.com/jacobtread/Quizler-v2/releases/download/v0.1.0-alpha2/quizler-windows.exe) |
-| Linux    | [Download](https://github.com/jacobtread/Quizler-v2/releases/download/v0.1.0-alpha2/quizler-linux)       |
+| Platform | Download                                                                                              |
+| -------- | ----------------------------------------------------------------------------------------------------- |
+| Windows  | [Download](https://github.com/jacobtread/Quizler/releases/download/v0.1.0-alpha2/quizler-windows.exe) |
+| Linux    | [Download](https://github.com/jacobtread/Quizler/releases/download/v0.1.0-alpha2/quizler-linux)       |
 <!-- Uncomment when stable releases are out
-| Windows  | [Download](https://github.com/jacobtread/Quizler-v2/releases/latest/download/quizler-windows.exe) |
-| Linux    | [Download](https://github.com/jacobtread/Quizler-v2/releases/latest/download/quizler-linux)      | 
+| Windows  | [Download](https://github.com/jacobtread/Quizler/releases/latest/download/quizler-windows.exe) |
+| Linux    | [Download](https://github.com/jacobtread/Quizler/releases/latest/download/quizler-linux)      | 
 -->
 
 

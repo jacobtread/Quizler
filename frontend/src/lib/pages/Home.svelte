@@ -15,7 +15,7 @@
     </div>
 
     <a
-      href="https://github.com/jacobtread/Quizler-v2"
+      href="https://github.com/jacobtread/Quizler"
       target="_blank"
       rel="noreferrer"
       title="View on Github"

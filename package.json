@@ -2,7 +2,7 @@
   "name": "quizler",
   "version": "0.1.0-alpha1",
   "description": "Real-time quiz application",
-  "repository": "https://github.com/jacobtread/Quizler-v2.git",
+  "repository": "https://github.com/jacobtread/Quizler.git",
   "author": "Jacobtread <jacobtread@gmail.com>",
   "license": "MIT",
   "scripts": {
