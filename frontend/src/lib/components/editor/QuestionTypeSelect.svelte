@@ -1,15 +1,13 @@
 <script lang="ts">
-  import Close from "$components/icons/Delete.svelte";
-
   import { QuestionType, type Question } from "$api/models";
   import {
     activeQuestion,
     changeQuestionType,
     replaceQuestion
   } from "$lib/stores/createStore";
-  import { fade, slide } from "svelte/transition";
   import Checkbox from "../Checkbox.svelte";
   import { confirmDialog } from "$lib/stores/dialogStore";
+  import FloatingModal from "../FloatingModal.svelte";
 
   export let question: Question;
   export let visible: boolean;
@@ -30,90 +28,80 @@
   }
 </script>
 
-<div class="floating-wrapper" transition:fade={{ duration: 200 }}>
-  <div class="dialog" transition:slide={{ duration: 200 }}>
-    <button
-      on:click={() => (visible = false)}
-      class="btn btn--icon btn--surface"
-    >
-      <Close />
-      Close
-    </button>
+<FloatingModal bind:visible>
+  <div class="section">
+    <h2 class="section__title">Question Type</h2>
+    <p class="section__desc">Please select the type of question below</p>
 
-    <div class="section">
-      <h2 class="section__title">Question Type</h2>
-      <p class="section__desc">Please select the type of question below</p>
+    <div class="types">
+      <button
+        class="type"
+        class:type--selected={question.ty == QuestionType.Single}
+        on:click={() => setQuestionType(QuestionType.Single)}
+      >
+        <p class="type__name">Single Choice</p>
+        <p class="type__desc">Players can only select one answer</p>
+        <div class="answers">
+          <p class="answer answer--correct" />
+          <p class="answer" />
+          <p class="answer" />
+          <p class="answer" />
+        </div>
+      </button>
 
-      <div class="types">
-        <button
-          class="type"
-          class:type--selected={question.ty == QuestionType.Single}
-          on:click={() => setQuestionType(QuestionType.Single)}
-        >
-          <p class="type__name">Single Choice</p>
-          <p class="type__desc">Players can only select one answer</p>
-          <div class="answers">
-            <p class="answer answer--correct" />
-            <p class="answer" />
-            <p class="answer" />
-            <p class="answer" />
-          </div>
-        </button>
-
-        <button
-          class="type"
-          class:type--selected={question.ty == QuestionType.Multiple}
-          on:click={() => setQuestionType(QuestionType.Multiple)}
-        >
-          <p class="type__name">Multiple Choice</p>
-          <p class="type__desc">Players can select multiple answers</p>
-          <div class="answers">
-            <p class="answer answer--correct" />
-            <p class="answer answer--correct" />
-            <p class="answer" />
-            <p class="answer answer--correct" />
-          </div>
-        </button>
-        <button
-          class="type"
-          class:type--selected={question.ty == QuestionType.TrueFalse}
-          on:click={() => setQuestionType(QuestionType.TrueFalse)}
-        >
-          <p class="type__name">True / False</p>
-          <p class="type__desc">Simple true or false questions</p>
-          <div class="answers">
-            <p class="answer answer--correct" />
-            <p class="answer" />
-          </div>
-        </button>
-        <button
-          class="type"
-          class:type--selected={question.ty == QuestionType.Typer}
-          on:click={() => setQuestionType(QuestionType.Typer)}
-        >
-          <p class="type__name">Typer</p>
-          <p class="type__desc">Players must type out their answer</p>
-          <div class="answers">
-            <p class="answer" />
-          </div>
-        </button>
-      </div>
+      <button
+        class="type"
+        class:type--selected={question.ty == QuestionType.Multiple}
+        on:click={() => setQuestionType(QuestionType.Multiple)}
+      >
+        <p class="type__name">Multiple Choice</p>
+        <p class="type__desc">Players can select multiple answers</p>
+        <div class="answers">
+          <p class="answer answer--correct" />
+          <p class="answer answer--correct" />
+          <p class="answer" />
+          <p class="answer answer--correct" />
+        </div>
+      </button>
+      <button
+        class="type"
+        class:type--selected={question.ty == QuestionType.TrueFalse}
+        on:click={() => setQuestionType(QuestionType.TrueFalse)}
+      >
+        <p class="type__name">True / False</p>
+        <p class="type__desc">Simple true or false questions</p>
+        <div class="answers">
+          <p class="answer answer--correct" />
+          <p class="answer" />
+        </div>
+      </button>
+      <button
+        class="type"
+        class:type--selected={question.ty == QuestionType.Typer}
+        on:click={() => setQuestionType(QuestionType.Typer)}
+      >
+        <p class="type__name">Typer</p>
+        <p class="type__desc">Players must type out their answer</p>
+        <div class="answers">
+          <p class="answer" />
+        </div>
+      </button>
     </div>
+  </div>
 
-    {#if question.ty === QuestionType.Typer}
-      <div class="section">
-        <h2 class="section__title">Settings</h2>
-        <p class="section__desc">Below are settings specific to this type</p>
-        <div>
-          <div class="row">
-            <Checkbox bind:value={question.ignore_case} />
-            <p>Ignore case when checking if the answer is correct</p>
-          </div>
+  {#if question.ty === QuestionType.Typer}
+    <div class="section">
+      <h2 class="section__title">Settings</h2>
+      <p class="section__desc">Below are settings specific to this type</p>
+      <div>
+        <div class="row">
+          <Checkbox bind:value={question.ignore_case} />
+          <p>Ignore case when checking if the answer is correct</p>
         </div>
       </div>
-    {/if}
-  </div>
-</div>
+    </div>
+  {/if}
+</FloatingModal>
 
 <style lang="scss">
   @import "../../../assets/scheme.scss";
@@ -189,43 +177,6 @@
     &--correct {
       background-color: $primary;
       color: #fff;
-    }
-  }
-
-  .floating-wrapper {
-    z-index: 1;
-    position: fixed;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-  }
-
-  .dialog {
-    background-color: $surface;
-
-    border-radius: 0.5rem;
-
-    width: 100%;
-    max-width: 46rem;
-
-    margin: 1rem;
-    padding: 1rem;
-
-    display: flex;
-    flex-flow: column;
-    gap: 1rem;
-  }
-
-  @media screen and (max-width: 48rem), (max-height: 48em) {
-    .floating-wrapper {
-      align-items: flex-start;
     }
   }
 

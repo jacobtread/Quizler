@@ -142,12 +142,19 @@ const answerValueSchema = z.object({
 // Answer value type inferred from its schema
 export type AnswerValue = z.infer<typeof answerValueSchema>;
 
-export const enum ImageFit {
+export enum ImageFit {
   Contain = "Contain",
   Cover = "Cover",
   Width = "Width",
   Height = "Height"
 }
+
+export const imageFitText: Record<ImageFit, string> = {
+  [ImageFit.Contain]: "Fit the entire image",
+  [ImageFit.Cover]: "Fill the available space",
+  [ImageFit.Width]: "Fill available width",
+  [ImageFit.Height]: "Fill available height"
+};
 
 // Schema for questions
 export const questionSchema = z

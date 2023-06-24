@@ -212,9 +212,7 @@
   {/if}
 {/if}
 
-{#if settings}
-  <Settings bind:visible={settings} />
-{/if}
+<Settings bind:visible={settings} />
 
 <main class="main">
   <header class="header btn-row btn-row--fill">

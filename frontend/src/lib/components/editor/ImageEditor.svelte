@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { ImageFit, type Question } from "$lib/api/models";
+  import { ImageFit, imageFitText, type Question } from "$lib/api/models";
   import { imagePreviewStore, selectImage } from "$lib/stores/imageStore";
   import ImageStorage from "$components/ImageStorage.svelte";
   import Cog from "../icons/Cog.svelte";
-  import ImageSettings from "./ImageSettings.svelte";
+  import FloatingModal, { ModelSize } from "../FloatingModal.svelte";
 
   export let question: Question;
 
@@ -31,36 +31,52 @@
     };
   }
 
-  function removeImage(event: Event) {
-    event.stopPropagation();
+  function removeImage() {
     question.image = null;
     image = null;
   }
 </script>
 
-<div tabindex="0" role="button" class="wrapper">
-  {#if question.image !== null && image}
-    <img
-      class="image"
-      data-fit={question.image.fit}
-      src={image}
-      alt="Uploaded Content"
-    />
-
-    <button class="overlay" on:click={removeImage}> Click to remove </button>
+{#if question.image !== null}
+  <div class="wrapper">
+    <!-- Actual preview image may not be immediately available -->
+    {#if image !== null}
+      <img
+        class="image"
+        data-fit={question.image.fit}
+        src={image}
+        alt="Question Preview"
+      />
+    {/if}
+    <button class="overlay" on:click={removeImage}>Click to remove</button>
     <button
       class="btn btn--icon btn--icon-only settings"
       on:click={() => (settings = true)}
     >
       <Cog />
     </button>
-  {:else}
-    <button class="add" on:click={pickImage}>Pick Image</button>
-  {/if}
-</div>
+  </div>
 
-{#if settings}
-  <ImageSettings bind:question bind:visible={settings} />
+  <!-- Dialog for changing image settings -->
+  <FloatingModal bind:visible={settings} size={ModelSize.Small}>
+    <label class="section">
+      <h2 class="section__title">Image Fit</h2>
+      <p class="section__desc">
+        How the image should be fit to devices. It's recommended that you use
+        <b>Contain</b> if its important that they can see the whole image
+      </p>
+
+      <select class="input" bind:value={question.image.fit}>
+        {#each Object.values(ImageFit) as value}
+          <option {value}>{value}: {imageFitText[value]}</option>
+        {/each}
+      </select>
+    </label>
+  </FloatingModal>
+{:else}
+  <div class="wrapper">
+    <button class="add" on:click={pickImage}>Pick Image</button>
+  </div>
 {/if}
 
 <!-- Image store access for rendering the image picker -->
@@ -134,6 +150,7 @@
   }
 
   .overlay {
+    cursor: pointer;
     position: absolute;
     left: 0;
     top: 0;
@@ -148,5 +165,18 @@
     &:hover {
       opacity: 1;
     }
+  }
+
+  .input {
+    display: block;
+    margin-top: 0.25rem;
+    width: 100%;
+    padding: 0.5rem;
+    border: none;
+    background-color: $surfaceLight;
+    border-radius: 0.25rem;
+    margin-top: 0.5rem;
+    font-size: 1rem;
+    line-height: 1.5;
   }
 </style>

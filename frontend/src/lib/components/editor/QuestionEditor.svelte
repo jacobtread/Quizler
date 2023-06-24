@@ -87,14 +87,8 @@
 />
 
 <EditorAnswers bind:question />
-
-{#if settings}
-  <QuestionSettings bind:question bind:visible={settings} />
-{/if}
-
-{#if type}
-  <QuestionTypeSelect bind:question bind:visible={type} />
-{/if}
+<QuestionSettings bind:question bind:visible={settings} />
+<QuestionTypeSelect bind:question bind:visible={type} />
 
 <style lang="scss">
   @import "../../../assets/scheme.scss";
