@@ -103,6 +103,9 @@ First you must build the frontend as the backend depends on embedding resources 
 > **Note** 
 > These commands are from within the context of the repository directory. If you haven't already download the repository and cd to the directory before running the commands below
 
+Building the frontend requires **NodeJS**>=16 and building the backend requires the latest version
+of **Cargo** and **Rust**
+
 ```shell
 # Move to the frontend directory
 cd frontend
