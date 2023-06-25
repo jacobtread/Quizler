@@ -166,17 +166,4 @@
       opacity: 1;
     }
   }
-
-  .input {
-    display: block;
-    margin-top: 0.25rem;
-    width: 100%;
-    padding: 0.5rem;
-    border: none;
-    background-color: $surfaceLight;
-    border-radius: 0.25rem;
-    margin-top: 0.5rem;
-    font-size: 1rem;
-    line-height: 1.5;
-  }
 </style>

@@ -201,6 +201,16 @@
     $createData.questions = e.detail.items;
   }
 
+  function onClickQuestion(question: Question) {
+    activeQuestion.set(question);
+  }
+
+  function onKeyQuestion(event: KeyboardEvent, question: Question) {
+    if (event.key === "Return" || event.key == "Enter") {
+      activeQuestion.set(question);
+    }
+  }
+
   let settings: boolean = false;
 </script>
 
@@ -259,11 +269,15 @@
         on:finalize={handleDndFinalize}
       >
         {#each $createData.questions as question, index (question.id)}
-          <div style="position: relative;" animate:flip={{ duration: 200 }}>
+          <div
+            class="qw"
+            animate:flip={{ duration: 200 }}
+            class:qw--active={$activeQuestion !== null &&
+              $activeQuestion.id === question.id}
+            on:click={() => onClickQuestion(question)}
+            on:keydown={(event) => onKeyQuestion(event, question)}
+          >
             <QuestionListItem {question} {index} />
-            {#if question[SHADOW_ITEM_MARKER_PROPERTY_NAME]}
-              <div class="shadow-item" />
-            {/if}
           </div>
         {/each}
       </section>
@@ -290,16 +304,22 @@
 
 <style lang="scss">
   @import "../../assets/scheme.scss";
-  .shadow-item {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    visibility: visible;
-    border: 3px dashed #333;
-    border-radius: 0.25rem;
-    margin: 0;
+  .qw {
+    border-radius: 0.5rem;
+    position: relative;
+
+    &:hover {
+      outline: 2px solid #666;
+    }
+
+    &--active,
+    &--active:hover {
+      outline: 2px solid $primary;
+    }
+
+    &:focus {
+      outline: 2px solid #fff;
+    }
   }
 
   .editor__none {

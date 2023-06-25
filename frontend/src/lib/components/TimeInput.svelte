@@ -57,7 +57,7 @@
 
 <div>
   <input
-    class="input"
+    class="time-input"
     type="number"
     min={convertTo(min)}
     max={convertTo(max)}
@@ -74,7 +74,7 @@
   @import "../../assets/scheme.scss";
 
   .select,
-  .input {
+  .time-input {
     padding: 0.5rem;
     border-radius: 0.25rem;
     font-size: 1rem;
@@ -82,7 +82,7 @@
     border: none;
   }
 
-  .input {
+  .time-input {
     margin-right: 0.25rem;
   }
 

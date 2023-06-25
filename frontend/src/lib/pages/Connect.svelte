@@ -152,7 +152,7 @@
     <form class="form" on:submit|preventDefault={connect}>
       <input
         bind:this={inputToken}
-        class="input"
+        class="special-input"
         type="text"
         bind:value={token}
         on:input={updateToken}
@@ -181,7 +181,7 @@
     <form class="form" on:submit|preventDefault={join}>
       <input
         bind:this={inputName}
-        class="input input--small"
+        class="special-input special-input--small"
         type="text"
         bind:value={name}
         on:input={updateName}
@@ -216,7 +216,7 @@
     text-align: center;
   }
 
-  .input {
+  .special-input {
     display: inline-block;
     padding: 0.7rem;
     font-size: 3rem;
@@ -258,7 +258,7 @@
 
   @media screen and (max-width: 32rem) {
     .play,
-    .input {
+    .special-input {
       max-width: none;
       display: block;
       margin: 1rem auto;

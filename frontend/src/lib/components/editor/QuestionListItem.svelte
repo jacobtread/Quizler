@@ -5,6 +5,7 @@
   import { imagePreviewStore } from "$lib/stores/imageStore";
   import { flip } from "svelte/animate";
   import Image from "../icons/Image.svelte";
+  import { SHADOW_ITEM_MARKER_PROPERTY_NAME } from "svelte-dnd-action";
 
   export let question: Question;
   export let index: number;
@@ -20,29 +21,12 @@
       image = null;
     }
   }
-
-  /**
-   * Updates the route to the editing route
-   * for the current question.
-   */
-  function edit() {
-    activeQuestion.set(question);
-  }
-
-  function onKeydown(event: KeyboardEvent) {
-    console.log(event.key);
-    if (event.key === "Return" || event.key == "Enter") {
-      edit();
-    }
-  }
 </script>
 
 <div
   class="question"
   class:question--active={$activeQuestion !== null &&
     $activeQuestion.id === question.id}
-  on:click={edit}
-  on:keypress={onKeydown}
 >
   <div class="image-wrapper">
     {#if question.image !== null && image !== null}
@@ -80,6 +64,11 @@
     <p class="answer" data-correct={false} />
   {/if}
 </div>
+
+<!-- Shadow item for drag and drop -->
+{#if question[SHADOW_ITEM_MARKER_PROPERTY_NAME]}
+  <div class="shadow" />
+{/if}
 
 <style lang="scss">
   @import "../../../assets/scheme.scss";
@@ -137,15 +126,6 @@
     gap: 0.5rem;
     width: 12rem;
 
-    &:hover {
-      outline: 2px solid #666;
-    }
-
-    &--active,
-    &--active:hover {
-      outline: 2px solid $primary;
-    }
-
     &__index {
       display: inline;
       background-color: $surface;
@@ -190,6 +170,18 @@
     }
   }
 
+  .shadow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    visibility: visible;
+    border: 3px dashed #333;
+    border-radius: 0.25rem;
+    margin: 0;
+  }
+
   @media screen and (max-width: 64rem) {
     .image-wrapper {
       height: 2rem;
@@ -203,6 +195,7 @@
       display: none;
     }
   }
+
   @media screen and (max-width: 48rem), (max-height: 48rem) {
     .image-wrapper {
       display: none;
