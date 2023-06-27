@@ -31,8 +31,8 @@ Prebuilt binaries are available for download here
 
 | Platform | Download                                                                                              |
 | -------- | ----------------------------------------------------------------------------------------------------- |
-| Windows  | [Download](https://github.com/jacobtread/Quizler/releases/download/v0.1.0-alpha2/quizler-windows.exe) |
-| Linux    | [Download](https://github.com/jacobtread/Quizler/releases/download/v0.1.0-alpha2/quizler-linux)       |
+| Windows  | [Download](https://github.com/jacobtread/Quizler/releases/download/v0.1.0-alpha3/quizler-windows.exe) |
+| Linux    | [Download](https://github.com/jacobtread/Quizler/releases/download/v0.1.0-alpha3/quizler-linux)       |
 <!-- Uncomment when stable releases are out
 | Windows  | [Download](https://github.com/jacobtread/Quizler/releases/latest/download/quizler-windows.exe) |
 | Linux    | [Download](https://github.com/jacobtread/Quizler/releases/latest/download/quizler-linux)      | 
