@@ -8,7 +8,7 @@
   export let gameData: GameData;
 </script>
 
-<main class="page page--overflow" transition:slide>
+<main class="page page--overflow" transition:slide|global>
   <div class="quiz">
     <h1 class="title">Waiting for host...</h1>
     <p class="text">You're in, waiting for the host to start the quiz.</p>

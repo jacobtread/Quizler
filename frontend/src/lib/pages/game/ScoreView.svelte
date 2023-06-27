@@ -19,7 +19,7 @@
   }
 </script>
 
-<main class="main" data-type={score.ty} transition:slide>
+<main class="main" data-type={score.ty} transition:slide|global>
   <h1 class="title">{score.ty}</h1>
   <p class="text">{message}</p>
   {#if score.ty === ScoreType.Correct}

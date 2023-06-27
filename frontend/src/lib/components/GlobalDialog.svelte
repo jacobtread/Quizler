@@ -7,7 +7,7 @@
 
 {#if $dialogStore}
   <div class="floating-wrapper" transition:fade={{ duration: 200 }}>
-    <div class="dialog" transition:slide={{ duration: 200 }}>
+    <div class="dialog" transition:slide|global={{ duration: 200 }}>
       <h1 class="dialog__title">{$dialogStore.title}</h1>
 
       <div class="dialog__msgs">

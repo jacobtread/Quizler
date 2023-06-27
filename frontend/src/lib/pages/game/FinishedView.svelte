@@ -18,7 +18,7 @@
   const doHostReset = () => doHostAction(HostAction.Reset);
 </script>
 
-<main class="page page--middle page--overflow" transition:slide>
+<main class="page page--middle page--overflow" transition:slide|global>
   <div class="quiz">
     <h1 class="token">
       {gameData.token}

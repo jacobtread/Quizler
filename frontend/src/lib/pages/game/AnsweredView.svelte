@@ -5,7 +5,7 @@
   const message = getRandomMessage("Answered");
 </script>
 
-<main class="main" transition:slide>
+<main class="main" transition:slide|global>
   <h1 class="title">Waiting...</h1>
   <p class="text">{message}</p>
 </main>

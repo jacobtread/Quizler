@@ -145,7 +145,7 @@
 </button>
 
 {#if state === State.Connect}
-  <main class="page page--center page--overflow" transition:slide>
+  <main class="page page--center page--overflow" transition:slide|global>
     <h1>Enter Code</h1>
     <p>Please enter your quiz code below</p>
 
@@ -173,7 +173,7 @@
     </form>
   </main>
 {:else}
-  <main class="page page--center page--overflow" transition:slide>
+  <main class="page page--center page--overflow" transition:slide|global>
     <p>{token}</p>
     <h1>Enter Name</h1>
     <p>Please enter your desired name</p>

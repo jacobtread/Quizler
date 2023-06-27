@@ -18,7 +18,7 @@
   const reset = () => doHostAction(HostAction.Reset);
 </script>
 
-<main class="page page--overflow" transition:slide>
+<main class="page page--overflow" transition:slide|global>
   <div class="quiz">
     {#if timeMs > 1000}
       <span class="time" transition:slide>{formatTime(timeMs)}</span>

@@ -8,7 +8,7 @@
   import Logo from "$components/icons/Logo.svelte";
 </script>
 
-<main class="main" transition:slide>
+<main class="main" transition:slide|global>
   <div class="left">
     <div class="logo">
       <Logo />

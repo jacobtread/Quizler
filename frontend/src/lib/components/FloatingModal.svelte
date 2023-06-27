@@ -18,7 +18,7 @@
     <div
       class="dialog"
       class:dialog--small={size == ModelSize.Small}
-      transition:slide={{ duration: 200 }}
+      transition:slide|global={{ duration: 250 }}
     >
       <button
         on:click={() => (visible = false)}
