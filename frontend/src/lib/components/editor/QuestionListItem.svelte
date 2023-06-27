@@ -53,13 +53,16 @@
 
   .image-wrapper {
     width: 100%;
-    height: 2.5rem;
+    height: 3rem;
     overflow: hidden;
     position: relative;
 
     display: flex;
     justify-content: center;
     align-items: center;
+
+    border: 1px solid $surfaceLight;
+    border-radius: 0.25rem;
   }
 
   .question {
@@ -129,26 +132,15 @@
   }
 
   @media screen and (max-width: 64rem) {
-    .image-wrapper {
-      height: 2rem;
-    }
-
     .question {
       max-width: 12rem;
+      flex-flow: row;
+      align-items: center;
+      padding: 0.2rem;
     }
 
     .answers {
       display: none;
-    }
-  }
-
-  @media screen and (max-width: 48rem), (max-height: 48rem) {
-    .image-wrapper {
-      display: none;
-    }
-
-    .question {
-      max-width: 6rem;
     }
   }
 </style>
