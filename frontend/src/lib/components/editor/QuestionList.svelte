@@ -80,20 +80,22 @@
 <style lang="scss">
   @import "../../../assets/scheme.scss";
   .qw {
-    border-radius: 0.5rem;
+    border-radius: 0.25rem;
     position: relative;
+    border: 2px solid $surface;
 
     &:hover {
-      outline: 2px solid #666;
+      border-color: #666;
     }
 
     &--active,
     &--active:hover {
-      outline: 2px solid $primary;
+      border-color: $primary;
     }
 
     &:focus {
       outline: 2px solid #fff;
+      outline-offset: 4px;
     }
   }
 
@@ -102,19 +104,19 @@
     flex-flow: column;
     gap: 1rem;
 
-    min-width: 14rem;
+    min-width: 12rem;
   }
 
   .questions {
     position: relative;
-    padding: 1rem;
+    padding: 0.75rem;
     overflow: auto;
     flex: auto;
-    border: 0.1rem solid $surface;
-    border-radius: 0.25rem;
+    border: 0.1rem solid $surfaceLight;
+    border-radius: 0.5rem;
 
     display: flex;
-    gap: 1rem;
+    gap: 0.75rem;
     flex-flow: column;
     list-style: none;
   }

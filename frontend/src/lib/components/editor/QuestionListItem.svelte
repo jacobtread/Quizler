@@ -71,7 +71,7 @@
     position: relative;
     background-color: $surface;
     padding: 0.5rem;
-    border-radius: 0.5rem;
+    border-radius: 0.25rem;
     display: flex;
     flex-flow: column;
     gap: 0.5rem;
@@ -128,7 +128,7 @@
     right: 0;
     bottom: 0;
     visibility: visible;
-    border: 3px dashed #333;
+    border: 2px dashed #333;
     border-radius: 0.25rem;
     margin: 0;
   }
