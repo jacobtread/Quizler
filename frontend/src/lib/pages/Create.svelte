@@ -86,7 +86,21 @@
    * validated copy or null if validation failed
    */
   function getCreateData(): CreateData | null {
-    let output = createDataSchema.safeParse($createData);
+    let input = $createData;
+
+    // Ensure multiple choice questions have valid correct_answers field
+    for (const question of input.questions) {
+      // Ensure the correct_answers field is correct
+      if (question.ty === QuestionType.Multiple) {
+        let correct = 0;
+        for (const answer of question.answers) {
+          if (answer.correct) correct++;
+        }
+        question.correct_answers = correct;
+      }
+    }
+
+    let output = createDataSchema.safeParse(input);
 
     if (!output.success) {
       let errors = "";
@@ -118,18 +132,6 @@
       errorDialog(`Quiz has error(s)`, errors);
 
       return null;
-    }
-
-    // Ensure multiple choice questions have valid correct_answers field
-    for (const question of output.data.questions) {
-      // Ensure the correct_answers field is correct
-      if (question.ty === QuestionType.Multiple) {
-        let correct = 0;
-        for (const answer of question.answers) {
-          if (answer.correct) correct++;
-        }
-        question.correct_answers = correct;
-      }
     }
 
     return output.data;
