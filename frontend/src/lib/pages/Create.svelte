@@ -209,15 +209,17 @@
 
   <div class="wrapper">
     <QuestionList />
-    <div class="editor">
-      {#if $activeQuestion !== null}
-        <QuestionEditor bind:question={$activeQuestion} />
-      {:else}
-        <div class="editor__none">
-          <h1>Select a question</h1>
-          <p>No question selected. Select a question to start editing</p>
-        </div>
-      {/if}
+    <div class="editor-wrapper">
+      <div class="editor">
+        {#if $activeQuestion !== null}
+          <QuestionEditor bind:question={$activeQuestion} />
+        {:else}
+          <div class="editor__none">
+            <h1>Select a question</h1>
+            <p>No question selected. Select a question to start editing</p>
+          </div>
+        {/if}
+      </div>
     </div>
   </div>
 </main>
@@ -248,18 +250,25 @@
     overflow: hidden;
   }
 
-  .editor {
-    flex: auto;
-    overflow: auto;
-    display: flex;
-    flex-flow: column;
-  }
-
   .wrapper {
     flex: auto;
     display: flex;
     overflow: hidden;
     gap: 1rem;
+  }
+
+  .editor-wrapper {
+    flex: auto;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .editor {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    display: flex;
+    flex-flow: column;
   }
 
   .header {
