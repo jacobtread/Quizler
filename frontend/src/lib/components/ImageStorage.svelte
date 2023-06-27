@@ -116,7 +116,12 @@
 
 {#if $selectImageStore}
   <div class="wrapper">
-    <div class="dialog" on:drop={onDrop} on:dragover={onDragOver}>
+    <div
+      class="dialog"
+      on:drop={onDrop}
+      on:dragover={onDragOver}
+      aria-hidden="true"
+    >
       <div class="images">
         <!-- Don't show the upload info if already uploading -->
         {#if $imageStore.length < 1 && uploading.length < 1}

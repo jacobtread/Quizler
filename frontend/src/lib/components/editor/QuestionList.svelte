@@ -17,11 +17,7 @@
     activeQuestion
   } from "$stores/createStore";
 
-  function handleDndConsider(e: CustomEvent<DndEvent<Question>>) {
-    $createData.questions = e.detail.items;
-  }
-
-  function handleDndFinalize(e: CustomEvent<DndEvent<Question>>) {
+  function handleDnd(e: CustomEvent<DndEvent<Question>>) {
     $createData.questions = e.detail.items;
   }
 
@@ -52,17 +48,19 @@
       flipDurationMs: 200,
       dropTargetStyle: {}
     }}
-    on:consider={handleDndConsider}
-    on:finalize={handleDndFinalize}
+    on:finalize={handleDnd}
+    on:consider={handleDnd}
   >
     {#each $createData.questions as question, index (question.id)}
       <div
+        tabindex="0"
         class="qw"
         animate:flip={{ duration: 200 }}
         class:qw--active={$activeQuestion !== null &&
           $activeQuestion.id === question.id}
         on:click={() => onClickQuestion(question)}
         on:keydown={(event) => onKeyQuestion(event, question)}
+        role="button"
       >
         <QuestionListItem {question} {index} />
       </div>
