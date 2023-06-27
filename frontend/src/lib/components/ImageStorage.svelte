@@ -12,6 +12,8 @@
   } from "$stores/imageStore";
   import Import from "$components/icons/Import.svelte";
   import { formatBytes } from "$lib/utils/utils";
+  import QuPreviewImage from "./editor/QuPreviewImage.svelte";
+  import { ImageFit } from "$lib/api/models";
 
   let uploading: FileUpload[] = [];
 
@@ -127,15 +129,7 @@
           <div class="file">
             <p class="file__name">{image.name}</p>
             <div class="image-wrapper">
-              {#if $imagePreviewStore[image.uuid] !== undefined}
-                <img
-                  class="image"
-                  src={$imagePreviewStore[image.uuid]}
-                  alt="Preview"
-                />
-              {:else}
-                <span>Preview loading..</span>
-              {/if}
+              <QuPreviewImage uuid={image.uuid} fit={ImageFit.Cover} />
             </div>
             <p>{formatBytes(image.size)}</p>
             <div class="file__actions">
@@ -240,19 +234,10 @@
     }
   }
 
-  .image {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
+  .image-wrapper {
     width: 100%;
-
-    &-wrapper {
-      width: 100%;
-      height: 80px;
-      overflow: hidden;
-      position: relative;
-    }
+    height: 80px;
+    position: relative;
   }
 
   .file {

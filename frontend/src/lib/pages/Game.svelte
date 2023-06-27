@@ -50,11 +50,6 @@
 
   export let gameData: GameData;
 
-  // Reference to the preloaded image so the browser doesn't unload it
-  // linting is disabled because this only stores the reference never using it
-  // eslint-disable-next-line
-  let preloadedImage: HTMLImageElement | null = null;
-
   let players: PlayerData[] = [];
   let gameState: GameState = GameState.Lobby;
 
@@ -142,18 +137,15 @@
     question = msg.question;
 
     // Preload the image
-    preloadedImage = await preloadImage(gameData.token, question);
+    const preloadedImage = await preloadImage(gameData.token, question);
 
     if (preloadedImage !== null && question.image !== null) {
-      // Prepare the image element for insertion
-      preloadedImage.classList.add("question-image");
-      preloadedImage.setAttribute("data-fit", question.image.fit);
-      preloadedImage.alt = question.text;
-
       // Ensure browser compatability
       if (preloadedImage.decode !== undefined) {
         await preloadedImage.decode();
       }
+
+      question.image.preloaded = preloadedImage;
     }
 
     // Update the ready state
@@ -205,13 +197,7 @@
   <Starting {gameState} {gameData} {timeMs} />
 {:else if gameState === GameState.AwaitingAnswers && question != null}
   {#if !answered}
-    <QuestionView
-      {gameData}
-      {question}
-      {timeMs}
-      {preloadedImage}
-      bind:answered
-    />
+    <QuestionView {gameData} {question} {timeMs} bind:answered />
   {:else if players.length !== 1}
     <!-- 
       Don't bother showing answered screen if only one player 

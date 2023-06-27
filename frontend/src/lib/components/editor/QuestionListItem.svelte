@@ -2,25 +2,13 @@
   import { QuestionType, type Question } from "$api/models";
   import { activeQuestion } from "$lib/stores/createStore";
 
-  import { imagePreviewStore } from "$lib/stores/imageStore";
   import { flip } from "svelte/animate";
   import Image from "../icons/Image.svelte";
   import { SHADOW_ITEM_MARKER_PROPERTY_NAME } from "svelte-dnd-action";
+  import QuPreviewImage from "./QuPreviewImage.svelte";
 
   export let question: Question;
   export let index: number;
-
-  let image: string | null = null;
-
-  $: if (question.image !== null) {
-    // Handle displaying image previews
-    let imagePreview = $imagePreviewStore[question.image.uuid];
-    if (imagePreview !== undefined) {
-      image = imagePreview;
-    } else {
-      image = null;
-    }
-  }
 </script>
 
 <div
@@ -29,13 +17,8 @@
     $activeQuestion.id === question.id}
 >
   <div class="image-wrapper">
-    {#if question.image !== null && image !== null}
-      <img
-        class="image"
-        data-fit={question.image.fit}
-        src={image}
-        alt="Uploaded Content"
-      />
+    {#if question.image !== null}
+      <QuPreviewImage uuid={question.image.uuid} fit={question.image.fit} />
     {:else}
       <Image />
     {/if}
@@ -82,38 +65,6 @@
     display: flex;
     justify-content: center;
     align-items: center;
-  }
-
-  .image {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    aspect-ratio: auto;
-
-    // Fit for width
-    &[data-fit="Width"] {
-      width: 100%;
-    }
-
-    // Fit for height
-    &[data-fit="Height"] {
-      height: 100%;
-    }
-
-    // Fit for containing whole image
-    &[data-fit="Contain"] {
-      height: 100%;
-      width: 100%;
-      object-fit: contain;
-    }
-
-    // Fit for covering available space
-    &[data-fit="Cover"] {
-      height: 100%;
-      width: 100%;
-      object-fit: cover;
-    }
   }
 
   .question {

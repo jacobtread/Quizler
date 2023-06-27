@@ -10,13 +10,12 @@
   import type { GameData } from "$pages/Game.svelte";
   import { doHostAction } from "$lib/api/actions";
   import { formatTime } from "$lib/utils/utils";
+  import QuPreviewImage from "$lib/components/editor/QuPreviewImage.svelte";
 
   export let gameData: GameData;
   export let timeMs: number;
   export let question: Question;
   export let answered: boolean;
-
-  export let preloadedImage: HTMLImageElement | null;
 
   let answers: number[] = [];
   let typerAnswer: string = "";
@@ -93,17 +92,18 @@
     }
   }
 
-  function preloadChild(target: HTMLElement, elm: HTMLImageElement) {
-    target.appendChild(elm);
-  }
-
   // Sends the next state action
   const next = () => doHostAction(HostAction.Next);
 </script>
 
 <main class="main">
-  {#if preloadedImage !== null}
-    <div class="image-wrapper" use:preloadChild={preloadedImage} />
+  {#if question.image !== null && question.image.preloaded !== undefined}
+    <div class="image-wrapper">
+      <QuPreviewImage
+        fit={question.image.fit}
+        preloaded={question.image.preloaded}
+      />
+    </div>
   {/if}
 
   <div class="content">

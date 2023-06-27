@@ -180,39 +180,6 @@ p {
   top: 1rem;
 }
 
-.question-image {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  aspect-ratio: auto;
-  z-index: -1;
-
-  // Fit for width
-  &[data-fit="Width"] {
-    width: 100%;
-  }
-
-  // Fit for height
-  &[data-fit="Height"] {
-    height: 100%;
-  }
-
-  // Fit for containing whole image
-  &[data-fit="Contain"] {
-    height: 100%;
-    width: 100%;
-    object-fit: contain;
-  }
-
-  // Fit for covering available space
-  &[data-fit="Cover"] {
-    height: 100%;
-    width: 100%;
-    object-fit: cover;
-  }
-}
-
 table {
   width: 100%;
   border-collapse: collapse;
@@ -326,4 +293,49 @@ th {
   margin-top: 0.5rem;
   font-size: 1rem;
   line-height: 1.5;
+}
+
+//  Wrapper for custom sized images
+.qu-image-wrapper {
+  position: relative;
+
+  width: 100%;
+  height: 100%;
+
+  overflow: hidden;
+}
+
+// Question image styling. Required to be global
+// due to runtime added class name for preloaded
+// images
+.qu-image {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  aspect-ratio: auto;
+
+  // Fit for width
+  &[data-fit="Width"] {
+    width: 100%;
+  }
+
+  // Fit for height
+  &[data-fit="Height"] {
+    height: 100%;
+  }
+
+  // Fit for containing whole image
+  &[data-fit="Contain"] {
+    height: 100%;
+    width: 100%;
+    object-fit: contain;
+  }
+
+  // Fit for covering available space
+  &[data-fit="Cover"] {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+  }
 }

@@ -1,24 +1,14 @@
 <script lang="ts">
   import { ImageFit, imageFitText, type Question } from "$lib/api/models";
-  import { imagePreviewStore, selectImage } from "$lib/stores/imageStore";
+  import { selectImage } from "$lib/stores/imageStore";
   import ImageStorage from "$components/ImageStorage.svelte";
   import Cog from "../icons/Cog.svelte";
   import FloatingModal, { ModelSize } from "../FloatingModal.svelte";
+  import QuPreviewImage from "./QuPreviewImage.svelte";
 
   export let question: Question;
 
-  let image: string | null = null;
   let settings: boolean = false;
-
-  $: if (question.image !== null) {
-    // Handle displaying image previews
-    let imagePreview = $imagePreviewStore[question.image.uuid];
-    if (imagePreview !== undefined) {
-      image = imagePreview;
-    } else {
-      image = null;
-    }
-  }
 
   async function pickImage() {
     let res = await selectImage();
@@ -33,21 +23,13 @@
 
   function removeImage() {
     question.image = null;
-    image = null;
   }
 </script>
 
 {#if question.image !== null}
   <div class="wrapper">
     <!-- Actual preview image may not be immediately available -->
-    {#if image !== null}
-      <img
-        class="image"
-        data-fit={question.image.fit}
-        src={image}
-        alt="Question Preview"
-      />
-    {/if}
+    <QuPreviewImage uuid={question.image.uuid} fit={question.image.fit} />
     <button class="overlay" on:click={removeImage}>Click to remove</button>
     <button
       class="btn btn--icon btn--icon-only settings"
@@ -102,39 +84,6 @@
   @media screen and (max-width: 64rem) {
     .wrapper {
       height: 50vh;
-    }
-  }
-
-  .image {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    aspect-ratio: auto;
-    z-index: 0;
-
-    // Fit for width
-    &[data-fit="Width"] {
-      width: 100%;
-    }
-
-    // Fit for height
-    &[data-fit="Height"] {
-      height: 100%;
-    }
-
-    // Fit for containing whole image
-    &[data-fit="Contain"] {
-      height: 100%;
-      width: 100%;
-      object-fit: contain;
-    }
-
-    // Fit for covering available space
-    &[data-fit="Cover"] {
-      height: 100%;
-      width: 100%;
-      object-fit: cover;
     }
   }
 

@@ -1,31 +1,18 @@
 <script lang="ts">
-  import { flip } from "svelte/animate";
-
-  import {
-    dndzone,
-    type DndEvent,
-    SHADOW_ITEM_MARKER_PROPERTY_NAME
-  } from "svelte-dnd-action";
-
   import {
     ClientMessage,
     errorText,
     ServerError,
-    type Question,
     QuestionType
   } from "$api/models";
   import * as socket from "$api/socket";
   import { createHttp } from "$api/http";
-  import * as constants from "$lib/constants";
 
-  import QuestionListItem from "$lib/components/editor/QuestionListItem.svelte";
   import FloatingLoader from "$components/FloatingLoader.svelte";
   import Import from "$components/icons/Import.svelte";
   import Back from "$components/icons/Back.svelte";
   import Play from "$components/icons/Play.svelte";
   import Export from "$components/icons/Export.svelte";
-  import Add from "$components/icons/Add.svelte";
-  import Shuffle from "$components/icons/Shuffle.svelte";
 
   import { loadQuizBlob, createQuizBlob } from "$lib/utils/format";
   import { acceptUpload, startDownload } from "$lib/utils/file";
@@ -35,9 +22,7 @@
   import { errorDialog } from "$stores/dialogStore";
   import {
     createData,
-    shuffleQuestions,
     type CreateData,
-    addQuestion,
     setCreateData,
     activeQuestion
   } from "$stores/createStore";
@@ -45,10 +30,12 @@
   import Cog from "$lib/components/icons/Cog.svelte";
   import Settings from "$lib/components/editor/Settings.svelte";
   import QuestionEditor from "../components/editor/QuestionEditor.svelte";
+  import QuestionList from "$lib/components/editor/QuestionList.svelte";
 
   let loading: boolean = false;
   let loadingState: string = "";
   let progress: Tweened<number> = tweened(0);
+  let settings: boolean = false;
 
   async function doExport() {
     const data: CreateData = $createData;
@@ -192,26 +179,6 @@
       })
       .finally(() => (loading = false));
   }
-
-  function handleDndConsider(e: CustomEvent<DndEvent<Question>>) {
-    $createData.questions = e.detail.items;
-  }
-
-  function handleDndFinalize(e: CustomEvent<DndEvent<Question>>) {
-    $createData.questions = e.detail.items;
-  }
-
-  function onClickQuestion(question: Question) {
-    activeQuestion.set(question);
-  }
-
-  function onKeyQuestion(event: KeyboardEvent, question: Question) {
-    if (event.key === "Return" || event.key == "Enter") {
-      activeQuestion.set(question);
-    }
-  }
-
-  let settings: boolean = false;
 </script>
 
 {#if loading}
@@ -249,46 +216,7 @@
   </header>
 
   <div class="wrapper">
-    <div class="list">
-      <button
-        on:click={shuffleQuestions}
-        disabled={$createData.questions.length <= 1}
-        class="btn btn--icon"
-      >
-        <Shuffle />
-        Shuffle
-      </button>
-      <section
-        class="questions"
-        use:dndzone={{
-          items: $createData.questions,
-          flipDurationMs: 200,
-          dropTargetStyle: {}
-        }}
-        on:consider={handleDndConsider}
-        on:finalize={handleDndFinalize}
-      >
-        {#each $createData.questions as question, index (question.id)}
-          <div
-            class="qw"
-            animate:flip={{ duration: 200 }}
-            class:qw--active={$activeQuestion !== null &&
-              $activeQuestion.id === question.id}
-            on:click={() => onClickQuestion(question)}
-            on:keydown={(event) => onKeyQuestion(event, question)}
-          >
-            <QuestionListItem {question} {index} />
-          </div>
-        {/each}
-      </section>
-      <button
-        on:click={addQuestion}
-        disabled={$createData.questions.length >= constants.MAX_QUESTIONS}
-        class="btn add btn--icon-only"
-      >
-        <Add />
-      </button>
-    </div>
+    <QuestionList />
     <div class="editor">
       {#if $activeQuestion !== null}
         <QuestionEditor bind:question={$activeQuestion} />
@@ -304,23 +232,6 @@
 
 <style lang="scss">
   @import "../../assets/scheme.scss";
-  .qw {
-    border-radius: 0.5rem;
-    position: relative;
-
-    &:hover {
-      outline: 2px solid #666;
-    }
-
-    &--active,
-    &--active:hover {
-      outline: 2px solid $primary;
-    }
-
-    &:focus {
-      outline: 2px solid #fff;
-    }
-  }
 
   .editor__none {
     display: flex;
@@ -359,28 +270,6 @@
     gap: 1rem;
   }
 
-  .list {
-    display: flex;
-    flex-flow: column;
-    gap: 1rem;
-
-    min-width: 14rem;
-  }
-
-  .questions {
-    position: relative;
-    padding: 1rem;
-    overflow: auto;
-    flex: auto;
-    border: 0.1rem solid $surface;
-    border-radius: 0.25rem;
-
-    display: flex;
-    gap: 1rem;
-    flex-flow: column;
-    list-style: none;
-  }
-
   .header {
     display: flex;
     flex-wrap: wrap;
@@ -388,30 +277,14 @@
   }
 
   @media screen and (max-width: 64rem) {
-    .list {
-      flex-flow: row;
-      width: auto;
-    }
-
     .wrapper {
       flex-flow: column-reverse;
-    }
-
-    .questions {
-      flex-flow: row;
     }
   }
 
   @media screen and (max-width: 64rem), (max-height: 48rem) {
     .editor {
       display: block;
-    }
-  }
-
-  @media screen and (max-width: 48rem), (max-height: 48rem) {
-    .questions {
-      padding: 0;
-      align-items: center;
     }
   }
 </style>
