@@ -1,6 +1,6 @@
 [package]
 name = "quizler"
-version = "0.1.0-alpha2"
+version = "0.1.0-alpha3"
 edition = "2021"
 description = "Offline quiz game"
 license = "MIT"
