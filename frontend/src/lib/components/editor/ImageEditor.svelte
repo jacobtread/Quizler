@@ -99,6 +99,7 @@
     font-size: 1rem;
     background-color: transparent;
     border: none;
+    border-radius: 0.5rem;
   }
 
   .overlay {
@@ -113,8 +114,10 @@
     background-color: rgba($color: #000000, $alpha: 0.7);
     border: none;
     opacity: 0;
+    border-radius: 0.5rem;
 
-    &:hover {
+    &:hover,
+    &:focus {
       opacity: 1;
     }
   }
