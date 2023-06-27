@@ -26,17 +26,15 @@
     ScoreType,
     removeReasonText,
     type GameSummary,
-    RemoveReason
+    RemoveReason,
+    ClientMessage
   } from "$api/models";
 
   import * as socket from "$api/socket";
-  import { setReady } from "$api/actions";
   import { preloadImage } from "$api/http";
 
   import { errorDialog } from "$stores/dialogStore";
   import { setHome } from "$stores/state";
-
-  import Loading from "$pages/Loading.svelte";
 
   import AnsweredView from "$pages/game/AnsweredView.svelte";
   import FinishedView from "$pages/game/FinishedView.svelte";
@@ -45,6 +43,7 @@
   import ScoreView from "$pages/game/ScoreView.svelte";
   import Waiting from "$pages/game/Waiting.svelte";
   import Starting from "$pages/game/Starting.svelte";
+  import Loading from "$pages/Loading.svelte";
 
   import { onMount } from "svelte";
 
@@ -149,9 +148,12 @@
     }
 
     // Update the ready state
-    await setReady();
-
-    console.debug("Server acknowledged ready state");
+    try {
+      await socket.send({ ty: ClientMessage.Ready });
+      console.debug("Server acknowledged ready state");
+    } catch (e) {
+      console.error("Error while attempting to ready", e);
+    }
   });
 
   socket.setHandler(ServerEvent.Scores, (msg) => {

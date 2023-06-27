@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { acceptUploadMany } from "$lib/utils/file";
   import { confirmDialog } from "$stores/dialogStore";
   import {
     imageStore,
@@ -10,10 +9,11 @@
     consumeSelectImage,
     imagePreviewStore
   } from "$stores/imageStore";
+  import QuPreviewImage from "$components/editor/QuPreviewImage.svelte";
   import Import from "$components/icons/Import.svelte";
+  import { acceptUploadMany } from "$lib/utils/file";
   import { formatBytes } from "$lib/utils/utils";
-  import QuPreviewImage from "./editor/QuPreviewImage.svelte";
-  import { ImageFit } from "$lib/api/models";
+  import { ImageFit } from "$api/models";
 
   let uploading: FileUpload[] = [];
 

@@ -2,9 +2,9 @@
 <script lang="ts">
   import { slide } from "svelte/transition";
   import { doHostAction } from "$api/actions";
+  import { GameState, HostAction } from "$api/models";
 
   import type { GameData } from "$pages/Game.svelte";
-  import { GameState, HostAction } from "$lib/api/models";
   import { formatTime } from "$lib/utils/utils";
 
   export let gameState: GameState;

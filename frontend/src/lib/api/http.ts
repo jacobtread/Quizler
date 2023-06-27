@@ -1,6 +1,5 @@
-import type { CreateData } from "$lib/api/models";
-import type { StoredImage } from "$lib/stores/imageStore";
-import type { CreatedResponse, Question } from "./models";
+import type { CreateData, CreatedResponse, Question } from "$api/models";
+import type { StoredImage } from "$stores/imageStore";
 
 /**
  * Obtains a server url for the provided path.

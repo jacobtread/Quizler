@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tweened, type Tweened } from "svelte/motion";
   import {
     ClientMessage,
     errorText,
@@ -8,31 +9,30 @@
     type CreateData,
     type CreateDataRuntime
   } from "$api/models";
-  import * as socket from "$api/socket";
   import { createHttp } from "$api/http";
+  import * as socket from "$api/socket";
 
+  import QuestionEditor from "$components/editor/QuestionEditor.svelte";
+  import QuestionList from "$components/editor/QuestionList.svelte";
   import FloatingLoader from "$components/FloatingLoader.svelte";
+  import Settings from "$components/editor/Settings.svelte";
   import Import from "$components/icons/Import.svelte";
   import Back from "$components/icons/Back.svelte";
   import Play from "$components/icons/Play.svelte";
   import Export from "$components/icons/Export.svelte";
+  import Cog from "$components/icons/Cog.svelte";
 
   import { loadQuizBlob, createQuizBlob } from "$lib/utils/format";
   import { acceptUpload, startDownload } from "$lib/utils/file";
 
-  import { setHome, setGame } from "$stores/state";
   import { imageStore, type StoredImage } from "$stores/imageStore";
+  import { setHome, setGame } from "$stores/state";
   import { errorDialog } from "$stores/dialogStore";
   import {
     createData,
     setCreateData,
     activeQuestion
   } from "$stores/createStore";
-  import { tweened, type Tweened } from "svelte/motion";
-  import Cog from "$lib/components/icons/Cog.svelte";
-  import Settings from "$lib/components/editor/Settings.svelte";
-  import QuestionEditor from "../components/editor/QuestionEditor.svelte";
-  import QuestionList from "$lib/components/editor/QuestionList.svelte";
 
   let loading: boolean = false;
   let loadingState: string = "";
@@ -175,16 +175,6 @@
   }
 </script>
 
-{#if loading}
-  {#if loadingState === "Uploading"}
-    <FloatingLoader text={`Uploading ${$progress.toFixed(0)}%`} />
-  {:else}
-    <FloatingLoader text="Connecting..." />
-  {/if}
-{/if}
-
-<Settings bind:visible={settings} />
-
 <main class="main">
   <header class="header btn-row btn-row--fill">
     <button on:click={setHome} class="btn btn--icon">
@@ -225,6 +215,16 @@
     </div>
   </div>
 </main>
+
+<Settings bind:visible={settings} />
+
+{#if loading}
+  {#if loadingState === "Uploading"}
+    <FloatingLoader text={`Uploading ${$progress.toFixed(0)}%`} />
+  {:else}
+    <FloatingLoader text="Connecting..." />
+  {/if}
+{/if}
 
 <style lang="scss">
   @import "../../assets/scheme.scss";

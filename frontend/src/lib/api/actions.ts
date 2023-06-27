@@ -1,8 +1,8 @@
-import { ClientMessage, HostAction } from "$lib/api/models";
-import * as socket from "$lib/api/socket";
-import type { GameData } from "$lib/pages/Game.svelte";
-import { confirmDialog } from "$lib/stores/dialogStore";
-import { setHome } from "$lib/stores/state";
+import { ClientMessage, HostAction } from "$api/models";
+import * as socket from "$api/socket";
+import type { GameData } from "$pages/Game.svelte";
+import { confirmDialog } from "$stores/dialogStore";
+import { setHome } from "$stores/state";
 
 export async function doKick(id: number) {
   try {
@@ -23,14 +23,6 @@ export async function doHostAction(action: HostAction): Promise<void> {
     });
   } catch (e) {
     console.error("Error while attempting host action", action, e);
-  }
-}
-
-export async function setReady() {
-  try {
-    await socket.send({ ty: ClientMessage.Ready });
-  } catch (e) {
-    console.error("Error while attempting to ready", e);
   }
 }
 

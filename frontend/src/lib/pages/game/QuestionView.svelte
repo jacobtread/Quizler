@@ -8,9 +8,9 @@
     HostAction
   } from "$api/models";
   import type { GameData } from "$pages/Game.svelte";
-  import { doHostAction } from "$lib/api/actions";
+  import { doHostAction } from "$api/actions";
   import { formatTime } from "$lib/utils/utils";
-  import QuPreviewImage from "$lib/components/editor/QuPreviewImage.svelte";
+  import QuPreviewImage from "$components/editor/QuPreviewImage.svelte";
 
   export let gameData: GameData;
   export let timeMs: number;

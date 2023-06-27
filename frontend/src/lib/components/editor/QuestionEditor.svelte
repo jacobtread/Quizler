@@ -5,18 +5,19 @@
 
   import * as constants from "$lib/constants";
 
-  import ImageEditor from "$components/editor/ImageEditor.svelte";
-  import Cog from "$lib/components/icons/Cog.svelte";
   import { shuffleArray } from "$lib/utils/utils";
-  import Delete from "$components/icons/Delete.svelte";
 
   import QuestionSettings from "$components/editor/QuestionSettings.svelte";
   import QuestionTypeSelect from "$components/editor/QuestionTypeSelect.svelte";
   import EditorAnswers from "$components/editor/EditorAnswers.svelte";
+  import ImageEditor from "$components/editor/ImageEditor.svelte";
   import Shuffle from "$components/icons/Shuffle.svelte";
+  import Delete from "$components/icons/Delete.svelte";
   import Swap from "$components/icons/Swap.svelte";
-  import { removeQuestion } from "$lib/stores/createStore";
-  import { confirmDialog } from "$lib/stores/dialogStore";
+  import Cog from "$components/icons/Cog.svelte";
+
+  import { removeQuestion } from "$stores/createStore";
+  import { confirmDialog } from "$stores/dialogStore";
 
   export let question: Question;
   let settings: boolean = false;

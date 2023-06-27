@@ -1,12 +1,13 @@
 <script lang="ts">
   import { AppStateType, appState } from "$stores/state";
-  import GlobalDialog from "$components/GlobalDialog.svelte";
   import { socketReady } from "$api/socket";
+
+  import GlobalDialog from "$components/GlobalDialog.svelte";
   import Loading from "$pages/Loading.svelte";
   import Connect from "$pages/Connect.svelte";
-  import Game from "$pages/Game.svelte";
   import Create from "$pages/Create.svelte";
   import Home from "$pages/Home.svelte";
+  import Game from "$pages/Game.svelte";
 </script>
 
 {#if $socketReady}

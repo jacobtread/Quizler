@@ -1,10 +1,11 @@
 <script lang="ts">
-  import { ImageFit, imageFitText, type Question } from "$lib/api/models";
-  import { selectImage } from "$lib/stores/imageStore";
+  import { ImageFit, imageFitText, type Question } from "$api/models";
+  import { selectImage } from "$stores/imageStore";
+
+  import FloatingModal, { ModelSize } from "$components/FloatingModal.svelte";
+  import QuPreviewImage from "$components/editor/QuPreviewImage.svelte";
   import ImageStorage from "$components/ImageStorage.svelte";
-  import Cog from "../icons/Cog.svelte";
-  import FloatingModal, { ModelSize } from "../FloatingModal.svelte";
-  import QuPreviewImage from "./QuPreviewImage.svelte";
+  import Cog from "$components/icons/Cog.svelte";
 
   export let question: Question;
 

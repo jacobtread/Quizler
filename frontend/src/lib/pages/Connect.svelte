@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { afterUpdate } from "svelte";
   import { slide } from "svelte/transition";
 
   import {
@@ -16,7 +17,6 @@
 
   import { setGame, setHome } from "$stores/state";
   import { errorDialog } from "$stores/dialogStore";
-  import { afterUpdate } from "svelte";
 
   const enum State {
     Connect,
