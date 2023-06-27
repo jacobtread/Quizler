@@ -1,18 +1,20 @@
-import { defaultCreateData, defaultQuestion } from "$lib/constants";
-import { NameFiltering, QuestionType, type Question } from "$api/models";
+import {
+  defaultAnswers,
+  defaultCreateData,
+  defaultQuestion
+} from "$lib/constants";
+import {
+  QuestionType,
+  type Question,
+  type CreateDataRuntime
+} from "$api/models";
 import { arraySwap, randomRange } from "$lib/utils/utils";
 import { writable, type Writable } from "svelte/store";
 
-export interface CreateData {
-  name: string;
-  text: string;
-  max_players: number;
-  filtering: NameFiltering;
-  questions: Question[];
-}
-
 // Store for the current creation data
-export const createData: Writable<CreateData> = writable(defaultCreateData());
+export const createData: Writable<CreateDataRuntime> = writable(
+  defaultCreateData()
+);
 export const activeQuestion: Writable<Question | null> = writable(null);
 
 activeQuestion.subscribe(() => {
@@ -23,7 +25,7 @@ export function forceUpdateCreate() {
   createData.update((store) => store);
 }
 
-export function setCreateData(data: CreateData) {
+export function setCreateData(data: CreateDataRuntime) {
   createData.set(data);
 
   if (data.questions.length > 0) {
@@ -150,7 +152,7 @@ export function changeQuestionType(
       ) {
         base.answers = question.answers;
       } else {
-        base.answers = [];
+        base.answers = defaultAnswers();
       }
 
       break;

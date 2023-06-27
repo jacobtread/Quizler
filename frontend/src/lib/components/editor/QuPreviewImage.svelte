@@ -12,7 +12,7 @@
   export let preloaded: HTMLImageElement | null = null;
 
   // Image fitting
-  export let fit: ImageFit | string;
+  export let fit: ImageFit;
 
   // Handling for images that need to be loaded from the preview store
   $: if (uuid !== null) {

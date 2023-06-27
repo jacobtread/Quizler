@@ -9,7 +9,12 @@
   <div class="floating-wrapper" transition:fade={{ duration: 200 }}>
     <div class="dialog" transition:slide={{ duration: 200 }}>
       <h1 class="dialog__title">{$dialogStore.title}</h1>
-      <p class="dialog__msg">{$dialogStore.message}</p>
+
+      <div class="dialog__msgs">
+        {#each $dialogStore.message.split("\n") as line}
+          <p class="dialog__msg">{line}</p>
+        {/each}
+      </div>
 
       <div class="btn-row btn-row--fill">
         {#if $dialogStore.ty === DialogType.Error}
@@ -49,6 +54,15 @@
     }
 
     &__msg {
+      margin-bottom: 0.25rem;
+    }
+
+    &__msgs {
+      display: flex;
+      flex-flow: column;
+      // gap: 0.25rem?;
+      max-height: 24rem;
+      overflow: auto;
       margin-bottom: 1rem;
     }
   }

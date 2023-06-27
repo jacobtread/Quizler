@@ -1,3 +1,13 @@
+import {
+  MAX_ANSWERS,
+  MAX_ANSWER_LENGTH,
+  MAX_DESCRIPTION_LENGTH,
+  MAX_MAX_PLAYERS,
+  MAX_QUESTIONS,
+  MAX_QUESTION_LENGTH,
+  MAX_TITLE_LENGTH,
+  MIN_MAX_PLAYERS
+} from "$lib/constants";
 import type { SHADOW_ITEM_MARKER_PROPERTY_NAME } from "svelte-dnd-action";
 import { z } from "zod";
 
@@ -139,10 +149,17 @@ export enum QuestionType {
   Typer = "Typer"
 }
 
+// Piece of text representing an answer
+const answerText = z
+  .string()
+  .trim()
+  .nonempty("cannot be empty")
+  .max(MAX_ANSWER_LENGTH, `cannot be longer than ${MAX_ANSWER_LENGTH}`);
+
 // Schema for question answers
 const answerValueSchema = z.object({
   id: z.number(),
-  value: z.string(),
+  value: answerText,
   correct: z.boolean()
 });
 
@@ -166,11 +183,15 @@ export const imageFitText: Record<ImageFit, string> = {
 // Schema for questions
 export const questionSchema = z
   .object({
-    text: z.string(),
+    text: z
+      .string()
+      .trim()
+      .nonempty("Question cannot be empty")
+      .max(MAX_QUESTION_LENGTH),
     image: z
       .object({
         uuid: z.string().uuid(),
-        fit: z.enum(["Contain", "Cover", "Width", "Height"])
+        fit: z.nativeEnum(ImageFit)
       })
       .nullable(),
     answer_time: z.number(),
@@ -186,12 +207,24 @@ export const questionSchema = z
       // Single choice questions
       z.object({
         ty: z.literal(QuestionType.Single),
-        answers: z.array(answerValueSchema)
+        answers: z
+          .array(answerValueSchema)
+          .min(1, "Must provide atleast one answer")
+          .max(
+            MAX_ANSWERS,
+            `Too many answers maximum allowed is ${MAX_ANSWERS}`
+          )
       }),
       // Multiple choice questions
       z.object({
         ty: z.literal(QuestionType.Multiple),
-        answers: z.array(answerValueSchema),
+        answers: z
+          .array(answerValueSchema)
+          .min(1, "Must provide atleast one answer")
+          .max(
+            MAX_ANSWERS,
+            `Too many answers maximum allowed is ${MAX_ANSWERS}`
+          ),
         correct_answers: z.number()
       }),
       // True / False choice questions
@@ -203,7 +236,13 @@ export const questionSchema = z
       // Typing question
       z.object({
         ty: z.literal(QuestionType.Typer),
-        answers: z.array(z.string()),
+        answers: z
+          .array(answerText)
+          .min(1, "Must provide atleast one answer")
+          .max(
+            MAX_ANSWERS,
+            `Too many answers maximum allowed is ${MAX_ANSWERS}`
+          ),
         ignore_case: z.boolean()
       })
     ])
@@ -225,6 +264,7 @@ type QuestionRuntime = {
 
 // Question type inferred from its schema
 export type Question = z.infer<typeof questionSchema> & QuestionRuntime;
+
 // Different answer types
 export const enum AnswerType {
   Single = "Single",
@@ -257,6 +297,21 @@ export type Score =
       value: number;
     }
   | { ty: ScoreType.Incorrect };
+
+export const createDataSchema = z.object({
+  name: z.string().trim().max(MAX_TITLE_LENGTH),
+  text: z.string().trim().max(MAX_DESCRIPTION_LENGTH),
+  max_players: z.number().min(MIN_MAX_PLAYERS).max(MAX_MAX_PLAYERS),
+  filtering: z.nativeEnum(NameFiltering),
+  questions: z.array(questionSchema).min(1).max(MAX_QUESTIONS)
+});
+
+export type CreateData = z.infer<typeof createDataSchema>;
+
+export type CreateDataRuntime = {
+  // Replace questions typing to include the runtime data
+  questions: Question[];
+} & CreateData;
 
 // Client message types
 export const enum ClientMessage {

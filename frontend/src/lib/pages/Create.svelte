@@ -3,7 +3,10 @@
     ClientMessage,
     errorText,
     ServerError,
-    QuestionType
+    QuestionType,
+    createDataSchema,
+    type CreateData,
+    type CreateDataRuntime
   } from "$api/models";
   import * as socket from "$api/socket";
   import { createHttp } from "$api/http";
@@ -22,7 +25,6 @@
   import { errorDialog } from "$stores/dialogStore";
   import {
     createData,
-    type CreateData,
     setCreateData,
     activeQuestion
   } from "$stores/createStore";
@@ -38,7 +40,8 @@
   let settings: boolean = false;
 
   async function doExport() {
-    const data: CreateData = $createData;
+    const data: CreateData | null = getCreateData();
+    if (data === null) return;
     const images: StoredImage[] = $imageStore;
 
     console.debug("Exporting quiz to file", data.name);
@@ -58,7 +61,7 @@
     if (file === null) return;
 
     try {
-      const imported: CreateData = await loadQuizBlob(file);
+      const imported: CreateDataRuntime = await loadQuizBlob(file);
 
       // Update the store
       setCreateData(imported);
@@ -78,69 +81,47 @@
     }
   }
 
-  function validate(data: CreateData): boolean {
-    // TODO: Visual validation failure hints instead of dialog
-    for (let i = 0; i < data.questions.length; i++) {
-      const question = data.questions[i];
+  /**
+   * Creates a copy of the current create data returns a
+   * validated copy or null if validation failed
+   */
+  function getCreateData(): CreateData | null {
+    let output = createDataSchema.safeParse($createData);
 
-      // Trim whitespace from the text
-      question.text = question.text.trim();
+    if (!output.success) {
+      let errors = "";
+      let currentIndex = -1;
 
-      if (question.text.length < 1) {
-        errorDialog(
-          "Empty quesiton",
-          `Question ${i + 1} text must not be empty`
-        );
-        return false;
-      }
+      output.error.issues.forEach((issue) => {
+        const message = issue.message;
+        const path = issue.path;
 
-      if (
-        question.ty === QuestionType.Single ||
-        question.ty === QuestionType.Multiple
-      ) {
-        if (question.answers.length === 0) {
-          errorDialog(
-            "Missing answers",
-            `Question ${i + 1} doesn't have any answers`
-          );
-          return false;
-        }
+        let leading = "";
 
-        for (let j = 0; j < question.answers.length; j++) {
-          const answer = question.answers[j];
-          answer.value = answer.value.trim();
+        if (path.length > 1 && path[0] === "questions") {
+          const questionIndex = path[1] as number;
 
-          if (answer.value.length < 1) {
-            errorDialog(
-              "Empty answer",
-              `Answer number ${j + 1} of question ${i + 1} must not be blank`
-            );
-            return false;
+          if (questionIndex != currentIndex) {
+            errors += "Question " + (questionIndex + 1) + ":\n";
+            currentIndex = questionIndex;
+          }
+
+          if (path.length > 3 && path[2] === "answers") {
+            const questionIndex = path[3] as number;
+            leading += "* Answer " + (questionIndex + 1) + " ";
           }
         }
-      } else if (question.ty === QuestionType.Typer) {
-        if (question.answers.length === 0) {
-          errorDialog(
-            "Missing answers",
-            `Question ${i + 1} doesn't have any answers`
-          );
-          return false;
-        }
 
-        // Trim answers
-        for (let j = 0; j < question.answers.length; j++) {
-          const trimmed = question.answers[j].trim();
-          question.answers[j] = trimmed;
-          if (trimmed.length < 1) {
-            errorDialog(
-              "Empty answer",
-              `Answer number ${j + 1} of question ${i + 1} must not be blank`
-            );
-            return false;
-          }
-        }
-      }
+        errors += `${leading} ${message} \n`;
+      });
 
+      errorDialog(`Quiz has error(s)`, errors);
+
+      return null;
+    }
+
+    // Ensure multiple choice questions have valid correct_answers field
+    for (const question of output.data.questions) {
       // Ensure the correct_answers field is correct
       if (question.ty === QuestionType.Multiple) {
         let correct = 0;
@@ -151,21 +132,16 @@
       }
     }
 
-    return true;
+    return output.data;
   }
 
   function play() {
-    const data: CreateData = $createData;
+    const data: CreateData | null = getCreateData();
 
-    if (!validate(data)) return;
+    if (data === null) return;
 
     loading = true;
     loadingState = "Uploading";
-
-    // Trim name whitespace
-    data.name = data.name.trim();
-    // Trim text whitespace
-    data.text = data.text.trim();
 
     const images: StoredImage[] = $imageStore;
 

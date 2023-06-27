@@ -1,6 +1,5 @@
 <script lang="ts">
   import { QuestionType, type Question } from "$api/models";
-  import { activeQuestion } from "$lib/stores/createStore";
 
   import { flip } from "svelte/animate";
   import Image from "../icons/Image.svelte";
@@ -11,11 +10,7 @@
   export let index: number;
 </script>
 
-<div
-  class="question"
-  class:question--active={$activeQuestion !== null &&
-    $activeQuestion.id === question.id}
->
+<div class="question">
   <div class="image-wrapper">
     {#if question.image !== null}
       <QuPreviewImage uuid={question.image.uuid} fit={question.image.fit} />

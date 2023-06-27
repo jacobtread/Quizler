@@ -5,28 +5,28 @@ import {
   loadImagePreview,
   type StoredImage
 } from "$stores/imageStore";
-import type { CreateData } from "$stores/createStore";
-import { questionSchema, NameFiltering, type Question } from "$api/models";
+import {
+  type Question,
+  createDataSchema,
+  type CreateData,
+  type CreateDataRuntime
+} from "$api/models";
 import { z } from "zod";
 import { v4 } from "uuid";
 
-// Schema used for parsing and validating the file format
-const fileFormatSchema = z.object({
-  name: z.string(),
-  text: z.string(),
-  max_players: z.number(),
-  filtering: z.string(),
-  questions: z.array(questionSchema).min(1),
-  images: z.array(
-    z.object({
-      uuid: z.string().uuid(),
-      name: z.string(),
-      size: z.number(),
-      type: z.string(),
-      data: z.array(z.number())
-    })
-  )
-});
+const fileFormatSchema = createDataSchema.and(
+  z.object({
+    images: z.array(
+      z.object({
+        uuid: z.string().uuid(),
+        name: z.string(),
+        size: z.number(),
+        type: z.string(),
+        data: z.array(z.number())
+      })
+    )
+  })
+);
 
 type QuizFormat = z.infer<typeof fileFormatSchema>;
 type SerializedImage = QuizFormat["images"][0];
@@ -85,7 +85,7 @@ export async function createQuizBlob(
  * @throws {ZodError} If the validation failed
  * @returns The loaded quiz data
  */
-export async function loadQuizBlob(file: Blob): Promise<CreateData> {
+export async function loadQuizBlob(file: Blob): Promise<CreateDataRuntime> {
   const reader = new FileReader();
 
   // Await the reading process
@@ -131,7 +131,7 @@ export async function loadQuizBlob(file: Blob): Promise<CreateData> {
     name: obj.name,
     text: obj.text,
     max_players: obj.max_players,
-    filtering: obj.filtering as NameFiltering,
+    filtering: obj.filtering,
     questions: obj.questions as Question[]
   };
 }

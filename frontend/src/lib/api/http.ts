@@ -1,4 +1,4 @@
-import type { CreateData } from "$lib/stores/createStore";
+import type { CreateData } from "$lib/api/models";
 import type { StoredImage } from "$lib/stores/imageStore";
 import type { CreatedResponse, Question } from "./models";
 
@@ -111,7 +111,7 @@ function createUploadForm(config: CreateData, images: StoredImage[]): FormData {
   // Append the images to the form
   for (const image of images) {
     // Images require atleast 1 reference to be included
-    const usage: Question | undefined = config.questions.find(
+    const usage = config.questions.find(
       (question) => question.image?.uuid === image.uuid
     );
     if (usage === undefined) continue;

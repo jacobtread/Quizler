@@ -1,5 +1,5 @@
 import { QuestionType, type Question, NameFiltering } from "$api/models";
-import type { CreateData } from "$stores/createStore";
+import type { AnswerValue, CreateDataRuntime } from "$lib/api/models";
 import { v4 } from "uuid";
 
 export const TOKEN_LENGTH: number = 5;
@@ -18,6 +18,7 @@ const DEFAULT_MAX_SCORE: number = 100;
 
 export const MAX_ANSWER_LENGTH: number = 150;
 
+export const MIN_ANSWERS: number = 1;
 export const MAX_ANSWERS: number = 8;
 
 export const MAX_QUESTIONS: number = 50;
@@ -48,7 +49,7 @@ export const MAX_IMAGE_BYTES: number = 1024 * 1024 * 15; /* 15mb */
  *
  * @returns The create data object
  */
-export function defaultCreateData(): CreateData {
+export function defaultCreateData(): CreateDataRuntime {
   return {
     name: DEFAULT_NAME,
     text: DEFAULT_DESCRIPTION,
@@ -76,11 +77,21 @@ export function defaultQuestion(): Question {
       max_score: DEFAULT_MAX_SCORE,
       bonus_score: DEFAULT_BONUS_SCORE
     },
-    answers: [
-      { id: 0, value: "Example A", correct: true },
-      { id: 1, value: "Example B", correct: false },
-      { id: 2, value: "Example C", correct: false },
-      { id: 3, value: "Example D", correct: false }
-    ]
+    answers: defaultAnswers()
   };
+}
+
+/**
+ * Creates a new array of default answers for a
+ * question to use
+ *
+ * @returns The array of answers
+ */
+export function defaultAnswers(): AnswerValue[] {
+  return [
+    { id: 0, value: "Example A", correct: true },
+    { id: 1, value: "Example B", correct: false },
+    { id: 2, value: "Example C", correct: false },
+    { id: 3, value: "Example D", correct: false }
+  ];
 }
