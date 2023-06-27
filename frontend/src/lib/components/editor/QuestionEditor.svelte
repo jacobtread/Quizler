@@ -61,20 +61,20 @@
       disabled={question.answers.length <= 1}
     >
       <Shuffle />
-      Shuffle Answers
+      <span>Shuffle Answers</span>
     </button>
   {/if}
 
   <button class="btn btn--icon qt" on:click={() => (type = true)}>
     <Swap />
-    Change Type
+    <span>Change Type</span>
 
     <span class="qt__type">{question.ty}</span>
   </button>
 
   <button on:click={remove} class="btn btn--icon">
     <Delete />
-    Delete
+    <span>Delete</span>
   </button>
 </div>
 
@@ -116,8 +116,7 @@
     resize: vertical;
     margin-bottom: 1rem;
 
-    height: auto;
-    min-height: 2.5rem;
+    min-height: 5rem;
     max-height: 6rem;
 
     padding: 0.5rem;
@@ -134,6 +133,12 @@
       .btn {
         flex: auto;
       }
+    }
+  }
+
+  @media screen and (max-width: 48rem) {
+    .btn > span {
+      display: none;
     }
   }
 </style>

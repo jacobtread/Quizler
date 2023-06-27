@@ -283,4 +283,10 @@
       flex-flow: column-reverse;
     }
   }
+
+  @media screen and (max-width: 48rem) {
+    .btn > span {
+      display: none;
+    }
+  }
 </style>
