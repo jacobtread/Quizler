@@ -69,8 +69,8 @@
 
   .settings {
     position: absolute;
-    right: 0;
-    top: 0;
+    right: 0.5rem;
+    top: 0.5rem;
   }
 
   .wrapper {
@@ -79,6 +79,9 @@
     overflow: hidden;
     position: relative;
     margin-bottom: 1rem;
+
+    border: 1px solid $surfaceLight;
+    border-radius: 0.5rem;
   }
 
   @media screen and (max-width: 64rem) {
