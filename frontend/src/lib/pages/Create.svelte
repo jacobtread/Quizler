@@ -98,6 +98,14 @@
         question.ty === QuestionType.Single ||
         question.ty === QuestionType.Multiple
       ) {
+        if (question.answers.length === 0) {
+          errorDialog(
+            "Missing answers",
+            `Question ${i + 1} doesn't have any answers`
+          );
+          return false;
+        }
+
         for (let j = 0; j < question.answers.length; j++) {
           const answer = question.answers[j];
           answer.value = answer.value.trim();
@@ -111,6 +119,14 @@
           }
         }
       } else if (question.ty === QuestionType.Typer) {
+        if (question.answers.length === 0) {
+          errorDialog(
+            "Missing answers",
+            `Question ${i + 1} doesn't have any answers`
+          );
+          return false;
+        }
+
         // Trim answers
         for (let j = 0; j < question.answers.length; j++) {
           const trimmed = question.answers[j].trim();
