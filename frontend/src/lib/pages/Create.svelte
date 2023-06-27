@@ -267,6 +267,7 @@
     width: 100%;
     height: 100%;
     overflow: auto;
+
     display: flex;
     flex-flow: column;
   }
@@ -280,12 +281,6 @@
   @media screen and (max-width: 64rem) {
     .wrapper {
       flex-flow: column-reverse;
-    }
-  }
-
-  @media screen and (max-width: 64rem), (max-height: 48rem) {
-    .editor {
-      display: block;
     }
   }
 </style>

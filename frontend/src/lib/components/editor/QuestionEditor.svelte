@@ -116,6 +116,7 @@
     resize: vertical;
     margin-bottom: 1rem;
 
+    height: auto;
     min-height: 2.5rem;
     max-height: 6rem;
 

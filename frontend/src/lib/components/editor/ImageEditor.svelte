@@ -84,9 +84,10 @@
     border-radius: 0.5rem;
   }
 
-  @media screen and (max-width: 64rem) {
+  @media screen and (max-width: 64rem), (max-height: 48rem) {
     .wrapper {
       height: 50vh;
+      min-height: 20rem;
     }
   }
 

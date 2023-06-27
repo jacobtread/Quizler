@@ -132,10 +132,12 @@
     }
   }
 
-  @media screen and (max-width: 48rem), (max-height: 48rem) {
+  @media screen and (max-width: 64rem), (max-height: 48rem) {
     .questions {
-      padding: 0;
       align-items: center;
+      padding: 0;
+
+      border: none;
     }
   }
 </style>
