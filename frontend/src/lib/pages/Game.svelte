@@ -49,15 +49,13 @@
 
   export let gameData: GameData;
 
-  let players: PlayerData[] = [];
+  let players: PlayerData[] = gameData.host
+    ? []
+    : [{ id: gameData.id, name: gameData.name ?? "" }];
   let gameState: GameState = GameState.Lobby;
 
   // The current game summary
   let summary: GameSummary | null = null;
-
-  if (!gameData.host) {
-    players.push({ id: gameData.id, name: gameData.name ?? "" });
-  }
 
   let question: Question | null = null;
 
