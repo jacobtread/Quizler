@@ -128,12 +128,10 @@
 
     if (inputToken && document.activeElement !== inputToken) {
       inputToken.focus();
-      console.log("Focus called");
     }
 
     if (inputName && document.activeElement !== inputName) {
       inputName.focus();
-      console.log("Focus called");
     }
   });
 </script>
