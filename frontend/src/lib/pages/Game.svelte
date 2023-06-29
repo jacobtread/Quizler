@@ -45,8 +45,6 @@
   import Starting from "$pages/game/Starting.svelte";
   import Loading from "$pages/Loading.svelte";
 
-  import { onMount } from "svelte";
-
   export let gameData: GameData;
 
   let players: PlayerData[] = gameData.host
@@ -183,11 +181,6 @@
         errorDialog("Removed from game", reason);
       }
     }
-  });
-
-  onMount(() => {
-    // Attempt to make the browser fullscreen to make the app more visible
-    // if (!gameData.host) tryFullscreen();
   });
 </script>
 

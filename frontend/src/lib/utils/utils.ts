@@ -61,23 +61,6 @@ export function getNumberWithOrdinal(n: number): string {
 }
 
 /**
- * Attempts to put the browser into fullscren
- * mode for a better viewing experience
- */
-export function tryFullscreen() {
-  const documentElement = document.documentElement;
-  if (documentElement.requestFullscreen === undefined) return false;
-
-  if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen({
-      navigationUI: "hide"
-    });
-  }
-
-  return tryFullscreen;
-}
-
-/**
  * Randomly suffles the array. Ensures that atleast length/2
  * changes are made to the array
  *
