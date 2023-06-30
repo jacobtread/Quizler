@@ -70,21 +70,23 @@
   }
 
   function onUploadFailed(file: File, error: Error) {
-    uploading = uploading.map((value) => {
+    for (const value of uploading) {
       if (value.name === file.name) {
         value.error = error.message;
+        break;
       }
-      return value;
-    });
+    }
+    uploading = uploading;
   }
 
   function onProgress(name: string, progress: number) {
-    uploading = uploading.map((value) => {
+    for (const value of uploading) {
       if (value.name === name) {
         value.progress = progress;
+        break;
       }
-      return value;
-    });
+    }
+    uploading = uploading;
   }
 
   function onDelete(image: StoredImage) {
@@ -151,27 +153,28 @@
 
         {#each uploading as upload}
           <div class="file">
-            <p>{upload.name}</p>
+            <p class="file__name">{upload.name}</p>
+            <div class="image-wrapper">
+              <p class="file__progress">
+                Progress: {upload.progress.toFixed(0)}%
+              </p>
+            </div>
             {#if upload.error}
               <p class="error">{upload.error}</p>
-            {:else}
-              <p>Progress: {upload.progress.toFixed(0)}%</p>
             {/if}
           </div>
         {/each}
       </div>
 
       <div class="actions btn-row btn-row--fill">
-        <button on:click={clearSelectImage} class="btn btn--surface"
-          >Close</button
-        >
-        <button on:click={doUpload} class="btn btn--icon btn--surface">
+        <button on:click={clearSelectImage} class="btn">Close</button>
+        <button on:click={doUpload} class="btn btn--icon">
           <Import />
           Upload Images
         </button>
         <button
           on:click={doClear}
-          class="btn btn--surface"
+          class="btn"
           disabled={$imageStore.length === 0}>Delete All Images</button
         >
       </div>
@@ -204,7 +207,9 @@
   }
 
   .dialog {
-    background-color: $surface;
+    background-color: $appBackground;
+    border: 1px solid $surface;
+
     padding: 1rem;
     border-radius: 0.5rem;
     max-width: 48rem;
@@ -216,14 +221,14 @@
     display: grid;
 
     grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-auto-rows: min-content;
     gap: 0.5rem;
 
     padding: 0.5rem;
     border-radius: 0.25rem;
-    background-color: $surfaceLight;
+    background-color: $surface;
 
-    min-height: 30vh;
-    max-height: 60vh;
+    height: 60vh;
 
     overflow: auto;
     margin-bottom: 1rem;
@@ -243,17 +248,20 @@
     width: 100%;
     height: 80px;
     position: relative;
+    border: 1px solid $surface;
+    background-color: $surfaceLight;
   }
 
   .file {
-    border: 1px solid $surface;
-    // background-color: $surface;
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+    border: 1px solid $surfaceLight;
+    background-color: $appBackground;
+
     padding: 0.5rem;
     border-radius: 0.25rem;
 
     &__name {
       text-overflow: ellipsis;
+      white-space: nowrap;
       overflow: hidden;
       color: #ffffff;
       font-weight: bold;
@@ -264,6 +272,11 @@
       display: flex;
       flex-flow: column;
       gap: 0.5rem;
+    }
+
+    &__progress {
+      padding: 0.5rem;
+      text-align: center;
     }
   }
 

@@ -124,7 +124,7 @@
     background-color: $surface;
     border: none;
     padding: 1rem;
-    border: 2px solid $surfaceLight;
+    border: 1px solid $surfaceLight;
     border-radius: 0.25rem;
     transition: border-color 0.25s ease;
     cursor: pointer;

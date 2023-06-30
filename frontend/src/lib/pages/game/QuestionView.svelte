@@ -92,7 +92,7 @@
         {#each question.answers as answer, index}
           <button
             data-host={gameData.host}
-            class="answer btn btn--surface"
+            class="answer btn"
             disabled={gameData.host}
             on:click={() => answerSingle(index)}
           >
@@ -105,7 +105,7 @@
         {#each question.answers as answer, index}
           <button
             data-host={gameData.host}
-            class="answer btn btn--surface"
+            class="answer btn"
             class:answer--checked={isSelected(index)}
             disabled={gameData.host || (!isSelected(index) && canSelect())}
             on:click={() => select(index)}
@@ -116,7 +116,7 @@
       </div>
       {#if !gameData.host}
         <button
-          class="btn btn btn--surface submit"
+          class="btn btn submit"
           on:click={answerMultiple}
           disabled={answers.length < 1}
         >
@@ -127,7 +127,7 @@
       <div class="answers">
         <button
           data-host={gameData.host}
-          class="answer btn btn--surface"
+          class="answer btn"
           disabled={gameData.host}
           on:click={() => answerBool(true)}
         >
@@ -135,7 +135,7 @@
         </button>
         <button
           data-host={gameData.host}
-          class="answer btn btn--surface"
+          class="answer btn"
           disabled={gameData.host}
           on:click={() => answerBool(false)}
         >
@@ -145,7 +145,7 @@
     {:else if question.ty === QuestionType.Typer && !gameData.host}
       <input class="input" type="text" bind:value={typerAnswer} />
       <button
-        class="btn btn btn--surface submit"
+        class="btn submit"
         on:click={answerTyper}
         disabled={typerAnswer.length < 1}
       >
@@ -223,7 +223,8 @@
     margin-bottom: 0;
     display: flex;
     flex-flow: column;
-    background-color: $surface;
+    background-color: $appBackground;
+    border: 2px solid $surface;
     border-radius: 0.5rem;
     margin: 0 1rem;
 

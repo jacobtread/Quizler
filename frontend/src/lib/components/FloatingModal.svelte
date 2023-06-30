@@ -20,10 +20,7 @@
       class:dialog--small={size == ModelSize.Small}
       transition:slide|global={{ duration: 250 }}
     >
-      <button
-        on:click={() => (visible = false)}
-        class="btn btn--icon btn--surface"
-      >
+      <button on:click={() => (visible = false)} class="btn btn--icon">
         <Close />
         Close
       </button>
@@ -52,7 +49,8 @@
   }
 
   .dialog {
-    background-color: $surface;
+    background-color: $appBackground;
+    border: 1px solid $surface;
 
     border-radius: 0.5rem;
 

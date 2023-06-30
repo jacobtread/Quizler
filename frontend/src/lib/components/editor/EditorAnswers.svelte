@@ -82,7 +82,7 @@
         <button
           disabled={question.answers.length == 1}
           on:click={() => removeAnswer(index)}
-          class="btn btn--surface btn--icon-only"
+          class="btn btn--icon-only delete"
         >
           <Delete />
         </button>
@@ -136,7 +136,7 @@
         <button
           disabled={question.answers.length == 1}
           on:click={() => removeAnswer(index)}
-          class="btn btn--surface btn--icon-only"
+          class="btn btn--icon-only delete"
         >
           <Delete />
         </button>
@@ -161,6 +161,14 @@
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1rem;
+  }
+
+  .delete {
+    background-color: $surfaceLight;
+
+    &:disabled {
+      background-color: $surfaceLightDisabled;
+    }
   }
 
   .answer {

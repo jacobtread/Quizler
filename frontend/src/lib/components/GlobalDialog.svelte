@@ -18,17 +18,14 @@
 
       <div class="btn-row btn-row--fill">
         {#if $dialogStore.ty === DialogType.Error}
-          <button class="btn btn--surface" on:click={() => consumeDialog(true)}>
+          <button class="btn" on:click={() => consumeDialog(true)}>
             Close
           </button>
         {:else}
-          <button class="btn btn--surface" on:click={() => consumeDialog(true)}>
+          <button class="btn" on:click={() => consumeDialog(true)}>
             Confirm
           </button>
-          <button
-            class="btn btn--surface"
-            on:click={() => consumeDialog(false)}
-          >
+          <button class="btn" on:click={() => consumeDialog(false)}>
             Cancel
           </button>
         {/if}
@@ -41,7 +38,9 @@
   @import "../../assets/scheme.scss";
 
   .dialog {
-    background-color: $surface;
+    background-color: $appBackground;
+    border: 1px solid $surface;
+
     padding: 1rem;
     border-radius: 0.5rem;
     max-width: 32rem;
