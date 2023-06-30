@@ -44,13 +44,16 @@
     if (data === null) return;
     const images: StoredImage[] = $imageStore;
 
-    console.debug("Exporting quiz to file", data.name);
+    let name = data.name.trim();
+    if (name.length === 0) name = "Quiz";
+
+    console.debug("Exporting quiz to file", name);
 
     // Create a blob from the quiz contents
     const blob = await createQuizBlob(data, images);
 
     // Start the file download
-    const fileName = data.name + ".quizler";
+    const fileName = name + ".quizler";
     startDownload(fileName, blob);
   }
 

@@ -12,10 +12,8 @@
     delay: 500
   });
 
-  $: {
-    if (score.ty === ScoreType.Correct || score.ty === ScoreType.Partial) {
-      value.set(score.value);
-    }
+  $: if (score.ty === ScoreType.Correct || score.ty === ScoreType.Partial) {
+    value.set(score.value);
   }
 </script>
 
