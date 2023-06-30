@@ -26,17 +26,6 @@
 <style lang="scss">
   @import "../../../assets/scheme.scss";
 
-  .bottom {
-    width: 100%;
-    background-color: $surface;
-    padding: 0.5rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-top: 5px solid $surfaceLight;
-    padding-left: 1rem;
-  }
-
   .quiz {
     display: flex;
     flex-flow: column;
@@ -61,6 +50,17 @@
 
     margin-bottom: 1rem;
     color: lighten($color: $partialStart, $amount: 32);
+  }
+
+  .bottom {
+    width: 100%;
+    background-color: $surface;
+    padding: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 5px solid $surfaceLight;
+    padding-left: 1rem;
   }
 
   .token {

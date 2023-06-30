@@ -46,18 +46,6 @@
 <style lang="scss">
   @import "../../../assets/scheme.scss";
 
-  .bottom {
-    width: 100%;
-    background-color: $surface;
-    padding: 0.5rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-top: 5px solid $surfaceLight;
-    padding-left: 1rem;
-    gap: 1rem;
-  }
-
   .quiz {
     display: flex;
     flex-flow: column;
@@ -71,14 +59,10 @@
   }
 
   .time {
-    font-size: 3rem;
+    font-size: 5rem;
 
     color: #fff;
     text-shadow: 0 3px 1px darken($color: $startingStart, $amount: 25);
-  }
-
-  .time {
-    font-size: 5rem;
   }
 
   .text {
@@ -86,6 +70,18 @@
 
     margin-bottom: 1rem;
     color: lighten($color: $startingStart, $amount: 32);
+  }
+
+  .bottom {
+    width: 100%;
+    background-color: $surface;
+    padding: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 5px solid $surfaceLight;
+    padding-left: 1rem;
+    gap: 1rem;
   }
 
   .token {

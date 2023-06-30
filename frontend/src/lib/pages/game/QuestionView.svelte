@@ -5,7 +5,8 @@
     type Question,
     ClientMessage,
     AnswerType,
-    HostAction
+    HostAction,
+    type Answer
   } from "$api/models";
   import type { GameData } from "$pages/Game.svelte";
   import { doHostAction } from "$api/actions";
@@ -20,71 +21,8 @@
   let answers: number[] = [];
   let typerAnswer: string = "";
 
-  async function doAnswer(index: number) {
-    answered = true;
-
-    try {
-      await socket.send({
-        ty: ClientMessage.Answer,
-        answer: {
-          ty: AnswerType.Single,
-          answer: index
-        }
-      });
-    } catch (e) {
-      console.error("Error while attempting to answer", e);
-    }
-  }
-
-  async function doAnswerBool(answer: boolean) {
-    answered = true;
-
-    try {
-      await socket.send({
-        ty: ClientMessage.Answer,
-        answer: {
-          ty: AnswerType.TrueFalse,
-          answer
-        }
-      });
-    } catch (e) {
-      console.error("Error while attempting to answer", e);
-    }
-  }
-
-  async function doAnswerTyper() {
-    answered = true;
-
-    try {
-      await socket.send({
-        ty: ClientMessage.Answer,
-        answer: {
-          ty: AnswerType.Typer,
-          answer: typerAnswer
-        }
-      });
-    } catch (e) {
-      console.error("Error while attempting to answer", e);
-    }
-  }
-
-  async function doAnswers() {
-    answered = true;
-    try {
-      await socket.send({
-        ty: ClientMessage.Answer,
-        answer: {
-          ty: AnswerType.Multiple,
-          answers
-        }
-      });
-    } catch (e) {
-      console.error("Error while attempting to answer", e);
-    }
-  }
-
   function select(index: number) {
-    if (answers.includes(index)) {
+    if (isSelected(index)) {
       answers = answers.filter((value) => value != index);
     } else {
       answers.push(index);
@@ -92,8 +30,49 @@
     }
   }
 
+  const isSelected = (index: number) => answers.includes(index);
+
+  function canSelect() {
+    if (question.ty !== QuestionType.Multiple) return false;
+    return answers.length === question.correct_answers;
+  }
+
   // Sends the next state action
   const next = () => doHostAction(HostAction.Next);
+
+  async function answer(answer: Answer) {
+    answered = true;
+    socket
+      .send({
+        ty: ClientMessage.Answer,
+        answer
+      })
+      .catch((e) => console.error("Error while attempting to answer", e));
+  }
+
+  const answerSingle = (index: number) =>
+    answer({
+      ty: AnswerType.Single,
+      answer: index
+    });
+
+  const answerBool = (value: boolean) =>
+    answer({
+      ty: AnswerType.TrueFalse,
+      answer: value
+    });
+
+  const answerTyper = () =>
+    answer({
+      ty: AnswerType.Typer,
+      answer: typerAnswer
+    });
+
+  const answerMultiple = () =>
+    answer({
+      ty: AnswerType.Multiple,
+      answers
+    });
 </script>
 
 <main class="main">
@@ -115,7 +94,7 @@
             data-host={gameData.host}
             class="answer btn btn--surface"
             disabled={gameData.host}
-            on:click={() => doAnswer(index)}
+            on:click={() => answerSingle(index)}
           >
             {answer.value}
           </button>
@@ -127,10 +106,8 @@
           <button
             data-host={gameData.host}
             class="answer btn btn--surface"
-            class:answer--checked={answers.includes(index)}
-            disabled={gameData.host ||
-              (!answers.includes(index) &&
-                answers.length === question.correct_answers)}
+            class:answer--checked={isSelected(index)}
+            disabled={gameData.host || (!isSelected(index) && canSelect())}
             on:click={() => select(index)}
           >
             {answer.value}
@@ -140,7 +117,7 @@
       {#if !gameData.host}
         <button
           class="btn btn btn--surface submit"
-          on:click={doAnswers}
+          on:click={answerMultiple}
           disabled={answers.length < 1}
         >
           Submit
@@ -152,7 +129,7 @@
           data-host={gameData.host}
           class="answer btn btn--surface"
           disabled={gameData.host}
-          on:click={() => doAnswerBool(true)}
+          on:click={() => answerBool(true)}
         >
           True
         </button>
@@ -160,7 +137,7 @@
           data-host={gameData.host}
           class="answer btn btn--surface"
           disabled={gameData.host}
-          on:click={() => doAnswerBool(false)}
+          on:click={() => answerBool(false)}
         >
           False
         </button>
@@ -169,7 +146,7 @@
       <input class="input" type="text" bind:value={typerAnswer} />
       <button
         class="btn btn btn--surface submit"
-        on:click={doAnswerTyper}
+        on:click={answerTyper}
         disabled={typerAnswer.length < 1}
       >
         Submit
