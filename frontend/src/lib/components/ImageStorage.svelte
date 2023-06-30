@@ -14,6 +14,7 @@
   import { acceptUploadMany } from "$lib/utils/file";
   import { formatBytes } from "$lib/utils/utils";
   import { ImageFit } from "$api/models";
+  import { fade, slide } from "svelte/transition";
 
   let uploading: FileUpload[] = [];
 
@@ -117,12 +118,13 @@
 </script>
 
 {#if $selectImageStore}
-  <div class="wrapper">
+  <div class="wrapper" transition:fade={{ duration: 200 }}>
     <div
       class="dialog"
       on:drop={onDrop}
       on:dragover={onDragOver}
       aria-hidden="true"
+      transition:slide|global={{ duration: 250 }}
     >
       <div class="images">
         <!-- Don't show the upload info if already uploading -->
