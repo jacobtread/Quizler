@@ -212,7 +212,6 @@ impl Session {
     ///
     /// # Arguments
     /// * msg - The client message being processed
-    ///
     async fn handle_request(&mut self, msg: ClientMessage) -> Result<(), axum::Error> {
         let res = match msg {
             ClientMessage::Initialize { uuid } => self.initialize(uuid).await,
