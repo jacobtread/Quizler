@@ -78,7 +78,8 @@
     padding: 0.5rem;
     border-radius: 0.25rem;
     font-size: 1rem;
-    background-color: $surfaceLight;
+    background-color: $btnSurfaceBackground;
+    color: $btnText;
     border: none;
   }
 

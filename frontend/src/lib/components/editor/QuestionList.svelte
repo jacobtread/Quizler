@@ -83,7 +83,7 @@
     border: 2px solid $surface;
 
     &:hover {
-      border-color: #666;
+      border-color: $surfaceLightest;
     }
 
     &--active,
@@ -92,7 +92,7 @@
     }
 
     &:focus {
-      outline: 2px solid #fff;
+      outline: 2px solid $outlineFill;
       outline-offset: 4px;
     }
   }

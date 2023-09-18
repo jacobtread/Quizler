@@ -240,7 +240,7 @@
     flex: auto;
 
     h1 {
-      color: #fff;
+      color: $textPrimary;
     }
   }
 

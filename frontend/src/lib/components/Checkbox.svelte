@@ -13,7 +13,6 @@
   >
     <path
       d="M4.575 8.977s-.404-.007-.536-.165L.057 5.64l.829-1.227L4.47 7.268 10.921.086l.923 1.103-6.863 7.64c-.134-.003-.406.148-.406.148z"
-      fill="#FFF"
       fill-rule="evenodd"
     />
   </svg>
@@ -25,7 +24,7 @@
   .checkbox {
     display: inline-block;
 
-    background-color: $surfaceLight;
+    background-color: $btnSurfaceBackground;
 
     width: 2rem;
     height: 2rem;
@@ -38,7 +37,7 @@
     }
 
     &:focus-within {
-      outline: 2px solid #ffffff;
+      outline: 2px solid $outlineFill;
     }
 
     &__value {
@@ -54,6 +53,7 @@
       &:checked ~ .checkbox__mark {
         opacity: 1;
         transform: translateY(0);
+        fill: $btnIconFill;
       }
     }
 
@@ -62,7 +62,6 @@
       width: 1rem;
       height: 1rem;
       margin: 0.5rem;
-      color: #ffffff;
 
       transition: opacity 0.15s ease, transform 0.15s ease;
       opacity: 0;

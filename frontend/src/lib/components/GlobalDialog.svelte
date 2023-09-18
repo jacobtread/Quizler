@@ -49,7 +49,7 @@
 
     &__title {
       margin-bottom: 0.5rem;
-      color: #ffffff;
+      color: $dialogTitle;
     }
 
     &__msg {

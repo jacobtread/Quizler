@@ -144,7 +144,7 @@
     &__name {
       font-size: 1.25rem;
       font-weight: bold;
-      color: #fff;
+      color: $textPrimary;
       margin-bottom: 0.25rem;
     }
 
@@ -176,7 +176,7 @@
 
     &--correct {
       background-color: $primary;
-      color: #fff;
+      color: $textPrimary;
     }
   }
 

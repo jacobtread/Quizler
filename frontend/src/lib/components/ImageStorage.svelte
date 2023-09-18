@@ -188,7 +188,7 @@
   @import "../../assets/scheme.scss";
 
   .error {
-    color: #ff8989;
+    color: $textError;
   }
 
   .wrapper {
@@ -265,7 +265,7 @@
       text-overflow: ellipsis;
       white-space: nowrap;
       overflow: hidden;
-      color: #ffffff;
+      color: $textPrimary;
       font-weight: bold;
       margin-bottom: 0.5rem;
     }

@@ -79,7 +79,7 @@
       display: inline;
       background-color: $surface;
 
-      color: #fff;
+      color: $textPrimary;
 
       font-weight: bold;
       margin-right: 0.25rem;
@@ -115,7 +115,7 @@
 
     &[data-correct="true"] {
       background-color: $primary;
-      color: #fff;
+      color: $textPrimary;
     }
   }
 
@@ -126,7 +126,7 @@
     right: 0;
     bottom: 0;
     visibility: visible;
-    border: 2px dashed #333;
+    border: 2px dashed $surfaceLight;
     border-radius: 0.25rem;
     margin: 0;
   }

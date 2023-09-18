@@ -90,7 +90,7 @@
 
     &__place {
       padding: 1rem;
-      color: #fff;
+      color: $textPrimary;
       font-weight: bold;
     }
 

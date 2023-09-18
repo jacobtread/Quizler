@@ -9,7 +9,7 @@
 }
 
 * {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
+  font-family: $fontFamily;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -24,7 +24,7 @@
 }
 
 *::-webkit-scrollbar-thumb {
-  background-color: #666;
+  background-color: $scrollbarThumb;
   border-radius: 0.5rem;
 }
 
@@ -46,7 +46,7 @@ body {
 
 body {
   background-color: $appBackground;
-  color: #e3e3e3;
+  color: $textDefault;
 }
 
 p {
@@ -70,12 +70,12 @@ p {
   padding: 1rem;
   border-radius: 0.5rem;
 
-  font-size: 1rem;
+  font-size: $btnFontSize;
 
   border: none;
 
-  color: #ffffff;
-  background-color: $surface;
+  color: $btnText;
+  background-color: $btnBackground;
 
   transition: background-color 0.25s ease, transform 0.2s ease;
   cursor: pointer;
@@ -87,16 +87,16 @@ p {
   }
 
   &--surface {
-    background-color: $surfaceLight;
+    background-color: $btnSurfaceBackground;
 
     &:disabled {
-      background-color: $surfaceLightDisabled;
+      background-color: $btnSurfaceDisabled;
     }
   }
 
   &--small {
     padding: 0.5rem 1rem;
-    font-size: 0.8rem;
+    font-size: $btnSmallFontSize;
     border-radius: 0.25rem;
   }
 
@@ -105,12 +105,13 @@ p {
   }
 
   &:hover {
-    background-color: lighten($color: $surface, $amount: 15);
+    background-color: $btnHoverBackground;
   }
 
   &:disabled {
-    background-color: $surfaceDisabled;
+    background-color: $btnDisabled;
     cursor: not-allowed;
+    color: $btnDisabledText;
   }
 
   &:active:not(:disabled) {
@@ -128,14 +129,20 @@ p {
     display: inline-block;
     vertical-align: middle;
 
-    width: 1.75rem;
-    height: 1.75rem;
-    margin-right: 0.25rem;
+    width: $btnIconWidth;
+    height: $btnIconHeight;
+    margin-right: $btnIconGap;
+
+    fill: $btnIconFill;
   }
 
-  &:disabled > img,
-  &:disabled > svg {
-    opacity: 0.25;
+  &:disabled {
+    color: $btnIconDisabledText;
+
+    > img,
+    > svg {
+      fill: $btnIconDisabledFill;
+    }
   }
 }
 
@@ -143,8 +150,8 @@ p {
 .btn--icon-only.btn--small {
   > img,
   > svg {
-    width: 1.25rem;
-    height: 1.25rem;
+    width: $btnSmallIconWidth;
+    height: $btnSmallIconHeight;
   }
 }
 
@@ -161,7 +168,8 @@ p {
   border-radius: 0.5rem;
 
   border: none;
-  background-color: $surface;
+  background-color: $btnBackground;
+  color: $btnText;
 
   transition: background-color 0.25s ease, transform 0.2s ease;
   line-height: 0;
@@ -250,11 +258,11 @@ th {
 
   &__name {
     font-weight: bold;
-    color: #ffffff;
+    color: $fieldName;
   }
 
   &__desc {
-    color: #cccccc;
+    color: $fieldDesc;
     margin-bottom: 0.25rem;
   }
 }
@@ -266,7 +274,7 @@ th {
   padding: 1rem;
   border-radius: 0.25rem;
   &__title {
-    color: #ffffff;
+    color: $sectionTitle;
     margin-bottom: 0.25rem;
   }
 

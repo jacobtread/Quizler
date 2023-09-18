@@ -76,7 +76,7 @@
   @import "../../../assets/scheme.scss";
 
   .optional {
-    color: #777;
+    color: $textHint;
     margin-left: 0.5rem;
   }
 

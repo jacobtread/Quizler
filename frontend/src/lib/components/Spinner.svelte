@@ -1,11 +1,13 @@
 <div class="spin" />
 
 <style lang="scss">
+  @import "../../assets/scheme.scss";
+
   .spin {
     width: 4rem;
     height: 4rem;
     display: block;
-    border: 5px solid #ffffff;
+    border: 5px solid $spinnerFill;
     border-radius: 2rem;
     border-top-color: transparent;
     animation: spin 2s linear infinite;

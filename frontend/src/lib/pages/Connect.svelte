@@ -223,7 +223,7 @@
     text-align: center;
     background-color: transparent;
     border: 5px solid $surface;
-    color: #fff;
+    color: $textPrimary;
     border-radius: 0.5rem;
     outline: none;
     transition: 0.5s ease;

@@ -164,10 +164,10 @@
   }
 
   .delete {
-    background-color: $surfaceLight;
+    background-color: $btnSurfaceBackground;
 
     &:disabled {
-      background-color: $surfaceLightDisabled;
+      background-color: $btnSurfaceDisabled;
     }
   }
 

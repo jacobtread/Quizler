@@ -75,6 +75,7 @@
   .logo :global(> svg) {
     max-width: 16rem;
     padding: 1rem;
+    fill: $logoFill;
   }
 
   .action {
