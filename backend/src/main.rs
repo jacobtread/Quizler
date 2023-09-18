@@ -42,10 +42,12 @@ async fn main() {
     #[allow(unused_mut)]
     let mut router = http::router();
 
-    // Add CORS layer to the router in debug mode
     #[cfg(debug_assertions)]
     {
-        router = router.layer(tower_http::cors::CorsLayer::very_permissive());
+        // Add CORS and tracing layer to the router in debug mode
+        router = router
+            .layer(tower_http::cors::CorsLayer::very_permissive())
+            .layer(tower_http::trace::TraceLayer::new_for_http());
     }
 
     let addr = SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, port));
