@@ -398,17 +398,8 @@ impl GameToken {
     }
 }
 
-impl Serialize for GameToken {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        // Game tokens are simply serialized as strings by casting the type
-        let token = unsafe { std::str::from_utf8_unchecked(&self.0) };
-        serializer.serialize_str(token)
-    }
-}
-
+/// Game tokens can be created from strings as long as they only
+/// contain characters from the token charset
 impl FromStr for GameToken {
     type Err = ServerError;
 
@@ -433,9 +424,27 @@ impl FromStr for GameToken {
     }
 }
 
+impl AsRef<str> for GameToken {
+    fn as_ref(&self) -> &str {
+        // Safety: Game tokens are always valid utf8 so can be freely represented as &str
+        unsafe { std::str::from_utf8_unchecked(&self.0) }
+    }
+}
+
 impl Display for GameToken {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let token = unsafe { std::str::from_utf8_unchecked(&self.0) };
+        let token: &str = self.as_ref();
         f.write_str(token)
+    }
+}
+
+impl Serialize for GameToken {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        // Game tokens are simply serialized as strings by casting the type
+        let token: &str = self.as_ref();
+        serializer.serialize_str(token)
     }
 }
