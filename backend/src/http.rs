@@ -20,11 +20,11 @@ use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     convert::Infallible,
-    fmt::Display,
     future::{ready, Ready},
     sync::Arc,
     task::{Context, Poll},
 };
+use thiserror::Error;
 use tower::Service;
 use uuid::Uuid;
 
@@ -55,21 +55,28 @@ struct GameConfigUpload {
 }
 
 /// Errors that can occur when creating a quiz
-#[derive(Debug)]
+#[derive(Debug, Error)]
 enum CreateError {
     /// Quiz was missing its config
+    #[error("Missing config data")]
     MissingConfig,
     /// Quiz config was invalid
+    #[error(transparent)]
     InvalidConfig(serde_json::Error),
     /// Quiz failed server validation
+    #[error("Validation failure incorrect values")]
     ValidationFailed,
     /// Uploaded image had an invalid ID
+    #[error(transparent)]
     InvalidImageUuid(uuid::Error),
     /// Image was missing its mime type
+    #[error("Missing image mime type for {0}")]
     MissingImageType(Uuid),
     /// Multipart read error
-    Multipart(MultipartError),
+    #[error(transparent)]
+    Multipart(#[from] MultipartError),
     /// Content was too large
+    #[error("Uploaded content was too large")]
     TooLarge,
 }
 
@@ -160,10 +167,13 @@ async fn create_quiz(mut payload: Multipart) -> Result<Response, CreateError> {
     Ok((StatusCode::CREATED, Json(QuizCreated { uuid })).into_response())
 }
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 enum ImageError {
+    #[error("The target game could not be found")]
     UnknownGame,
+    #[error("The target image could not be found")]
     UnknownImage,
+    #[error("Image mime type was invalid")]
     InvalidImageMime,
 }
 
@@ -256,41 +266,9 @@ impl<T> Service<Request<T>> for Assets {
     }
 }
 
-impl From<MultipartError> for CreateError {
-    fn from(value: MultipartError) -> Self {
-        Self::Multipart(value)
-    }
-}
-
-impl Display for CreateError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::MissingConfig => f.write_str("Missing config data"),
-            Self::InvalidConfig(err) => err.fmt(f),
-            Self::InvalidImageUuid(err) => err.fmt(f),
-            Self::MissingImageType(uuid) => {
-                write!(f, "Missing image mime type for {}", uuid)
-            }
-            Self::Multipart(err) => err.fmt(f),
-            Self::TooLarge => f.write_str("Uploaded content was too large"),
-            Self::ValidationFailed => f.write_str("Validation failure incorrect values"),
-        }
-    }
-}
-
 impl IntoResponse for CreateError {
     fn into_response(self) -> Response {
         (StatusCode::BAD_REQUEST, self.to_string()).into_response()
-    }
-}
-
-impl Display for ImageError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::UnknownGame => f.write_str("The target game could not be found"),
-            Self::UnknownImage => f.write_str("The target image could not be found"),
-            Self::InvalidImageMime => f.write_str("Image mime type was invalid"),
-        }
     }
 }
 
