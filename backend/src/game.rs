@@ -883,13 +883,13 @@ impl PlayerAnswer {
         // Trim extra whitespace
         let answer = answer.trim();
 
-        let correct = if ignore_case {
-            answers
-                .iter()
-                .any(|value| answer.eq_ignore_ascii_case(value))
+        let equal_fn = if ignore_case {
+            str::eq_ignore_ascii_case
         } else {
-            answers.iter().any(|value| answer.eq(value.as_ref()))
+            str::eq
         };
+
+        let correct = answers.iter().any(|value| equal_fn(answer, value));
 
         if correct {
             Score::Correct { value: base_score }
