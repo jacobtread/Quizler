@@ -30,12 +30,13 @@ async fn main() {
     // Spawn the cleanup future
     tokio::spawn(Games::tick_cleanup());
 
-    let port: u16 = match std::env::var("QUIZLER_PORT") {
-        Ok(value) => value
-            .parse()
-            .expect("Provided QUIZLER_PORT was not a valid port"),
-        Err(_) => 80,
-    };
+    let port: u16 = std::env::var("QUIZLER_PORT")
+        .map(|value| {
+            value
+                .parse::<u16>()
+                .expect("Provided QUIZLER_PORT was not a valid port")
+        })
+        .unwrap_or(80);
 
     info!("Starting Quizler on port {} (v{})", port, VERSION);
 
