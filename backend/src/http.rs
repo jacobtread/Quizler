@@ -181,8 +181,7 @@ enum ImageError {
 ///
 /// Endpoint for getting the contents of an image from
 /// a quiz
-async fn quiz_image(Path((token, uuid)): Path<(String, Uuid)>) -> Result<Response, ImageError> {
-    let token: GameToken = token.parse().map_err(|_| ImageError::UnknownGame)?;
+async fn quiz_image(Path((token, uuid)): Path<(GameToken, Uuid)>) -> Result<Response, ImageError> {
     let game = Games::get_game(&token)
         .await
         .ok_or(ImageError::UnknownGame)?;

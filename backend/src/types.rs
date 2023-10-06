@@ -1,6 +1,6 @@
 use bytes::Bytes;
 use rand_core::{OsRng, RngCore};
-use serde::{ser::SerializeMap, Deserialize, Serialize};
+use serde::{de::Visitor, ser::SerializeMap, Deserialize, Serialize};
 use std::{collections::HashMap, fmt::Display, hash::Hash, str::FromStr, time::Duration};
 use uuid::Uuid;
 
@@ -440,5 +440,32 @@ impl Serialize for GameToken {
         // Game tokens are simply serialized as strings by casting the type
         let token: &str = self.as_ref();
         serializer.serialize_str(token)
+    }
+}
+
+impl<'de> Deserialize<'de> for GameToken {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        struct GameTokenVisitor;
+
+        impl<'de> Visitor<'de> for GameTokenVisitor {
+            type Value = GameToken;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                write!(formatter, "a game token")
+            }
+
+            fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                v.parse::<Self::Value>()
+                    .map_err(|_| serde::de::Error::custom("Invalid token"))
+            }
+        }
+
+        deserializer.deserialize_str(GameTokenVisitor)
     }
 }
