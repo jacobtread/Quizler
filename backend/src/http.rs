@@ -227,36 +227,12 @@ impl<T> Service<Request<T>> for Assets {
     fn call(&mut self, req: Request<T>) -> Self::Future {
         let path = req.uri().path();
         // Strip the leading slash in order to match paths correctly
-        let path = match path.strip_prefix('/') {
-            Some(value) => value,
-            None => path,
-        };
+        let path = path.strip_prefix('/').unwrap_or(path);
 
-        let std_path = std::path::Path::new(path);
-
-        let (file, content_type) = if let Some(file) = Assets::get(path) {
-            // Find a matching content type or default to text/plain
-            let content_type = std_path
-                .extension()
-                .and_then(|ext| {
-                    if ext == "js" {
-                        Some("application/javascript")
-                    } else if ext == "css" {
-                        Some("text/css")
-                    } else if ext == "html" {
-                        Some("text/html")
-                    } else {
-                        None
-                    }
-                })
-                .unwrap_or("text/plain");
-
-            (file, content_type)
-        } else {
+        let (file, content_type) = Assets::get(path)
+            .map(|file| (file, get_content_type(path)))
             // Fallback to the index.html file for all unknown pages
-            let index = Assets::get("index.html").expect("Missing index.html from build");
-            (index, "text/html")
-        };
+            .unwrap_or_else(|| (Assets::get("index.html").unwrap_or_default(), "text/html"));
 
         let mut res = Full::from(file).into_response();
         res.headers_mut()
@@ -264,6 +240,29 @@ impl<T> Service<Request<T>> for Assets {
 
         ready(Ok(res))
     }
+}
+
+/// Obtains the content type to use for the provided path by
+/// matching its extension against expected types
+///
+/// # Arguments
+/// * path - The path to get the content type for
+fn get_content_type(path: &str) -> &'static str {
+    std::path::Path::new(path)
+        .extension()
+        .and_then(|ext| {
+            if ext == "js" {
+                Some("application/javascript")
+            } else if ext == "css" {
+                Some("text/css")
+            } else if ext == "html" {
+                Some("text/html")
+            } else {
+                None
+            }
+        })
+        // Default to the text/plain type
+        .unwrap_or("text/plain")
 }
 
 impl IntoResponse for CreateError {
