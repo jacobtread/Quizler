@@ -352,14 +352,8 @@ impl Serialize for ScoreCollection {
 /// Token abstraction to store tokens as fixed length byte
 /// slices rather than strings. This makes them easier to
 /// compare,generate, and serialize
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(PartialEq, Eq, Clone, Copy, Hash)]
 pub struct GameToken([u8; GameToken::LENGTH]);
-
-impl Hash for GameToken {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.0.hash(state);
-    }
-}
 
 impl GameToken {
     /// Length of tokens that will be created
