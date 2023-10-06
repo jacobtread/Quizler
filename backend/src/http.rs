@@ -95,11 +95,17 @@ async fn create_quiz(mut payload: Multipart) -> Result<Response, CreateError> {
     let mut images = HashMap::new();
 
     while let Some(mut field) = payload.next_field().await? {
+        // Skip un-named fields
+        if field.name().is_none() {
+            continue;
+        }
+
         /// Cap the upload max size to 15mb
         const MAX_BUFFER_SIZE_BYTES: usize = 1024 * 1024 * 15;
 
         // Read the field content until the max buffer size
         let mut buffer = BytesMut::new();
+
         while let Some(chunk) = field.try_next().await? {
             buffer.extend_from_slice(&chunk);
 
@@ -108,11 +114,8 @@ async fn create_quiz(mut payload: Multipart) -> Result<Response, CreateError> {
             }
         }
 
-        let name = match field.name() {
-            Some(value) => value,
-            // Skip un-named fields
-            None => continue,
-        };
+        // Name was already checked at start, reading should not have changed this
+        let name = field.name().expect("Field was missing its name");
 
         // Handle the config
         if name == "config" {
