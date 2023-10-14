@@ -8,7 +8,7 @@
 > Real time quiz application
 
 > **Note**
-> This project is in early alpha stages, currenlty it is fully functional however all of the features and logic may not be entirely polished yet, this project is under active development
+> This project is in early alpha stages, currently it is fully functional however all of the features and logic may not be entirely polished yet
 
 
 This is the improved version of my [Quizler](https://github.com/jacobtread/Quizler-v1) app which is intended to be a real time quiz application similar to [Kahoot](https://kahoot.com/) but *OpenSource* and able to be played offline over LAN or self hosted.
