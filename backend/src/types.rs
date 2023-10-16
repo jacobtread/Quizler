@@ -319,6 +319,64 @@ pub enum Score {
     Partial { value: u32, count: u32, total: u32 },
 }
 
+// Testing related implementations for score
+#[cfg(test)]
+mod score_test {
+    use super::Score;
+    use std::fmt::Debug;
+
+    impl Debug for Score {
+        fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+            match self {
+                Score::Correct { value } => {
+                    f.debug_struct("Correct").field("value", value).finish()
+                }
+                Score::Incorrect => f.write_str("Incorrect"),
+                Score::Partial {
+                    value,
+                    count,
+                    total,
+                } => f
+                    .debug_struct("Partial")
+                    .field("value", value)
+                    .field("count", count)
+                    .field("total", total)
+                    .finish(),
+            }
+        }
+    }
+
+    impl PartialEq for Score {
+        fn eq(&self, other: &Self) -> bool {
+            match (self, other) {
+                (Score::Correct { value: value_self }, Score::Correct { value: value_other }) => {
+                    value_self.eq(value_other)
+                }
+                (Score::Incorrect, Score::Incorrect) => true,
+                (
+                    Score::Partial {
+                        value: value_self,
+                        count: count_self,
+                        total: total_self,
+                    },
+                    Score::Partial {
+                        value: value_other,
+                        count: count_other,
+                        total: total_other,
+                    },
+                ) => {
+                    value_self.eq(value_other)
+                        && count_self.eq(count_other)
+                        && total_self.eq(total_other)
+                }
+                _other => false,
+            }
+        }
+    }
+
+    impl Eq for Score {}
+}
+
 impl Score {
     /// Obtains the score value from the answer score
     pub fn value(&self) -> u32 {

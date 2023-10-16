@@ -898,3 +898,213 @@ impl PlayerAnswer {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use crate::{
+        game::PlayerAnswer,
+        types::{AnswerValue, Score},
+    };
+
+    pub const TEST_CORRECT_SCORE: u32 = 100;
+
+    #[test]
+    fn test_mark_single_correct() {
+        let answers = &[
+            AnswerValue {
+                value: "Test".into(),
+                correct: true,
+            },
+            AnswerValue {
+                value: "Test".into(),
+                correct: false,
+            },
+        ];
+
+        let score = PlayerAnswer::mark_single(0, answers, TEST_CORRECT_SCORE);
+        let expected = Score::Correct {
+            value: TEST_CORRECT_SCORE,
+        };
+        assert_eq!(score, expected);
+    }
+
+    #[test]
+    fn test_mark_single_incorrect() {
+        let answers = &[
+            AnswerValue {
+                value: "Test".into(),
+                correct: true,
+            },
+            AnswerValue {
+                value: "Test".into(),
+                correct: false,
+            },
+        ];
+
+        let score = PlayerAnswer::mark_single(1, answers, TEST_CORRECT_SCORE);
+        let expected = Score::Incorrect;
+
+        assert_eq!(score, expected);
+    }
+
+    #[test]
+    fn test_mark_multiple_correct() {
+        let answers = &[
+            AnswerValue {
+                value: "Test".into(),
+                correct: true,
+            },
+            AnswerValue {
+                value: "Test".into(),
+                correct: false,
+            },
+            AnswerValue {
+                value: "Test".into(),
+                correct: true,
+            },
+            AnswerValue {
+                value: "Test".into(),
+                correct: false,
+            },
+        ];
+
+        let score = PlayerAnswer::mark_multiple(&[0, 2], answers, TEST_CORRECT_SCORE);
+        let expected = Score::Correct {
+            value: TEST_CORRECT_SCORE,
+        };
+
+        assert_eq!(score, expected);
+    }
+
+    #[test]
+    fn test_mark_multiple_partial() {
+        let answers = &[
+            AnswerValue {
+                value: "Test".into(),
+                correct: true,
+            },
+            AnswerValue {
+                value: "Test".into(),
+                correct: false,
+            },
+            AnswerValue {
+                value: "Test".into(),
+                correct: true,
+            },
+            AnswerValue {
+                value: "Test".into(),
+                correct: false,
+            },
+        ];
+
+        let score = PlayerAnswer::mark_multiple(&[1, 2], answers, TEST_CORRECT_SCORE);
+        let expected = Score::Partial {
+            value: TEST_CORRECT_SCORE / 2,
+            count: 1,
+            total: 2,
+        };
+
+        assert_eq!(score, expected);
+    }
+
+    #[test]
+    fn test_mark_multiple_incorrect() {
+        let answers = &[
+            AnswerValue {
+                value: "Test".into(),
+                correct: true,
+            },
+            AnswerValue {
+                value: "Test".into(),
+                correct: false,
+            },
+            AnswerValue {
+                value: "Test".into(),
+                correct: true,
+            },
+            AnswerValue {
+                value: "Test".into(),
+                correct: false,
+            },
+        ];
+
+        let score = PlayerAnswer::mark_multiple(&[1, 3], answers, TEST_CORRECT_SCORE);
+        let expected = Score::Incorrect;
+
+        assert_eq!(score, expected);
+    }
+
+    #[test]
+    fn test_mark_bool_correct() {
+        let score = PlayerAnswer::mark_bool(true, true, TEST_CORRECT_SCORE);
+        let expected = Score::Correct {
+            value: TEST_CORRECT_SCORE,
+        };
+
+        assert_eq!(score, expected);
+    }
+
+    #[test]
+    fn test_mark_bool_incorrect() {
+        let score = PlayerAnswer::mark_bool(true, false, TEST_CORRECT_SCORE);
+        let expected = Score::Incorrect;
+
+        assert_eq!(score, expected);
+    }
+
+    #[test]
+    fn test_mark_typer_correct_case_sensitive() {
+        let score = PlayerAnswer::mark_typer(
+            "Test",
+            &["Test".into(), "Test 1".into(), "Test 2".into()],
+            false,
+            TEST_CORRECT_SCORE,
+        );
+        let expected = Score::Correct {
+            value: TEST_CORRECT_SCORE,
+        };
+
+        assert_eq!(score, expected);
+    }
+
+    #[test]
+    fn test_mark_typer_correct_case_insensitive() {
+        let score = PlayerAnswer::mark_typer(
+            "test",
+            &["Test".into(), "Test 1".into(), "Test 2".into()],
+            true,
+            TEST_CORRECT_SCORE,
+        );
+        let expected = Score::Correct {
+            value: TEST_CORRECT_SCORE,
+        };
+
+        assert_eq!(score, expected);
+    }
+
+    #[test]
+    fn test_mark_typer_incorrect_case_sensitive() {
+        let score = PlayerAnswer::mark_typer(
+            "test",
+            &["Test".into(), "Test 1".into(), "Test 2".into()],
+            false,
+            TEST_CORRECT_SCORE,
+        );
+        let expected = Score::Incorrect;
+        
+        assert_eq!(score, expected);
+    }
+
+    #[test]
+    fn test_mark_typer_incorrect_case_insensitive() {
+        let score = PlayerAnswer::mark_typer(
+            "test 5",
+            &["Test".into(), "Test 1".into(), "Test 2".into()],
+            true,
+            TEST_CORRECT_SCORE,
+        );
+        let expected = Score::Incorrect;
+
+        assert_eq!(score, expected);
+    }
+}
