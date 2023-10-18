@@ -41,7 +41,7 @@ pub struct Session {
     socket: WebSocket,
 
     /// Receiver for receiving server events
-    rx: mpsc::UnboundedReceiver<EventMessage>,
+    rx: mpsc::UnboundedReceiver<Arc<ServerEvent>>,
     /// Sender for server events
     tx: EventTarget,
 }
@@ -152,7 +152,7 @@ impl Session {
     ///
     /// # Arguments
     /// * event - The event to handle
-    async fn handle_event(&mut self, event: EventMessage) -> Result<(), axum::Error> {
+    async fn handle_event(&mut self, event: Arc<ServerEvent>) -> Result<(), axum::Error> {
         let value = event.as_ref();
 
         // Ensure we drop our reference to the game when kicked
@@ -356,46 +356,17 @@ impl Session {
         Ok(ResponseMessage::Ok)
     }
 }
-
-/// Wrapper around server events to allow for owned
-/// and shared access
-enum EventMessage {
-    /// Owned server event
-    Owned(ServerEvent),
-    /// Server event behind an Arc shared for many players
-    Shared(Arc<ServerEvent>),
-}
-
-impl EventMessage {
-    /// Obtains a reference to the server event stored
-    /// in this message
-    fn as_ref(&self) -> &ServerEvent {
-        match self {
-            EventMessage::Owned(value) => value,
-            EventMessage::Shared(value) => value.as_ref(),
-        }
-    }
-}
-
 /// Wrapper around the session sender to allow sending server
 /// events to the sessions
 #[derive(Clone)]
-pub struct EventTarget(mpsc::UnboundedSender<EventMessage>);
+pub struct EventTarget(mpsc::UnboundedSender<Arc<ServerEvent>>);
 
 impl EventTarget {
-    /// Sends an owned message over the event sender
+    /// Sends a server event to the event target
     ///
     /// # Arguments
     /// * event - The server event to send
-    pub fn send(&self, event: ServerEvent) {
-        let _ = self.0.send(EventMessage::Owned(event));
-    }
-
-    /// Sends a shared message behind an Arc over the event sender
-    ///
-    /// # Arguments
-    /// * event - The server event to send
-    pub fn send_shared(&self, event: Arc<ServerEvent>) {
-        let _ = self.0.send(EventMessage::Shared(event));
+    pub fn send(&self, event: Arc<ServerEvent>) {
+        let _ = self.0.send(event);
     }
 }

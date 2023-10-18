@@ -242,11 +242,11 @@ impl Game {
 
         // Send the message to all the players
         for player in &self.players {
-            player.addr.send_shared(event.clone());
+            player.addr.send(event.clone());
         }
 
         // Send the message to the host
-        self.host.addr.send_shared(event);
+        self.host.addr.send(event);
     }
 
     /// Sets the current game state to the provided `state`. Emits a
@@ -332,7 +332,7 @@ impl Game {
                 // Increase the player score
                 player.score += score.value();
 
-                player.addr.send(ServerEvent::Score { score });
+                player.addr.send(Arc::new(ServerEvent::Score { score }));
 
                 (player.id, player.score)
             })
@@ -425,17 +425,17 @@ impl Game {
 
         // Notify all players of the existence of eachother
         for player in &self.players {
-            player.addr.send_shared(joiner_message.clone());
+            player.addr.send(joiner_message.clone());
 
             // Message describing the other player
-            game_player.addr.send(ServerEvent::PlayerData {
+            game_player.addr.send(Arc::new(ServerEvent::PlayerData {
                 id: player.id,
                 name: player.name.clone(),
-            });
+            }));
         }
 
         // Notify the host of the join
-        self.host.addr.send_shared(joiner_message);
+        self.host.addr.send(joiner_message);
 
         self.players.push(game_player);
 
@@ -574,10 +574,10 @@ impl Game {
         // Inform each player of the removal
         self.players
             .iter()
-            .for_each(|player| player.addr.send_shared(kick_msg.clone()));
+            .for_each(|player| player.addr.send(kick_msg.clone()));
 
         // Inform the host of the player removal
-        self.host.addr.send_shared(kick_msg);
+        self.host.addr.send(kick_msg);
 
         // Remove the player
         self.players.remove(index);
@@ -606,16 +606,16 @@ impl Game {
         // Tell all the players they've been kicked
         for player in &self.players {
             // Send the visual kick message
-            player.addr.send(ServerEvent::Kicked {
+            player.addr.send(Arc::new(ServerEvent::Kicked {
                 id: player.id,
                 reason: RemoveReason::HostDisconnect,
-            });
+            }));
         }
 
-        self.host.addr.send(ServerEvent::Kicked {
+        self.host.addr.send(Arc::new(ServerEvent::Kicked {
             id: self.host.id,
             reason: RemoveReason::Disconnected,
-        });
+        }));
 
         self.state = GameState::Stopped;
 
@@ -1091,7 +1091,7 @@ mod test {
             TEST_CORRECT_SCORE,
         );
         let expected = Score::Incorrect;
-        
+
         assert_eq!(score, expected);
     }
 
