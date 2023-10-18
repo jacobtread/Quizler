@@ -366,7 +366,8 @@ impl EventTarget {
     ///
     /// # Arguments
     /// * event - The server event to send
+    #[inline]
     pub fn send(&self, event: Arc<ServerEvent>) {
-        let _ = self.0.send(event);
+        _ = self.0.send(event);
     }
 }
