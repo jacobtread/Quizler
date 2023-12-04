@@ -417,7 +417,7 @@ impl GameToken {
     /// Length of tokens that will be created
     const LENGTH: usize = 5;
     /// Set of chars that can be used as game tokens
-    const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    const CHARSET: &'static [u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
     /// Creates a unique random token that isn't present in the
     /// provided collect of games
