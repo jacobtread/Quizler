@@ -5,7 +5,7 @@ use crate::{
     types::{GameToken, ImStr, Image, NameFiltering, Question},
 };
 use axum::{
-    body::Full,
+    body::Body,
     extract::{multipart::MultipartError, Multipart, Path, WebSocketUpgrade},
     response::{IntoResponse, Response},
     routing::{get, post},
@@ -195,7 +195,7 @@ async fn quiz_image(Path((token, uuid)): Path<(GameToken, Uuid)>) -> Result<Resp
         .get_image(uuid)
         .ok_or(ImageError::UnknownImage)?;
 
-    let mut res = Full::from(image.data).into_response();
+    let mut res = Body::from(image.data).into_response();
     let content_type =
         HeaderValue::from_str(&image.mime).map_err(|_| ImageError::InvalidImageMime)?;
     res.headers_mut().insert(CONTENT_TYPE, content_type);
@@ -236,7 +236,7 @@ impl<T> Service<Request<T>> for Assets {
             // Fallback to the index.html file for all unknown pages
             .unwrap_or_else(|| (Assets::get("index.html").unwrap_or_default(), "text/html"));
 
-        let mut res = Full::from(file).into_response();
+        let mut res = Body::from(file).into_response();
         res.headers_mut()
             .insert(CONTENT_TYPE, HeaderValue::from_static(content_type));
 

@@ -1,10 +1,8 @@
 use crate::games::Games;
 use dotenvy::dotenv;
 use log::{error, info, LevelFilter};
-use std::{
-    net::{Ipv4Addr, SocketAddr, SocketAddrV4},
-    process::exit,
-};
+use std::{net::Ipv4Addr, process::exit};
+use tokio::net::TcpListener;
 
 mod game;
 mod games;
@@ -51,12 +49,11 @@ async fn main() {
             .layer(tower_http::trace::TraceLayer::new_for_http());
     }
 
-    let addr = SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, port));
-
-    if let Err(err) = axum::Server::bind(&addr)
-        .serve(router.into_make_service())
+    let listener = TcpListener::bind((Ipv4Addr::UNSPECIFIED, port))
         .await
-    {
+        .unwrap();
+
+    if let Err(err) = axum::serve(listener, router).await {
         error!("Server error: {}", err);
         exit(1);
     }

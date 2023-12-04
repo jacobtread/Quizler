@@ -10,11 +10,11 @@ readme = "../README.md"
 keywords = ["quizler", "game"]
 
 [dependencies]
-axum = { version = "^0.6", features = ["ws", "multipart"] }
-hyper = { version = "^0.14", features = ["full"] }
+axum = { version = "^0.7", features = ["ws", "multipart"] }
+hyper = { version = "^1", features = ["full"] }
 tokio = { version = "^1", features = ["full"] }
 tower = "0.4"
-tower-http = { version = "0.4", features = ["full"] }
+tower-http = { version = "0.5", features = ["full"] }
 
 
 # Logging
