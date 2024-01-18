@@ -7,7 +7,7 @@
   "license": "MIT",
   "scripts": {
     "backend": "cd backend && cargo run",
-    "frontend": "cd frontend && yarn dev",
-    "frontend:dist": "cd frontend && yarn dist"
+    "frontend": "cd frontend && npm run dev",
+    "frontend:dist": "cd frontend && npm run dist"
   }
 }

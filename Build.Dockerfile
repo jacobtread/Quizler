@@ -9,16 +9,16 @@ WORKDIR /app
 
 # Copy the package json and lock file
 COPY frontend/package.json ./
-COPY frontend/yarn.lock ./
+COPY frontend/package-lock.json ./
 
 # Install the dependencies
-RUN yarn install
+RUN npm install
 
 # Copy the remaining source
 COPY frontend ./
 
 # Build the app
-RUN yarn build
+RUN npm run build
 
 # Backend build stage
 # =====================

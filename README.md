@@ -109,10 +109,10 @@ of **Cargo** and **Rust**
 ```shell
 # Move to the frontend directory
 cd frontend
-# Install the dependencies (NPM: npm install)
-yarn install
-# Run the dist commands (NPM: npm run dist)
-yarn dist
+# Install the dependencies 
+npm install
+# Run the dist commands
+npm run dist
 # Move out of the frontend directory
 cd ..
 ```

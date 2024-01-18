@@ -25,7 +25,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: Build Frontend
         working-directory: ./frontend
-        run: yarn && yarn dist
+        run: npm install && npm run dist
       - name: Build Backend
         working-directory: ./backend
         run: cargo build --verbose
