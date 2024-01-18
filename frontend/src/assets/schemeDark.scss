@@ -1,0 +1,75 @@
+
+// Root background color for the whole app
+$appBackground: #111111;
+
+$fontFamily: Avenir, Helvetica, Arial, sans-serif;
+
+$surface: #222;
+$surfaceDisabled: #191919;
+$surfaceLight: #333;
+$surfaceLighter: #444;
+$surfaceLightest: #555;
+$surfaceLightDisabled: #292929;
+
+$textDefault: #e3e3e3;
+
+$primary: #f66828;
+$primaryDark: #552e1c;
+$primaryLighter: #ff8046;
+$secondary: #f35f5f;
+
+$incorrectStart: #f35f5f;
+$incorrectEnd: #933030;
+
+$partialStart: #734790;
+$partialEnd: #49295e;
+
+$correctStart: #80ff80;
+$correctEnd: #359235;
+
+$textPrimary: #ffffff;
+$textSecondary: #cccccc;
+$textDisabled: #999;
+$textError: #ff8989;
+$textHint: #777;
+
+$startingStart: #467dc5;
+$startingEnd: #1b398b;
+
+$btnFontSize: 1rem;
+$btnSmallFontSize: 0.8rem;
+$btnText: $textPrimary;
+
+$btnBorderColor: #555;
+$btnBackground: $surface;
+$btnHoverBackground: $surfaceLighter;
+$btnDisabled: $surfaceDisabled;
+$btnDisabledText: $textDisabled;
+
+$btnIconFill: $textPrimary;
+$btnIconWidth: 1.75rem;
+$btnIconHeight: 1.75rem;
+$btnIconGap: 0.25rem;
+$btnIconDisabledFill: $textDisabled;
+$btnIconDisabledText: $textDisabled;
+
+$btnSmallIconWidth: 1.25rem;
+$btnSmallIconHeight: 1.25rem;
+
+$btnSurfaceBackground: $surfaceLight;
+$btnSurfaceDisabled: $surfaceLightDisabled;
+
+$scrollbarThumb: $surfaceLightest;
+
+$sectionTitle: $textPrimary;
+
+$fieldName: $textPrimary;
+$fieldDesc: $textSecondary;
+
+$outlineFill: #fff;
+
+$dialogTitle: $textPrimary;
+
+$spinnerFill: #ffffff;
+
+$logoFill: $textPrimary;
