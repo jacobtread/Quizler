@@ -101,7 +101,11 @@
     }
 
     &__action {
-      padding: 0;
+      padding: 0.5rem;
+      display: flex;
+      flex-flow: row;
+      justify-content: center;
+      border: none;
     }
   }
 

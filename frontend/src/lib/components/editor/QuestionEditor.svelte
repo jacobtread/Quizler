@@ -115,6 +115,7 @@
     display: block;
     width: 100%;
     resize: vertical;
+
     margin-bottom: 1rem;
 
     min-height: 5rem;
@@ -127,6 +128,7 @@
     margin-top: 0.5rem;
     font-size: 1rem;
     line-height: 1.5;
+    color: $textDefault;
   }
 
   @media screen and (max-width: 64rem) {

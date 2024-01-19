@@ -246,11 +246,18 @@
     border-radius: 1rem;
     border: none;
     cursor: pointer;
-    color: #fff;
+    color: $textPrimary;
     background-color: $primary;
 
     &--small {
       padding-inline-start: 0.6rem;
+    }
+  }
+  .back {
+    border: 0.1rem solid $btnBorderColor;
+
+    :global(> svg) {
+      fill: $textPrimary;
     }
   }
 

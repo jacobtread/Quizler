@@ -102,6 +102,7 @@
     background-color: transparent;
     border: none;
     border-radius: 0.5rem;
+    color: $textDefault;
   }
 
   .overlay {

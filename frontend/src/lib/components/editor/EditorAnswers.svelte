@@ -197,6 +197,7 @@
       background-color: $surfaceLight;
       border-radius: 0.25rem;
       font-size: 1rem;
+      color: $textPrimary;
     }
 
     &--bool {
