@@ -26,17 +26,11 @@ you can follow the guide on the Wiki [Here](https://github.com/jacobtread/Quizle
 
 Prebuilt binaries are available for download here
 
-> **Note**
-> This project is still in alpha so there may be unexpected bugs in these early releases
-
-| Platform | Download                                                                                              |
-| -------- | ----------------------------------------------------------------------------------------------------- |
-| Windows  | [Download](https://github.com/jacobtread/Quizler/releases/download/v0.1.0-alpha3/quizler-windows.exe) |
-| Linux    | [Download](https://github.com/jacobtread/Quizler/releases/download/v0.1.0-alpha3/quizler-linux)       |
-<!-- Uncomment when stable releases are out
+| Platform | Download                                                                                       |
+| -------- | ---------------------------------------------------------------------------------------------- |
 | Windows  | [Download](https://github.com/jacobtread/Quizler/releases/latest/download/quizler-windows.exe) |
-| Linux    | [Download](https://github.com/jacobtread/Quizler/releases/latest/download/quizler-linux)      | 
--->
+| Linux    | [Download](https://github.com/jacobtread/Quizler/releases/latest/download/quizler-linux)       |
+
 
 
 ## 📸 Screenshots
@@ -68,8 +62,8 @@ This is the screen for creating a new quiz
     - Single: Can have multiple correct answer but only lets the players select one option
     - Multiple: Can have many correct answers and lets the players select more than one answer
 - [x] Small and performant, the binary size is super small and is quick to download and move around. From manual testing games could easily handle 15 players in a single game (It can likely handle a far greater number of players however this is untested)
-    - Windows binary:  3.8mb 
-    - Linux binary: 4.5mb
+    - Windows binary:  4.1mb 
+    - Linux binary: 4.0mb
 - [x] Name filtering levels
     - You are able to select different levels of filtering for what usernames are allowed by the players on a quiz by quiz basis (None, Low, Medium, High)
 - [x] Image fitting
