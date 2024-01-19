@@ -1,6 +1,6 @@
 [package]
 name = "quizler"
-version = "0.1.0-alpha3"
+version = "0.1.0"
 edition = "2021"
 description = "Offline quiz game"
 license = "MIT"
@@ -15,7 +15,6 @@ hyper = { version = "^1", features = ["full"] }
 tokio = { version = "^1", features = ["full"] }
 tower = "0.4"
 tower-http = { version = "0.5", features = ["full"] }
-
 
 # Logging
 log = "0.4"

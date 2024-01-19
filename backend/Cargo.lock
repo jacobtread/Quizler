@@ -884,7 +884,7 @@ dependencies = [
 
 [[package]]
 name = "quizler"
-version = "0.1.0-alpha3"
+version = "0.1.0"
 dependencies = [
  "axum",
  "bytes",
