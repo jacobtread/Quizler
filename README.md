@@ -7,124 +7,106 @@
 
 > Real time quiz application
 
-This is the improved version of my [Quizler](https://github.com/jacobtread/Quizler-v1) app which is intended to be a real time quiz application similar to [Kahoot](https://kahoot.com/) but *OpenSource* and able to be played offline over LAN or self hosted.
+## 📜 Table of Contents
 
-This version aims to improve upon the downfalls of the previous app (Written in Go) along with providing new features. I aim to make this version more stable and performant using my better understanding of the [Rust](https://www.rust-lang.org/) language.
+- [🌟 Introduction](#-introduction)
+- [📥 Downloads](#-downloads)
+- [✨ Features](#-features)
+- [📸 Screenshots](#-screenshots)
+- [🛫 Deploying](#-deploying)
+- [⚙️ Build Instructions](#-build-instructions)
+- [🧾 License](#-license)
 
-This new version makes use of [Rust](https://www.rust-lang.org/) for the backend with the [Axum](https://docs.rs/axum/latest/axum/) web framework and [Svelte](https://svelte.dev/) for the frontend. The previous version used [Go](https://go.dev/) for the backend and [VueJS](https://vuejs.org/) for the frontend.
+## 🌟 Introduction 
 
-## 🛫 Deploying
-
-Quizler can be quickly and easily deployed to [Render](https://render.com) if you would like to deploy a Free instance to render
-you can follow the guide on the Wiki [Here](https://github.com/jacobtread/Quizler/wiki/Deploying-to-Render)
+Welcome to Quizler, an enhanced iteration of the original [Quizler](https://github.com/jacobtread/Quizler-v1) project. It's designed to be a real-time quiz application similar to [Kahoot](https://kahoot.com/), with a focus on being open-source and playable offline over LAN or self-hosted environments.
 
 ## 📥 Downloads
 
-Prebuilt binaries are available for download here
+Prebuilt binaries are available for download:
 
-| Platform | Download                                                                                       |
+| Platform | Link                                                                                           |
 | -------- | ---------------------------------------------------------------------------------------------- |
 | Windows  | [Download](https://github.com/jacobtread/Quizler/releases/latest/download/quizler-windows.exe) |
 | Linux    | [Download](https://github.com/jacobtread/Quizler/releases/latest/download/quizler-linux)       |
 
+## ✨ Features
 
+- **Small and Performant**: Binary sizes for Windows and Linux are optimized, ensuring efficiency without sacrificing performance.
+- **Name Filtering**: Maintain a positive environment by customizing the level of filtering for player usernames on a per-quiz basis.
+- **Image Fitting**: Adapt quiz images for various devices with options like Cover, Contain, Fit Width, and Fit Height.
+- **Customization Options**:
+  - Adjust time limits for answering questions.
+  - Set min, max, and bonus scores for each question.
+  - Support for different question types: Single, Multiple, True/False, and Typer.
+- **Easy Shuffling**: Quickly rearrange the order of questions and answers for variety.
+- **Readiness and Preloading**: Ensure fairness by waiting for all players to preload images before starting question timers.
+- **Fully Portable**: No files are persisted, making Quizler completely portable as a single executable. Quizzes can be exported/imported as self-contained .quizler files.
+- **Containerized**: Run Quizler as a standalone executable or within a Docker container using the `jacobtread/quizler` container image. Example `docker-compose.yml` provided.
+- **Short and Shareable Codes**: Quiz codes consist of short 5-character tokens (e.g., AZ2ES), making sharing easy.
+- **Cross-Platform**: Server runs on both Windows and Linux, accessible from any device with a web browser.
 
 ## 📸 Screenshots
 
 ### Home screen
 
-This is the screen which allows the users to select between joining a quiz and
-creating their own
+Allows users to select between joining a quiz and creating their own.
 
 ![Home Screen](assets/home.png)
 
 ### Create screen
 
-This is the screen for creating a new quiz
+For creating a new quiz.
 
 ![Create Screen](assets/create.png)
 
 ### Join screen
 
-This is the screen for creating a new quiz
+For joining a quiz.
 
 ![Join Screen](assets/join.png)
 
+## 🛫 Deploying
 
+Easily deploy Quizler to [Render](https://render.com) using the provided guide in the Wiki [Here](https://github.com/jacobtread/Quizler/wiki/Deploying-to-Render). Additionally, it can be deployed to other services that support deploying docker images by using the provided `jacobtread/quizler` docker image or the `Dockerfile` in the repository.
 
-## ⚙️ Features
+## ⚙️ Build Instructions
 
-- [x] Different quesiton types
-    - Single: Can have multiple correct answer but only lets the players select one option
-    - Multiple: Can have many correct answers and lets the players select more than one answer
-- [x] Small and performant, the binary size is super small and is quick to download and move around. From manual testing games could easily handle 15 players in a single game (It can likely handle a far greater number of players however this is untested)
-    - Windows binary:  4.1mb 
-    - Linux binary: 4.0mb
-- [x] Name filtering levels
-    - You are able to select different levels of filtering for what usernames are allowed by the players on a quiz by quiz basis (None, Low, Medium, High)
-- [x] Image fitting
-    - Quiz images can have the fitting property adjusted in order to decide how
-    it will be shown on devices (Cover, Contain, Fit Width, Fit Height)
-- [x] Customizable timing
-    - You can customize the time given for answering on a question by question basis
-- [x] Customizable scoring
-    - You can customize the min, max, and bonus score awarded for each question
-- [x] Easy shuffling
-    - There are shuffle buttons for both questions and answers to quickly and easily shuffle the order of questions and answers
-- [x] Readyiness and preloading (Automated)
-    - The quiz will wait for all the players to preload the images and be "ready" before starting the timer of the question to ensure that players arent at a disadvantage due to slower connections
-- [x] Fully portable
-  - The server doesn't store any files so its completely portable as a single executable. Quiz's are instead able to be exported and imported as .quizler files which can be shared
-  - In future a less portable version might be created that supports storing these files in some sort of database 
-- [x] Containerized
-  -  Quizler can run both as a single executable or within a Docker container using the `jacobtread/quizler` container image. 
-  -  There is an example docker-compose.yml file for starting a dockerized version. 
-  -  You can also run a containerize version of the server that builds itself using the Build.Dockerfile docker file
-- [x] Short and easy to share codes
-  - The quiz codes are short 5 character tokens that cosist of A-Z 0-9 (e.g AZ2ES)
-- [x] Cross platform
-  - The server can be run on both Windows or Linux, and can be connected to by any device with a web browser (Its recommended that a up to date browser be used as some older browsers might incorrectly render the page) 
-  - Any other platform can run the server within a Docker container
-
-## ⚒ Build Instructions
-
-First you must build the frontend as the backend depends on embedding resources created by the frontend build process
+Building Quizler requires NodeJS (>=16) for the frontend and Cargo/Rust (>=1.75.0) for the backend:
 
 > **Note** 
 > These commands are from within the context of the repository directory. If you haven't already download the repository and cd to the directory before running the commands below
 
-Building the frontend requires **NodeJS**>=16 and building the backend requires the latest version
-of **Cargo** and **Rust**
+1. **Frontend**:
+    ```shell
+    # Move to the frontend directory
+    cd frontend
+    # Install dependencies 
+    npm install
+    # Run the dist commands
+    npm run dist
+    # Move out of the frontend directory
+    cd ..
+    ```
 
-```shell
-# Move to the frontend directory
-cd frontend
-# Install the dependencies 
-npm install
-# Run the dist commands
-npm run dist
-# Move out of the frontend directory
-cd ..
-```
-Then you can build the backend
+2. **Backend**:
+    ```shell
+    # Move to the backend directory
+    cd backend
+    # Build the release binary
+    cargo build --release
+    ```
 
-```shell
-# Move to the backend directory
-cd backend
-# Build the release binary
-cargo build --release
-```
+After building the backend, find the binary at `backend/target/release/quizler[.exe]`.
 
-After building the backend the binary will be at
-```backend/target/rlease/quizler[.exe]```
-
-If you would like to Build within Docker this repository contains a Build.Dockerfile which does this for you
+For Docker-based builds, refer to the provided `Build.Dockerfile` in the repository, there is also
+a docker image for pre-built binaries at `Dockerfile`.
 
 ## 🧾 License
 
 MIT License
 
-Copyright (c) 2023 Jacobtread
+Copyright (c) 2023 - 2024 Jacobtread
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
