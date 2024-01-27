@@ -7,10 +7,6 @@
 
 > Real time quiz application
 
-> **Note**
-> This project is in early alpha stages, currently it is fully functional however all of the features and logic may not be entirely polished yet
-
-
 This is the improved version of my [Quizler](https://github.com/jacobtread/Quizler-v1) app which is intended to be a real time quiz application similar to [Kahoot](https://kahoot.com/) but *OpenSource* and able to be played offline over LAN or self hosted.
 
 This version aims to improve upon the downfalls of the previous app (Written in Go) along with providing new features. I aim to make this version more stable and performant using my better understanding of the [Rust](https://www.rust-lang.org/) language.
