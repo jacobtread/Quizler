@@ -2,7 +2,7 @@
 <script lang="ts">
   import { tweened, type Tweened } from "svelte/motion";
 
-  // The actual vaule
+  // The actual value
   export let value: number;
 
   // Create a tweened version of the value

@@ -120,7 +120,7 @@ function createSocket(): WebSocket {
   // Handle close events
   ws.onclose = (event: CloseEvent) => {
     // Handle the socket becoming unavailable
-    console.error("WebSocket connetion closed", event);
+    console.error("WebSocket connection closed", event);
 
     // Update lost connection states
     onDisconnected();
@@ -196,7 +196,7 @@ export function send<T extends ClientMessage>(
 
 /**
  * Event handler for parsing, and handling messages
- * recieved from the server
+ * received from the server
  *
  * @param data The message data from the event
  */
@@ -222,7 +222,7 @@ function onMessage({ data }: MessageEvent) {
       // If the types didn't match it must've been an error
       responseHandle.reject(msg.error);
     } else {
-      // Reoslve with the correct result
+      // Resolve with the correct result
       responseHandle.resolve(msg);
     }
 
@@ -232,7 +232,7 @@ function onMessage({ data }: MessageEvent) {
   // Find the handler for the message
   const handler = messageHandlers[msg.ty];
   if (handler !== undefined) {
-    // Call the handler with the mesasge
+    // Call the handler with the message
     handler(msg);
     return;
   }

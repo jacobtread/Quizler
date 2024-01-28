@@ -9,7 +9,7 @@ const messages = {
     "Yeah it was probably that one... 😬",
     "0_0 good luck i guess..",
     "Are you sure it was that one..?",
-    "😅 Probbably right",
+    "😅 Probably right",
     "It gotta be that one!",
     "If you say so 🫠",
     "1 + 1 = 5?",

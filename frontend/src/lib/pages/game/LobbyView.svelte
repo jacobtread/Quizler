@@ -61,7 +61,7 @@
             <td class="player_score">
               <ScoreTweened value={scores[player.id] ?? 0} />
             </td>
-            <!-- Host privilleges -->
+            <!-- Host privileges -->
             <td class="player__action">
               <button class="btn" on:click={() => doKick(player.id)}>
                 Kick

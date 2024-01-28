@@ -54,7 +54,7 @@
     <span>Settings</span>
   </button>
 
-  <!-- If question type is shufflable include a shuffle button -->
+  <!-- If question type can be shuffled include a shuffle button -->
   {#if (question.ty === QuestionType.Single || question.ty === QuestionType.Multiple) && question.answers !== undefined}
     <button
       class="btn btn--icon"

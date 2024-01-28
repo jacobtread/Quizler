@@ -27,7 +27,7 @@ export function formatBytes(bytes: number): string {
  * min and max (inclusive)
  *
  * @param min The minimum number
- * @param max The maxmimum number
+ * @param max The maximum number
  * @returns The random number
  */
 export function randomRange(min: number, max: number): number {
@@ -61,10 +61,10 @@ export function getNumberWithOrdinal(n: number): string {
 }
 
 /**
- * Randomly suffles the array. Ensures that atleast length/2
+ * Randomly shuffles the array. Ensures that at least length/2
  * changes are made to the array
  *
- * @param array The array to suffle
+ * @param array The array to shuffle
  * @returns The reference to the provided array
  */
 export function shuffleArray<T>(array: T[]): T[] {

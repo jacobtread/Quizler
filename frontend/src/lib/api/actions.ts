@@ -35,7 +35,7 @@ export async function leave(gameData: GameData) {
 
   if (!result) return;
 
-  // Take back to the home scren
+  // Take back to the home screen
   setHome();
 
   // Kick self from game to leave

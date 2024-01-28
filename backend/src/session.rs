@@ -165,7 +165,7 @@ impl Session {
         self.send(value).await
     }
 
-    /// Handles processing websocket messages, updating heartbeat, and forwading
+    /// Handles processing websocket messages, updating heartbeat, and forwarding
     /// along parsed messages to handle_request
     ///
     /// # Arguments
@@ -284,7 +284,7 @@ impl Session {
     /// Disconnects the session from their current game if they
     /// are already in one
     async fn disconnect(&mut self) {
-        // If already in a game infrom the game that we've left
+        // If already in a game inform the game that we've left
         if let Some(game) = self.game.take() {
             let mut lock = game.write().await;
             let _ = lock.remove_player(self.id, self.id, RemoveReason::Disconnected);

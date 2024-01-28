@@ -56,7 +56,7 @@
     token = token
       // Convert the value to uppercase format
       .toUpperCase()
-      // Remove any invald values
+      // Remove any invalid values
       .replace(/[^A-Z0-9]/, "");
 
     // Enforce max token length for mobile devices
@@ -73,7 +73,7 @@
    * provided player name
    */
   function updateName() {
-    // Change the disabled state based on the name lengthh
+    // Change the disabled state based on the name length
     nameValid =
       name.length >= MIN_PLAYER_NAME_LENGTH &&
       name.length <= MAX_PLAYER_NAME_LENGTH;

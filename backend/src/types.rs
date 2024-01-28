@@ -25,13 +25,13 @@ pub enum ServerError {
     NotJoinable,
     /// The game is already at max capacity
     CapacityReached,
-    /// An action was attempting on a player that wasnt found
+    /// An action was attempting on a player that wasn't found
     UnknownPlayer,
     /// Something unexpected went wrong on the server
     Unexpected,
     /// Didn't have permission to complete that action
     InvalidPermission,
-    /// Message was recieved but wasn't expected at the current
+    /// Message was received but wasn't expected at the current
     /// state
     UnexpectedMessage,
     /// Provided answer is not valid for the type of question
@@ -80,7 +80,7 @@ pub enum HostAction {
 pub enum RemoveReason {
     /// Player was manually kicked by the host
     RemovedByHost,
-    /// The host diconnected ending the game
+    /// The host disconnected ending the game
     HostDisconnect,
     /// Connection was lost to the player
     LostConnection,
@@ -138,7 +138,7 @@ impl Question {
 }
 
 /// Structure of a question image, contains the
-/// UUID of the image aswell as its fit mode
+/// UUID of the image as well as its fit mode
 #[derive(Serialize, Deserialize)]
 pub struct QuestionImage {
     /// UUID from created image  

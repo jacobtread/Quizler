@@ -139,7 +139,7 @@ impl Game {
     }
 
     /// Creates a new delayed task to move to the next state once the provided
-    /// duration has passed. This updates the timer state for clients aswell
+    /// duration has passed. This updates the timer state for clients as well
     ///
     /// # Arguments
     /// * duration - The duration to wait before moving states
@@ -296,7 +296,7 @@ impl Game {
     }
 
     /// Provides the current question to the all the players, updating
-    /// the ready state and waiting for player readyiness
+    /// the ready state and waiting for player readiness
     fn question(&mut self) {
         // Reset ready states for the players
         self.players
@@ -339,7 +339,7 @@ impl Game {
             .collect();
         let scores = ScoreCollection(scores);
 
-        // Update everyones scores
+        // Update everyone's scores
         self.send_all(ServerEvent::Scores { scores });
 
         // Set state to marked
@@ -423,7 +423,7 @@ impl Game {
             name: game_player.name.clone(),
         });
 
-        // Notify all players of the existence of eachother
+        // Notify all players of the existence of each other
         for player in &self.players {
             player.addr.send(joiner_message.clone());
 
@@ -446,7 +446,7 @@ impl Game {
     }
 
     /// Handles ready messages from a client by ID and updates
-    /// the readyiness accordingly
+    /// the readiness accordingly
     ///
     /// # Arguments
     /// * id - The ID of the session that is ready
@@ -858,7 +858,7 @@ impl PlayerAnswer {
         }
     }
 
-    /// Marks a True / False boolean quesiton
+    /// Marks a True / False boolean question
     ///
     /// # Arguments
     /// * answer - The boolean answer the player chose

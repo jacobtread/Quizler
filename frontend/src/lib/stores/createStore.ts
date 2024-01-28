@@ -100,7 +100,7 @@ export function shuffleQuestions() {
 }
 
 /**
- * Saves a currenlty editing question by finding
+ * Saves a currently editing question by finding
  * it in the questions array and replacing it or
  * pushing it if its missing
  *

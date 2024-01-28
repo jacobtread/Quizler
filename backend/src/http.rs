@@ -131,7 +131,7 @@ async fn create_quiz(mut payload: Multipart) -> Result<Response, CreateError> {
             .ok_or(CreateError::MissingImageType(uuid))?;
 
         debug!(
-            "Recieved uploaded file (UUID: {}, Mime: {}, Size: {})",
+            "Received uploaded file (UUID: {}, Mime: {}, Size: {})",
             uuid,
             mime,
             buffer.len()
