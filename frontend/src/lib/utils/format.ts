@@ -111,11 +111,12 @@ export async function loadQuizBlob(file: Blob): Promise<CreateDataRuntime> {
 
     // Add the image to the image store
     imageStore.update((store) => {
-      // Update the data store
-      store.push({ uuid, name, size, blob });
-
       // Remove duplicates from loading the file again
-      return store.filter((value) => value.uuid !== uuid);
+      const filtered = store.filter((value) => value.uuid !== uuid);
+
+      // Add the new item
+      const item = { uuid, name, size, blob };
+      return [...filtered, item];
     });
 
     // Trigger the image preview loading
