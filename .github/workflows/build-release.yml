@@ -1,0 +1,222 @@
+name: Build Release
+
+on:
+    # This will trigger when a tag like v1.0.0 is pushed
+    # will create a release
+    push:
+        tags:
+            - "v*.*.*"
+    # Manual trigger for creating an artifact (button in the UI)
+    workflow_dispatch:
+
+permissions:
+    packages: write
+    contents: write
+
+jobs:
+    build-frontend:
+        name: Build Frontend
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout Frontend
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "24"
+                  cache: "npm"
+                  cache-dependency-path: frontend/package-lock.json
+
+            - name: Install dependencies
+              working-directory: frontend
+              run: npm ci
+
+            - name: Build frontend
+              working-directory: frontend
+              run: npm run build
+
+            - name: Upload frontend artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: frontend-build
+                  path: frontend/build/
+
+    build-linux:
+        name: Build Linux targets
+        runs-on: ubuntu-latest
+        needs: [build-frontend]
+        strategy:
+            matrix:
+                include:
+                    - target: x86_64-unknown-linux-musl
+                      os_name: linux-musl
+                      arch: x86_64
+                      filename: quizler-x86_64-linux-musl
+
+                    - target: x86_64-unknown-linux-gnu
+                      os_name: linux-gnu
+                      arch: x86_64
+                      filename: quizler-x86_64-linux-gnu
+
+                    - target: aarch64-unknown-linux-musl
+                      os_name: linux-musl
+                      arch: aarch64
+                      filename: quizler-aarch64-linux-musl
+
+                    - target: aarch64-unknown-linux-gnu
+                      os_name: linux-gnu
+                      arch: aarch64
+                      filename: quizler-aarch64-linux-gnu
+
+        steps:
+            # Checkout the repo for building
+            - uses: actions/checkout@v4
+
+            # Download the frontend build artifact
+            - name: Download frontend artifact
+              uses: actions/download-artifact@v4
+              with:
+                  name: frontend-build
+                  merge-multiple: true
+                  path: assets
+
+            # Setup rust for building the service
+            - name: Set up Rust
+              uses: dtolnay/rust-toolchain@stable
+              with:
+                  toolchain: stable
+                  targets: ${{ matrix.target }}
+                  override: true
+
+            # Cache Rust dependencies and build artifacts
+            - name: Cache Rust dependencies
+              id: cache-rust
+              uses: actions/cache@v4
+              with:
+                  path: |
+                      ~/.cargo/bin/
+                      ~/.cargo/registry/index/
+                      ~/.cargo/registry/cache/
+                      ~/.cargo/git/db/
+                      target/
+                  key: ${{ runner.os }}-${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+                  restore-keys: |
+                      ${{ runner.os }}-${{ matrix.target }}-cargo-
+
+            # Install cross for cross compiling
+            - name: Install cross
+              if: steps.cache-rust.outputs.cache-hit != 'true'
+              run: cargo install cross
+
+            # Cross compile the binary
+            - name: Build with ${{ matrix.target }}
+              run: cross build --release --target ${{ matrix.target }} -p quizler
+
+            # Copy built binary to output directory
+            - name: Copy binary to output
+              run: cp target/${{ matrix.target }}/release/quizler ${{ matrix.filename }}
+              shell: bash
+
+            # Upload the built artifact
+            - name: Upload artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: ${{ matrix.filename }}
+                  path: ${{ matrix.filename }}
+
+    build-windows:
+        name: Build Windows targets
+        runs-on: windows-latest
+        needs: [build-frontend]
+        strategy:
+            matrix:
+                include:
+                    - target: x86_64-pc-windows-gnu
+                      os_name: windows-gnu
+                      arch: x86_64
+                      filename: quizler-x86_64-windows-gnu.exe
+
+                    - target: x86_64-pc-windows-msvc
+                      os_name: windows-msvc
+                      arch: x86_64
+                      filename: quizler-x86_64-windows-msvc.exe
+
+        steps:
+            # Checkout the repo for building
+            - uses: actions/checkout@v4
+
+            # Download the frontend build artifact
+            - name: Download frontend artifact
+              uses: actions/download-artifact@v4
+              with:
+                  name: frontend-build
+                  merge-multiple: true
+                  path: assets
+
+            # Setup rust for building the service
+            - name: Install Rust
+              uses: dtolnay/rust-toolchain@stable
+              with:
+                  targets: ${{ matrix.target }}
+
+            # Cache Rust dependencies and build artifacts
+            - name: Cache Rust dependencies
+              uses: actions/cache@v4
+              with:
+                  path: |
+                      ~/.cargo/bin/
+                      ~/.cargo/registry/index/
+                      ~/.cargo/registry/cache/
+                      ~/.cargo/git/db/
+                      target/
+                  key: ${{ runner.os }}-${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+                  restore-keys: |
+                      ${{ runner.os }}-${{ matrix.target }}-cargo-
+
+            # Cross compile the binary
+            - name: Build
+              run: cargo build --release --target ${{ matrix.target }} -p quizler
+
+            # Copy built binary to output directory
+            - name: Rename and move output binary
+              run: cp target/${{ matrix.target }}/release/quizler.exe ${{ matrix.filename }}
+              shell: bash
+
+            # Upload the built artifact
+            - name: Upload binary artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: ${{ matrix.filename }}
+                  path: ${{ matrix.filename }}
+
+    release:
+        name: Create Release
+        runs-on: ubuntu-latest
+        needs: [build-linux, build-windows]
+
+        steps:
+            # Checkout the repo
+            - uses: actions/checkout@v4
+
+            # Download all the compiled artifacts from previous
+            # steps
+            - name: Download all build artifacts
+              uses: actions/download-artifact@v4
+              with:
+                  path: dist
+                  # Only download the executables not the frontend
+                  pattern: quizler-*
+                  merge-multiple: true
+
+            # Create the github release if we pushed up a new tag
+            - name: Create GitHub Release
+              uses: softprops/action-gh-release@v2
+              if: github.event_name == 'push'
+              with:
+                  tag_name: ${{ github.ref_name }}
+                  name: ${{ github.ref_name }}
+                  draft: true
+                  files: dist/*
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

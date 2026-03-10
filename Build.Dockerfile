@@ -22,7 +22,7 @@ RUN npm run build
 
 # Backend build stage
 # =====================
-FROM rust:1.69.0 as backend
+FROM rust:1.93.1 as backend
 
 RUN rustup target add x86_64-unknown-linux-musl
 RUN apt update && apt install -y musl-tools musl-dev
@@ -40,7 +40,7 @@ RUN mkdir ./src && echo 'fn main() { println!("Dummy!"); }' > ./src/main.rs
 # Cargo build the dummy project for dependency caching
 RUN cargo build --target x86_64-unknown-linux-musl --release
 
-# Remove dummy src 
+# Remove dummy src
 RUN rm -rf ./src
 
 # Copy real source code over

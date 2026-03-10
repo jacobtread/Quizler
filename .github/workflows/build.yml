@@ -1,39 +1,50 @@
 name: Build
 on:
-  push:
-    branches: ["master"]
-  pull_request:
-    branches: ["master"]
+    push:
+        branches: ["master"]
+    pull_request:
+        branches: ["master"]
 env:
-  CARGO_TERM_COLOR: always
+    CARGO_TERM_COLOR: always
 jobs:
-  build:
-    strategy:
-      fail-fast: true
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-        include:
-          - os: ubuntu-latest
-            file: quizler
-            file_name: Ubuntu Build
-          - os: windows-latest
-            file: quizler.exe
-            file_name: Windows Build
-    runs-on: ${{ matrix.os }}
+    build:
+        strategy:
+            fail-fast: true
+            matrix:
+                os: [ubuntu-latest, windows-latest]
+                include:
+                    - os: ubuntu-latest
+                      file: quizler
+                      file_name: Ubuntu Build
+                    - os: windows-latest
+                      file: quizler.exe
+                      file_name: Windows Build
+        runs-on: ${{ matrix.os }}
 
-    steps:
-      - uses: actions/checkout@v3
-      - name: Build Frontend
-        working-directory: ./frontend
-        run: npm install && npm run dist
-      - name: Build Backend
-        working-directory: ./backend
-        run: cargo build --verbose
-      - name: Run tests
-        working-directory: ./backend
-        run: cargo test --verbose
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{ matrix.file_name }}
-          path: "./backend/target/debug/${{ matrix.file }}"
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "24"
+                  cache: "npm"
+                  cache-dependency-path: frontend/package-lock.json
+
+            - name: Build Frontend
+              working-directory: ./frontend
+              run: npm install && npm run dist
+
+            - name: Build Backend
+              working-directory: ./backend
+              run: cargo build --verbose
+
+            - name: Run tests
+              working-directory: ./backend
+              run: cargo test --verbose
+
+            - name: Upload artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: ${{ matrix.file_name }}
+                  path: "./backend/target/debug/${{ matrix.file }}"
