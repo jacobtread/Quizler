@@ -79,7 +79,7 @@ jobs:
               with:
                   name: frontend-build
                   merge-multiple: true
-                  path: assets
+                  path: assets/
 
             # Setup rust for building the service
             - name: Set up Rust
@@ -111,11 +111,12 @@ jobs:
 
             # Cross compile the binary
             - name: Build with ${{ matrix.target }}
+              working-directory: backend
               run: cross build --release --target ${{ matrix.target }} -p quizler
 
             # Copy built binary to output directory
             - name: Copy binary to output
-              run: cp target/${{ matrix.target }}/release/quizler ${{ matrix.filename }}
+              run: cp backend/target/${{ matrix.target }}/release/quizler ${{ matrix.filename }}
               shell: bash
 
             # Upload the built artifact
@@ -152,7 +153,7 @@ jobs:
               with:
                   name: frontend-build
                   merge-multiple: true
-                  path: assets
+                  path: assets/
 
             # Setup rust for building the service
             - name: Install Rust
@@ -176,11 +177,12 @@ jobs:
 
             # Cross compile the binary
             - name: Build
+              working-directory: backend
               run: cargo build --release --target ${{ matrix.target }} -p quizler
 
             # Copy built binary to output directory
             - name: Rename and move output binary
-              run: cp target/${{ matrix.target }}/release/quizler.exe ${{ matrix.filename }}
+              run: cp backend/target/${{ matrix.target }}/release/quizler.exe ${{ matrix.filename }}
               shell: bash
 
             # Upload the built artifact
