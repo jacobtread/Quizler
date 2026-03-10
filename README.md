@@ -25,10 +25,13 @@ Welcome to Quizler, an enhanced iteration of the original [Quizler](https://gith
 
 Prebuilt binaries are available for download:
 
-| Platform | Link                                                                                           |
-| -------- | ---------------------------------------------------------------------------------------------- |
-| Windows  | [Download](https://github.com/jacobtread/Quizler/releases/latest/download/quizler-windows.exe) |
-| Linux    | [Download](https://github.com/jacobtread/Quizler/releases/latest/download/quizler-linux)       |
+| Platform             | Link                                                                                                       |
+| -------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Windows              | [Download](https://github.com/jacobtread/Quizler/releases/latest/download/quizler-x86_64-windows-msvc.exe) |
+| Linux (x86_64 GNU)   | [Download](https://github.com/jacobtread/Quizler/releases/latest/download/quizler-x86_64-linux-gnu)        |
+| Linux (x86_64 MUSL)  | [Download](https://github.com/jacobtread/Quizler/releases/latest/download/quizler-x86_64-linux-musl)       |
+| Linux (aarch64 GNU)  | [Download](https://github.com/jacobtread/Quizler/releases/latest/download/quizler-aarch64-linux-gnu)       |
+| Linux (aarch64 MUSL) | [Download](https://github.com/jacobtread/Quizler/releases/latest/download/quizler-aarch64-linux-musl)      |
 
 ## ✨ Features
 
