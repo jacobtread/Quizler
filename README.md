@@ -17,7 +17,7 @@
 - [⚙️ Build Instructions](#-build-instructions)
 - [🧾 License](#-license)
 
-## 🌟 Introduction 
+## 🌟 Introduction
 
 Welcome to Quizler, an enhanced iteration of the original [Quizler](https://github.com/jacobtread/Quizler-v1) project. It's designed to be a real-time quiz application similar to [Kahoot](https://kahoot.com/), with a focus on being open-source and playable offline over LAN or self-hosted environments.
 
@@ -36,9 +36,9 @@ Prebuilt binaries are available for download:
 - **Name Filtering**: Maintain a positive environment by customizing the level of filtering for player usernames on a per-quiz basis.
 - **Image Fitting**: Adapt quiz images for various devices with options like Cover, Contain, Fit Width, and Fit Height.
 - **Customization Options**:
-  - Adjust time limits for answering questions.
-  - Set min, max, and bonus scores for each question.
-  - Support for different question types: Single, Multiple, True/False, and Typer.
+    - Adjust time limits for answering questions.
+    - Set min, max, and bonus scores for each question.
+    - Support for different question types: Single, Multiple, True/False, and Typer.
 - **Easy Shuffling**: Quickly rearrange the order of questions and answers for variety.
 - **Readiness and Preloading**: Ensure fairness by waiting for all players to preload images before starting question timers.
 - **Fully Portable**: No files are persisted, making Quizler completely portable as a single executable. Quizzes can be exported/imported as self-contained .quizler files.
@@ -66,22 +66,19 @@ For joining a quiz.
 
 ![Join Screen](assets/join.png)
 
-## 🛫 Deploying
-
-Easily deploy Quizler to [Render](https://render.com) using the provided guide in the Wiki [Here](https://github.com/jacobtread/Quizler/wiki/Deploying-to-Render). Additionally, it can be deployed to other services that support deploying docker images by using the provided `jacobtread/quizler` docker image or the `Dockerfile` in the repository.
-
 ## ⚙️ Build Instructions
 
 Building Quizler requires NodeJS (>=16) for the frontend and Cargo/Rust (>=1.75.0) for the backend:
 
-> **Note** 
+> **Note**
 > These commands are from within the context of the repository directory. If you haven't already download the repository and cd to the directory before running the commands below
 
 1. **Frontend**:
+
     ```shell
     # Move to the frontend directory
     cd frontend
-    # Install dependencies 
+    # Install dependencies
     npm install
     # Run the dist commands
     npm run dist
