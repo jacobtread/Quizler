@@ -13,6 +13,9 @@ permissions:
     contents: read
     packages: write
 
+env:
+    DOCKER_REPOSITORY: jacobtread/quizler
+
 jobs:
     build-and-push-debian:
         runs-on: ubuntu-latest
@@ -42,12 +45,12 @@ jobs:
                   build-args: |
                       GITHUB_RELEASE_VERSION=${{ github.event.inputs.release_tag }}
                   tags: |
-                      ${{ vars.DOCKER_REPOSITORY }}:${{ github.event.inputs.release_tag }}
-                      ${{ vars.DOCKER_REPOSITORY }}:${{ github.event.inputs.release_tag }}-debian-prebuilt
-                      ${{ vars.DOCKER_REPOSITORY }}:${{ github.event.inputs.release_tag }}-debian
-                      ${{ vars.DOCKER_REPOSITORY }}:latest-debian-prebuilt
-                      ${{ vars.DOCKER_REPOSITORY }}:latest-debian
-                      ${{ vars.DOCKER_REPOSITORY }}:latest
+                      ${{ env.DOCKER_REPOSITORY }}:${{ github.event.inputs.release_tag }}
+                      ${{ env.DOCKER_REPOSITORY }}:${{ github.event.inputs.release_tag }}-debian-prebuilt
+                      ${{ env.DOCKER_REPOSITORY }}:${{ github.event.inputs.release_tag }}-debian
+                      ${{ env.DOCKER_REPOSITORY }}:latest-debian-prebuilt
+                      ${{ env.DOCKER_REPOSITORY }}:latest-debian
+                      ${{ env.DOCKER_REPOSITORY }}:latest
 
     build-and-push-alpine:
         runs-on: ubuntu-latest
