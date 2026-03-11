@@ -33,6 +33,31 @@ Prebuilt binaries are available for download:
 | Linux (aarch64 GNU)  | [Download](https://github.com/jacobtread/Quizler/releases/latest/download/quizler-aarch64-linux-gnu)       |
 | Linux (aarch64 MUSL) | [Download](https://github.com/jacobtread/Quizler/releases/latest/download/quizler-aarch64-linux-musl)      |
 
+## 🐋 Docker
+
+This repository includes the following Dockerfiles:
+
+- `./containers/prebuilt.alpine.Dockerfile` - Prebuilt Alpine based image
+- `./containers/prebuilt.debian.Dockerfile` - Prebuilt Debian based image
+- `./containers/Build.Dockerfile` - Alpine based Builder image
+
+Both the prebuilt alpine and debian releases are available from the Docker Hub registry and the Github Container Registry:
+
+**Docker Hub Registry:**
+
+`jacobtread/quizler:latest`
+
+**Github Container Registry:**
+
+`ghcr.io/jacobtread/quizler:latest`
+
+The following tags are available with each image release:
+
+- `latest` / `latest-debian` - Debian prebuilt of the latest Quizler version
+- `latest-alpine` - Alpine prebuilt of the latest Quizler version
+- `vX.X.X` / `vX.X.X-debian` - Debian prebuilt of a specific Quizler version
+- `vX.X.X-alpine` - Alpine prebuilt of a specific Quizler version
+
 ## ✨ Features
 
 - **Small and Performant**: Binary sizes for Windows and Linux are optimized, ensuring efficiency without sacrificing performance.
