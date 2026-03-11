@@ -85,7 +85,9 @@
   rows="2"
   maxlength={constants.MAX_QUESTION_LENGTH}
   bind:value={question.text}
-/>
+>
+  <!-- -->
+</textarea>
 
 <EditorAnswers bind:question />
 <QuestionSettings bind:question bind:visible={settings} />

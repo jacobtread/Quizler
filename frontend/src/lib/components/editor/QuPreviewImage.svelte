@@ -56,5 +56,7 @@
     />
   </div>
 {:else if preloaded != null}
-  <div class="qu-image-wrapper" use:preloadChild={preloaded} />
+  <div class="qu-image-wrapper" use:preloadChild={preloaded}>
+    <!--  -->
+  </div>
 {/if}

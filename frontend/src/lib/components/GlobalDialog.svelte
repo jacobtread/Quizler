@@ -11,7 +11,7 @@
       <h1 class="dialog__title">{$dialogStore.title}</h1>
 
       <div class="dialog__msgs">
-        {#each $dialogStore.message.split("\n") as line}
+        {#each $dialogStore.message.split("\n") as line, i (i)}
           <p class="dialog__msg">{line}</p>
         {/each}
       </div>

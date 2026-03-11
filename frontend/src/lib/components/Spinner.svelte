@@ -1,4 +1,6 @@
-<div class="spin" />
+<div class="spin">
+  <!--  -->
+</div>
 
 <style lang="scss">
   @import "../../assets/scheme.scss";

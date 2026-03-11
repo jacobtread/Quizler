@@ -30,22 +30,32 @@
           animate:flip={{ duration: 250 }}
           class="answer"
           data-correct={answer.correct}
-        />
+        >
+          <!--  -->
+        </p>
       {/each}
     </div>
   {:else if question.ty === QuestionType.TrueFalse}
     <div class="answers">
-      <p class="answer" data-correct={question.answer === true} />
-      <p class="answer" data-correct={question.answer === false} />
+      <p class="answer" data-correct={question.answer === true}>
+        <!--  -->
+      </p>
+      <p class="answer" data-correct={question.answer === false}>
+        <!--  -->
+      </p>
     </div>
   {:else if question.ty === QuestionType.Typer}
-    <p class="answer" data-correct={false} />
+    <p class="answer" data-correct={false}>
+      <!--  -->
+    </p>
   {/if}
 </div>
 
 <!-- Shadow item for drag and drop -->
 {#if question[SHADOW_ITEM_MARKER_PROPERTY_NAME]}
-  <div class="shadow" />
+  <div class="shadow">
+    <!--  -->
+  </div>
 {/if}
 
 <style lang="scss">

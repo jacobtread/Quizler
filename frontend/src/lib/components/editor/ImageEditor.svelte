@@ -50,7 +50,7 @@
       </p>
 
       <select class="input" bind:value={question.image.fit}>
-        {#each Object.values(ImageFit) as value}
+        {#each Object.values(ImageFit) as value (value)}
           <option {value}>{value}: {imageFitText[value]}</option>
         {/each}
       </select>

@@ -134,7 +134,7 @@
           </p>
         {/if}
 
-        {#each $imageStore as image}
+        {#each $imageStore as image (image.uuid)}
           <div class="file">
             <p class="file__name">{image.name}</p>
             <div class="image-wrapper">
@@ -153,7 +153,7 @@
           </div>
         {/each}
 
-        {#each uploading as upload}
+        {#each uploading as upload, i (i)}
           <div class="file">
             <p class="file__name">{upload.name}</p>
             <div class="image-wrapper">

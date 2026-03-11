@@ -34,7 +34,7 @@
 
 <div class="list">
   <button
-    on:click={shuffleQuestions}
+    onclick={shuffleQuestions}
     disabled={$createData.questions.length <= 1}
     class="btn btn--icon"
   >
@@ -44,12 +44,12 @@
   <section
     class="questions"
     use:dndzone={{
-      items: $createData.questions,
+      items: $createData.questions as Question[],
       flipDurationMs: 200,
       dropTargetStyle: {}
     }}
-    on:finalize={handleDnd}
-    on:consider={handleDnd}
+    onfinalize={handleDnd}
+    onconsider={handleDnd}
   >
     {#each $createData.questions as question, index (question.id)}
       <div
@@ -58,8 +58,8 @@
         animate:flip={{ duration: 200 }}
         class:qw--active={$activeQuestion !== null &&
           $activeQuestion.id === question.id}
-        on:click={() => onClickQuestion(question)}
-        on:keydown={(event) => onKeyQuestion(event, question)}
+        onclick={() => onClickQuestion(question)}
+        onkeydown={(event) => onKeyQuestion(event, question)}
         role="button"
       >
         <QuestionListItem {question} {index} />
@@ -67,7 +67,7 @@
     {/each}
   </section>
   <button
-    on:click={addQuestion}
+    onclick={addQuestion}
     disabled={$createData.questions.length >= constants.MAX_QUESTIONS}
     class="btn add btn--icon-only"
   >

@@ -36,7 +36,7 @@
           rows="2"
           bind:value={$createData.text}
           maxlength={constants.MAX_DESCRIPTION_LENGTH}
-        />
+        ></textarea>
       </label>
     </div>
   </div>
@@ -63,7 +63,7 @@
           that you leave this on <b>Medium</b> or <b>High</b>
         </p>
         <select bind:value={$createData.filtering} class="input">
-          {#each Object.values(NameFiltering) as value}
+          {#each Object.values(NameFiltering) as value (value)}
             <option {value}>{value}: {nameFilterText[value]}</option>
           {/each}
         </select>

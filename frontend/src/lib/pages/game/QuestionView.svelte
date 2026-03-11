@@ -89,7 +89,7 @@
     <p class="text">{question.text}</p>
     {#if question.ty === QuestionType.Single}
       <div class="answers">
-        {#each question.answers as answer, index}
+        {#each question.answers as answer, index (index)}
           <button
             data-host={gameData.host}
             class="answer btn"
@@ -102,7 +102,7 @@
       </div>
     {:else if question.ty === QuestionType.Multiple}
       <div class="answers">
-        {#each question.answers as answer, index}
+        {#each question.answers as answer, index (index)}
           <button
             data-host={gameData.host}
             class="answer btn"

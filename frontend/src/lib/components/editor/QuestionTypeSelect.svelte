@@ -42,10 +42,18 @@
         <p class="type__name">Single Choice</p>
         <p class="type__desc">Players can only select one answer</p>
         <div class="answers">
-          <p class="answer answer--correct" />
-          <p class="answer" />
-          <p class="answer" />
-          <p class="answer" />
+          <p class="answer answer--correct">
+            <!--  -->
+          </p>
+          <p class="answer">
+            <!--  -->
+          </p>
+          <p class="answer">
+            <!--  -->
+          </p>
+          <p class="answer">
+            <!--  -->
+          </p>
         </div>
       </button>
 
@@ -57,10 +65,18 @@
         <p class="type__name">Multiple Choice</p>
         <p class="type__desc">Players can select multiple answers</p>
         <div class="answers">
-          <p class="answer answer--correct" />
-          <p class="answer answer--correct" />
-          <p class="answer" />
-          <p class="answer answer--correct" />
+          <p class="answer answer--correct">
+            <!--  -->
+          </p>
+          <p class="answer answer--correct">
+            <!--  -->
+          </p>
+          <p class="answer">
+            <!--  -->
+          </p>
+          <p class="answer answer--correct">
+            <!--  -->
+          </p>
         </div>
       </button>
       <button
@@ -71,8 +87,12 @@
         <p class="type__name">True / False</p>
         <p class="type__desc">Simple true or false questions</p>
         <div class="answers">
-          <p class="answer answer--correct" />
-          <p class="answer" />
+          <p class="answer answer--correct">
+            <!--  -->
+          </p>
+          <p class="answer">
+            <!--  -->
+          </p>
         </div>
       </button>
       <button
@@ -83,7 +103,9 @@
         <p class="type__name">Typer</p>
         <p class="type__desc">Players must type out their answer</p>
         <div class="answers">
-          <p class="answer" />
+          <p class="answer">
+            <!--  -->
+          </p>
         </div>
       </button>
     </div>

@@ -124,7 +124,7 @@
   </div>
 {:else if question.ty === QuestionType.Typer}
   <div class="answers">
-    {#each question.answers as answer, index}
+    {#each question.answers as answer, index (index)}
       <div class="answer">
         <input
           class="answer__input"
