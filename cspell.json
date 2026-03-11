@@ -9,6 +9,9 @@
     "embeddy",
     "downloadurl",
     "uuidv",
-    "nonempty"
+    "nonempty",
+    "serde",
+    "codegen",
+    "Jacobtread"
   ]
 }

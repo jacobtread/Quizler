@@ -7,6 +7,7 @@ use crate::{
 use axum::{
     body::Body,
     extract::{multipart::MultipartError, Multipart, Path, WebSocketUpgrade},
+    http::{header::CONTENT_TYPE, HeaderValue, Request, StatusCode},
     response::{IntoResponse, Response},
     routing::{get, post},
     Json, Router,
@@ -14,7 +15,6 @@ use axum::{
 use bytes::BytesMut;
 use embeddy::Embedded;
 use futures_util::TryStreamExt;
-use hyper::{header::CONTENT_TYPE, http::HeaderValue, Request, StatusCode};
 use log::debug;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -33,7 +33,7 @@ use uuid::Uuid;
 pub fn router() -> Router {
     Router::new()
         .route("/api/quiz", post(create_quiz))
-        .route("/api/quiz/:token/:image", get(quiz_image))
+        .route("/api/quiz/{token}/{image}", get(quiz_image))
         .route("/api/quiz/socket", get(quiz_socket))
         .fallback_service(Assets)
 }
@@ -180,7 +180,7 @@ enum ImageError {
     InvalidImageMime,
 }
 
-/// # GET /api/quiz/:token/:uuid
+/// # GET /api/quiz/{token}/{uuid}
 ///
 /// Endpoint for getting the contents of an image from
 /// a quiz

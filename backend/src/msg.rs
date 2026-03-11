@@ -8,7 +8,7 @@ use crate::{
         ServerError,
     },
 };
-use serde::{ser::SerializeMap, Deserialize, Serialize, __private::ser::FlatMapSerializer};
+use serde::{ser::SerializeMap, Deserialize, Serialize};
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -23,7 +23,9 @@ impl Serialize for ServerResponse {
     {
         let mut map = serializer.serialize_map(None)?;
         map.serialize_entry("ret", &1)?;
-        self.0.serialize(FlatMapSerializer(&mut map))?;
+
+        self.0
+            .serialize(serde::__private228::ser::FlatMapSerializer(&mut map))?;
         map.end()
     }
 }

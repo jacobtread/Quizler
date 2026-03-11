@@ -1,5 +1,5 @@
 use bytes::Bytes;
-use rand_core::{OsRng, RngCore};
+use rand::Rng;
 use serde::{de::Visitor, ser::SerializeMap, Deserialize, Serialize};
 use std::{collections::HashMap, fmt::Display, hash::Hash, str::FromStr, time::Duration};
 use uuid::Uuid;
@@ -425,7 +425,8 @@ impl GameToken {
         /// Length of the charset
         const RANGE: usize = GameToken::CHARSET.len();
 
-        let mut rand = OsRng;
+        let mut rand = rand::rng();
+
         let mut token = Self([0u8; Self::LENGTH]);
 
         loop {

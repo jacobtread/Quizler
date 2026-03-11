@@ -5,6 +5,7 @@ use crate::{
     types::{Answer, GameToken, HostAction, RemoveReason, ServerError},
 };
 use axum::extract::ws::{Message, WebSocket};
+use bytes::Bytes;
 use futures_util::future::BoxFuture;
 use log::{debug, error};
 use serde::Serialize;
@@ -125,10 +126,7 @@ impl Session {
             // Connection lost timeout
             false
         } else {
-            self.socket
-                .send(Message::Ping(Vec::with_capacity(0)))
-                .await
-                .is_ok()
+            self.socket.send(Message::Ping(Bytes::new())).await.is_ok()
         }
     }
 
@@ -242,7 +240,7 @@ impl Session {
     /// * msg - The message to send
     async fn send<S: Serialize>(&mut self, msg: &S) -> Result<(), axum::Error> {
         let value = serde_json::to_string(msg).map_err(|err| axum::Error::new(Box::new(err)))?;
-        self.socket.send(Message::Text(value)).await
+        self.socket.send(Message::Text(value.into())).await
     }
 
     /// Handler for initialize messages to attempt to initialize a new game.
