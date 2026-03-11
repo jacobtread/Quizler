@@ -135,7 +135,7 @@
     const preloadedImage = await preloadImage(gameData.token, question);
 
     if (preloadedImage !== null && question.image !== null) {
-      // Ensure browser compatability
+      // Ensure browser compatibility
       if (preloadedImage.decode !== undefined) {
         await preloadedImage.decode();
       }
@@ -192,9 +192,9 @@
   {#if !answered}
     <QuestionView {gameData} {question} {timeMs} bind:answered />
   {:else if players.length !== 1}
-    <!-- 
-      Don't bother showing answered screen if only one player 
-      as it will just be a blink before the score screen 
+    <!--
+      Don't bother showing answered screen if only one player
+      as it will just be a blink before the score screen
     -->
     <AnsweredView />
   {/if}

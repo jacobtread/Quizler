@@ -28,7 +28,7 @@ impl Serialize for ServerResponse {
     }
 }
 
-/// Messages recieved from the client
+/// Messages received from the client
 #[derive(Deserialize)]
 #[serde(tag = "ty")]
 pub enum ClientMessage {

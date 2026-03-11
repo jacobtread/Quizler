@@ -109,7 +109,7 @@ function createUploadForm(config: CreateData, images: StoredImage[]): FormData {
 
   // Append the images to the form
   for (const image of images) {
-    // Images require atleast 1 reference to be included
+    // Images require at least 1 reference to be included
     const usage = config.questions.find(
       (question) => question.image?.uuid === image.uuid
     );

@@ -188,7 +188,7 @@ impl Session {
             _ => return Ok(true),
         };
 
-        // Decode the recieved client message
+        // Decode the received client message
         let req = match serde_json::from_str::<ClientMessage>(&text) {
             Ok(value) => value,
             Err(err) => {

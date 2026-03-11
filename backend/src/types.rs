@@ -141,7 +141,7 @@ impl Question {
 /// UUID of the image as well as its fit mode
 #[derive(Serialize, Deserialize)]
 pub struct QuestionImage {
-    /// UUID from created image  
+    /// UUID from created image
     pub uuid: ImageRef,
     /// Client side image fit mode
     pub fit: ImageFit,
@@ -292,7 +292,7 @@ pub enum Answer {
 
 impl Answer {
     /// Validation to ensure that a question answer is the
-    /// right type of answer for the specified quesiton type
+    /// right type of answer for the specified question type
     pub fn is_valid(&self, qt: &QuestionData) -> bool {
         matches!(
             (self, qt),
@@ -315,7 +315,7 @@ pub enum Score {
     Correct { value: u32 },
     // Answer was incorrect
     Incorrect,
-    // Multiple choice has some asnwers right
+    // Multiple choice has some answers right
     Partial { value: u32, count: u32, total: u32 },
 }
 

@@ -209,7 +209,7 @@ export const questionSchema = z
         ty: z.literal(QuestionType.Single),
         answers: z
           .array(answerValueSchema)
-          .min(1, "Must provide atleast one answer")
+          .min(1, "Must provide at least one answer")
           .max(
             MAX_ANSWERS,
             `Too many answers maximum allowed is ${MAX_ANSWERS}`
@@ -220,7 +220,7 @@ export const questionSchema = z
         ty: z.literal(QuestionType.Multiple),
         answers: z
           .array(answerValueSchema)
-          .min(1, "Must provide atleast one answer")
+          .min(1, "Must provide at least one answer")
           .max(
             MAX_ANSWERS,
             `Too many answers maximum allowed is ${MAX_ANSWERS}`
@@ -238,7 +238,7 @@ export const questionSchema = z
         ty: z.literal(QuestionType.Typer),
         answers: z
           .array(answerText)
-          .min(1, "Must provide atleast one answer")
+          .min(1, "Must provide at least one answer")
           .max(
             MAX_ANSWERS,
             `Too many answers maximum allowed is ${MAX_ANSWERS}`

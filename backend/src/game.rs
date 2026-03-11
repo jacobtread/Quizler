@@ -584,7 +584,7 @@ impl Game {
 
         self.update_ready();
 
-        // Reset the game if everyone disconected while in progress
+        // Reset the game if everyone disconnected while in progress
         if self.state != GameState::Finished && self.players.is_empty() {
             self.reset_completely();
         }
