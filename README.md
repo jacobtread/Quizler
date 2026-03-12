@@ -96,7 +96,7 @@ For joining a quiz.
 
 ## ⚙️ Build Instructions
 
-Building Quizler requires NodeJS (>=16) for the frontend and Cargo/Rust (>=1.75.0) for the backend:
+Building Quizler requires NodeJS (>=22) for the frontend and Cargo/Rust (>=1.93.0) for the backend:
 
 > **Note**
 > These commands are from within the context of the repository directory. If you haven't already download the repository and cd to the directory before running the commands below
@@ -126,27 +126,3 @@ After building the backend, find the binary at `backend/target/release/quizler[.
 
 For Docker-based builds, refer to the provided `Build.Dockerfile` in the repository, there is also
 a docker image for pre-built binaries at `Dockerfile`.
-
-## 🧾 License
-
-MIT License
-
-Copyright (c) 2023 - 2024 Jacobtread
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
