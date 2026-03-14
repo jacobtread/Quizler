@@ -1,7 +1,7 @@
 [package]
 name = "quizler"
 version = "0.1.2"
-edition = "2021"
+edition = "2024"
 description = "Offline quiz game"
 license = "MIT"
 authors = ["Jacobtread <jacobtread@gmail.com>"]
