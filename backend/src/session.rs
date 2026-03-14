@@ -6,7 +6,6 @@ use crate::{
 };
 use axum::extract::ws::{Message, WebSocket};
 use bytes::Bytes;
-use futures_util::future::BoxFuture;
 use log::{debug, error};
 use serde::Serialize;
 use std::{
@@ -212,19 +211,17 @@ impl Session {
     /// # Arguments
     /// * msg - The client message being processed
     async fn handle_request(&mut self, msg: ClientMessage) -> Result<(), axum::Error> {
-        let future: BoxFuture<Result<ResponseMessage, ServerError>> = match msg {
-            ClientMessage::Initialize { uuid } => Box::pin(self.initialize(uuid)),
-            ClientMessage::Connect { token } => Box::pin(self.connect(token)),
-            ClientMessage::Join { name } => Box::pin(self.join(name)),
-            ClientMessage::HostAction { action } => Box::pin(self.host_action(action)),
-            ClientMessage::Answer { answer } => Box::pin(self.answer(answer)),
-            ClientMessage::Kick { id } => Box::pin(self.kick(id)),
-            ClientMessage::Ready => Box::pin(self.ready()),
+        let result: Result<ResponseMessage, ServerError> = match msg {
+            ClientMessage::Initialize { uuid } => self.initialize(uuid).await,
+            ClientMessage::Connect { token } => self.connect(token).await,
+            ClientMessage::Join { name } => self.join(name).await,
+            ClientMessage::HostAction { action } => self.host_action(action).await,
+            ClientMessage::Answer { answer } => self.answer(answer).await,
+            ClientMessage::Kick { id } => self.kick(id).await,
+            ClientMessage::Ready => self.ready().await,
         };
 
-        let res = future.await;
-
-        let msg = match res {
+        let msg = match result {
             Ok(value) => value,
             Err(error) => ResponseMessage::Error { error },
         };
