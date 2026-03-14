@@ -418,30 +418,39 @@ impl GameToken {
     const LENGTH: usize = 5;
     /// Set of chars that can be used as game tokens
     const CHARSET: &'static [u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    /// Length of the charset
+    const RANGE: usize = GameToken::CHARSET.len();
+
+    /// Randomize the current game token value using the provided `rng`
+    /// source
+    fn randomize<R>(&mut self, rng: &mut R)
+    where
+        R: Rng + ?Sized,
+    {
+        for at in self.0.iter_mut() {
+            loop {
+                // Obtain a random number
+                let var = (rng.next_u32() >> (32 - 6)) as usize;
+
+                // If the value is in the charset break the loop
+                if var < Self::RANGE {
+                    *at = Self::CHARSET[var];
+                    break;
+                }
+            }
+        }
+    }
 
     /// Creates a unique random token that isn't present in the
     /// provided collect of games
     pub fn unique_token(map: &HashMap<GameToken, GameRef>) -> GameToken {
-        /// Length of the charset
-        const RANGE: usize = GameToken::CHARSET.len();
-
-        let mut rand = rand::rng();
+        let mut rng = rand::rng();
 
         let mut token = Self([0u8; Self::LENGTH]);
 
         loop {
-            for at in token.0.iter_mut() {
-                loop {
-                    // Obtain a random number
-                    let var = (rand.next_u32() >> (32 - 6)) as usize;
-
-                    // If the value is in the charset break the loop
-                    if var < RANGE {
-                        *at = Self::CHARSET[var];
-                        break;
-                    }
-                }
-            }
+            // Randomize the token
+            token.randomize(&mut rng);
 
             // Check that the token isn't already taken
             if !map.contains_key(&token) {
