@@ -77,10 +77,10 @@
 </FloatingModal>
 
 <style lang="scss">
-  @import "../../../assets/scheme.scss";
+  @use "../../../assets/scheme.scss";
 
   .optional {
-    color: $textHint;
+    color: scheme.$textHint;
     margin-left: 0.5rem;
   }
 

@@ -12,6 +12,9 @@
     "nonempty",
     "serde",
     "codegen",
-    "Jacobtread"
+    "Jacobtread",
+    "onconsider",
+    "onfinalize",
+    "dndzone"
   ]
 }

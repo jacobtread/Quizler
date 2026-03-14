@@ -153,7 +153,7 @@
 {/if}
 
 <style lang="scss">
-  @import "../../../assets/scheme.scss";
+  @use "../../../assets/scheme.scss";
 
   .hidden {
     display: none;
@@ -168,15 +168,15 @@
   }
 
   .delete {
-    background-color: $btnSurfaceBackground;
+    background-color: scheme.$btnSurfaceBackground;
 
     &:disabled {
-      background-color: $btnSurfaceDisabled;
+      background-color: scheme.$btnSurfaceDisabled;
     }
   }
 
   .answer {
-    background-color: $surface;
+    background-color: scheme.$surface;
     padding: 0.5rem 1rem;
     gap: 1rem;
     border-radius: 0.5rem;
@@ -186,7 +186,7 @@
     line-height: 1;
 
     &--selected {
-      outline: 2px solid $primary;
+      outline: 2px solid scheme.$primary;
     }
 
     &__check {
@@ -198,10 +198,10 @@
       width: 100%;
       padding: 1rem;
       border: none;
-      background-color: $surfaceLight;
+      background-color: scheme.$surfaceLight;
       border-radius: 0.25rem;
       font-size: 1rem;
-      color: $textPrimary;
+      color: scheme.$textPrimary;
     }
 
     &--bool {

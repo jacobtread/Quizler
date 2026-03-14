@@ -41,7 +41,7 @@
 {/if}
 
 <style lang="scss">
-  @import "../../assets/scheme.scss";
+  @use "../../assets/scheme.scss";
 
   .floating-wrapper {
     z-index: 1;
@@ -59,8 +59,8 @@
   }
 
   .dialog {
-    background-color: $appBackground;
-    border: 1px solid $surface;
+    background-color: scheme.$appBackground;
+    border: 1px solid scheme.$surface;
 
     border-radius: 0.5rem;
 

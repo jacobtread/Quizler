@@ -1,5 +1,5 @@
 @use "sass:color";
-@import "scheme";
+@use "scheme";
 
 :root {
   line-height: 1.5;
@@ -9,7 +9,7 @@
 }
 
 * {
-  font-family: $fontFamily;
+  font-family: scheme.$fontFamily;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -18,13 +18,13 @@
 }
 
 *::-webkit-scrollbar {
-  background-color: $surface;
+  background-color: scheme.$surface;
   max-width: 8px;
   max-height: 8px;
 }
 
 *::-webkit-scrollbar-thumb {
-  background-color: $scrollbarThumb;
+  background-color: scheme.$scrollbarThumb;
   border-radius: 0.5rem;
 }
 
@@ -45,9 +45,8 @@ body {
 }
 
 body {
-
-  background-color: $appBackground;
-  color: $textDefault;
+  background-color: scheme.$appBackground;
+  color: scheme.$textDefault;
 }
 
 p {
@@ -71,15 +70,17 @@ p {
   padding: 1rem;
   border-radius: 0.5rem;
 
-  font-size: $btnFontSize;
+  font-size: scheme.$btnFontSize;
 
   border: none;
 
-  color: $btnText;
-  background-color: $btnBackground;
-  border: 1px solid $btnBorderColor;
+  color: scheme.$btnText;
+  background-color: scheme.$btnBackground;
+  border: 1px solid scheme.$btnBorderColor;
 
-  transition: background-color 0.25s ease, transform 0.2s ease;
+  transition:
+    background-color 0.25s ease,
+    transform 0.2s ease;
   cursor: pointer;
 
   text-decoration: none;
@@ -89,16 +90,16 @@ p {
   }
 
   &--surface {
-    background-color: $btnSurfaceBackground;
+    background-color: scheme.$btnSurfaceBackground;
 
     &:disabled {
-      background-color: $btnSurfaceDisabled;
+      background-color: scheme.$btnSurfaceDisabled;
     }
   }
 
   &--small {
     padding: 0.5rem 1rem;
-    font-size: $btnSmallFontSize;
+    font-size: scheme.$btnSmallFontSize;
     border-radius: 0.25rem;
   }
 
@@ -107,13 +108,13 @@ p {
   }
 
   &:hover {
-    background-color: $btnHoverBackground;
+    background-color: scheme.$btnHoverBackground;
   }
 
   &:disabled {
-    background-color: $btnDisabled;
+    background-color: scheme.$btnDisabled;
     cursor: not-allowed;
-    color: $btnDisabledText;
+    color: scheme.$btnDisabledText;
   }
 
   &:active:not(:disabled) {
@@ -131,19 +132,19 @@ p {
     display: inline-block;
     vertical-align: middle;
 
-    width: $btnIconWidth;
-    height: $btnIconHeight;
-    margin-right: $btnIconGap;
+    width: scheme.$btnIconWidth;
+    height: scheme.$btnIconHeight;
+    margin-right: scheme.$btnIconGap;
 
-    fill: $btnIconFill;
+    fill: scheme.$btnIconFill;
   }
 
   &:disabled {
-    color: $btnIconDisabledText;
+    color: scheme.$btnIconDisabledText;
 
     > img,
     > svg {
-      fill: $btnIconDisabledFill;
+      fill: scheme.$btnIconDisabledFill;
     }
   }
 }
@@ -152,8 +153,8 @@ p {
 .btn--icon-only.btn--small {
   > img,
   > svg {
-    width: $btnSmallIconWidth;
-    height: $btnSmallIconHeight;
+    width: scheme.$btnSmallIconWidth;
+    height: scheme.$btnSmallIconHeight;
   }
 }
 
@@ -170,17 +171,19 @@ p {
   border-radius: 0.5rem;
 
   border: none;
-  background-color: $btnBackground;
-  color: $btnText;
+  background-color: scheme.$btnBackground;
+  color: scheme.$btnText;
 
-  transition: background-color 0.25s ease, transform 0.2s ease;
+  transition:
+    background-color 0.25s ease,
+    transform 0.2s ease;
   line-height: 0;
   cursor: pointer;
 
   z-index: 1;
 
   &:hover {
-    background-color: $primary;
+    background-color: scheme.$primary;
   }
 }
 
@@ -193,18 +196,18 @@ p {
 table {
   width: 100%;
   border-collapse: collapse;
-  border: 1px solid $surfaceLight;
+  border: 1px solid scheme.$surfaceLight;
 }
 
 td {
-  background-color: $surface;
-  border: 1px solid $surfaceLight;
+  background-color: scheme.$surface;
+  border: 1px solid scheme.$surfaceLight;
   padding: 1rem;
 }
 
 th {
-  background-color: $surface;
-  border: 1px solid $surfaceLight;
+  background-color: scheme.$surface;
+  border: 1px solid scheme.$surfaceLight;
   padding: 1rem;
 
   &:first-child {
@@ -260,11 +263,11 @@ th {
 
   &__name {
     font-weight: bold;
-    color: $fieldName;
+    color: scheme.$fieldName;
   }
 
   &__desc {
-    color: $fieldDesc;
+    color: scheme.$fieldDesc;
     margin-bottom: 0.25rem;
   }
 }
@@ -276,7 +279,7 @@ th {
   padding: 1rem;
   border-radius: 0.25rem;
   &__title {
-    color: $sectionTitle;
+    color: scheme.$sectionTitle;
     margin-bottom: 0.25rem;
   }
 
@@ -297,12 +300,12 @@ th {
   width: 100%;
   padding: 0.5rem;
   border: none;
-  background-color: $surfaceLight;
+  background-color: scheme.$surfaceLight;
   border-radius: 0.25rem;
   margin-top: 0.5rem;
   font-size: 1rem;
   line-height: 1.5;
-  color: $textDefault;
+  color: scheme.$textDefault;
 }
 
 //  Wrapper for custom sized images

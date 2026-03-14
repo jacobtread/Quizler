@@ -35,11 +35,11 @@
 {/if}
 
 <style lang="scss">
-  @import "../../assets/scheme.scss";
+  @use "../../assets/scheme.scss";
 
   .dialog {
-    background-color: $appBackground;
-    border: 1px solid $surface;
+    background-color: scheme.$appBackground;
+    border: 1px solid scheme.$surface;
 
     padding: 1rem;
     border-radius: 0.5rem;
@@ -49,7 +49,7 @@
 
     &__title {
       margin-bottom: 0.5rem;
-      color: $dialogTitle;
+      color: scheme.$dialogTitle;
     }
 
     &__msg {

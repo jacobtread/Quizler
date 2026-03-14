@@ -23,12 +23,12 @@
 </label>
 
 <style lang="scss">
-  @import "../../assets/scheme.scss";
+  @use "../../assets/scheme.scss";
 
   .checkbox {
     display: inline-block;
 
-    background-color: $btnSurfaceBackground;
+    background-color: scheme.$btnSurfaceBackground;
 
     width: 2rem;
     height: 2rem;
@@ -41,7 +41,7 @@
     }
 
     &:focus-within {
-      outline: 2px solid $outlineFill;
+      outline: 2px solid scheme.$outlineFill;
     }
 
     &__value {
@@ -57,7 +57,7 @@
       &:checked ~ .checkbox__mark {
         opacity: 1;
         transform: translateY(0);
-        fill: $btnIconFill;
+        fill: scheme.$btnIconFill;
       }
     }
 
@@ -67,7 +67,9 @@
       height: 1rem;
       margin: 0.5rem;
 
-      transition: opacity 0.15s ease, transform 0.15s ease;
+      transition:
+        opacity 0.15s ease,
+        transform 0.15s ease;
       opacity: 0;
       transform: translateY(15px);
     }

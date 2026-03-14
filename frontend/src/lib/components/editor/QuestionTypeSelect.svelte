@@ -130,7 +130,7 @@
 </FloatingModal>
 
 <style lang="scss">
-  @import "../../../assets/scheme.scss";
+  @use "../../../assets/scheme.scss";
 
   .row {
     display: flex;
@@ -147,30 +147,30 @@
 
   .type {
     text-align: left;
-    background-color: $surface;
+    background-color: scheme.$surface;
     border: none;
     padding: 1rem;
-    border: 1px solid $surfaceLight;
+    border: 1px solid scheme.$surfaceLight;
     border-radius: 0.25rem;
     transition: border-color 0.25s ease;
     cursor: pointer;
 
     &--selected {
-      border-color: $primary;
+      border-color: scheme.$primary;
     }
 
     &:hover {
-      border-color: $surfaceLighter;
+      border-color: scheme.$surfaceLighter;
     }
 
     &--selected:hover {
-      border-color: $primaryLighter;
+      border-color: scheme.$primaryLighter;
     }
 
     &__name {
       font-size: 1.25rem;
       font-weight: bold;
-      color: $textPrimary;
+      color: scheme.$textPrimary;
       margin-bottom: 0.25rem;
     }
 
@@ -192,7 +192,7 @@
   .answer {
     padding: 0.5rem;
     border-radius: 0.25rem;
-    background-color: $surfaceLight;
+    background-color: scheme.$surfaceLight;
     transition: background-color 0.1s linear;
 
     &:nth-child(odd):last-child {
@@ -201,8 +201,8 @@
     }
 
     &--correct {
-      background-color: $primary;
-      color: $textPrimary;
+      background-color: scheme.$primary;
+      color: scheme.$textPrimary;
     }
   }
 

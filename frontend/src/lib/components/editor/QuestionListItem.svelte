@@ -63,7 +63,7 @@
 {/if}
 
 <style lang="scss">
-  @import "../../../assets/scheme.scss";
+  @use "../../../assets/scheme.scss";
 
   .image-wrapper {
     width: 100%;
@@ -75,13 +75,13 @@
     justify-content: center;
     align-items: center;
 
-    border: 1px solid $surfaceLight;
+    border: 1px solid scheme.$surfaceLight;
     border-radius: 0.25rem;
   }
 
   .question {
     position: relative;
-    background-color: $surface;
+    background-color: scheme.$surface;
     padding: 0.5rem;
     border-radius: 0.25rem;
     display: flex;
@@ -91,9 +91,9 @@
 
     &__index {
       display: inline;
-      background-color: $surface;
+      background-color: scheme.$surface;
 
-      color: $textPrimary;
+      color: scheme.$textPrimary;
 
       font-weight: bold;
       margin-right: 0.25rem;
@@ -119,7 +119,7 @@
   .answer {
     padding: 0.5rem;
     border-radius: 0.25rem;
-    background-color: $surfaceLight;
+    background-color: scheme.$surfaceLight;
     transition: background-color 0.1s linear;
 
     &:nth-child(odd):last-child {
@@ -128,8 +128,8 @@
     }
 
     &[data-correct="true"] {
-      background-color: $primary;
-      color: $textPrimary;
+      background-color: scheme.$primary;
+      color: scheme.$textPrimary;
     }
   }
 
@@ -140,7 +140,7 @@
     right: 0;
     bottom: 0;
     visibility: visible;
-    border: 2px dashed $surfaceLight;
+    border: 2px dashed scheme.$surfaceLight;
     border-radius: 0.25rem;
     margin: 0;
   }

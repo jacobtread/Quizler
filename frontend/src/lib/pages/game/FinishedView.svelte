@@ -72,7 +72,7 @@
 </main>
 
 <style lang="scss">
-  @import "../../../assets/scheme.scss";
+  @use "../../../assets/scheme.scss";
 
   .page {
     padding: 1rem;
@@ -89,12 +89,12 @@
 
   .player {
     position: relative;
-    background-color: $surface;
-    border: 1px solid $surfaceLight;
+    background-color: scheme.$surface;
+    border: 1px solid scheme.$surfaceLight;
 
     &__place {
       padding: 1rem;
-      color: $textPrimary;
+      color: scheme.$textPrimary;
       font-weight: bold;
     }
 
@@ -134,7 +134,7 @@
   }
 
   .token {
-    color: $primary;
+    color: scheme.$primary;
     font-weight: bold;
     font-size: 3rem;
     margin: 0;

@@ -76,23 +76,24 @@
 </div>
 
 <style lang="scss">
-  @import "../../../assets/scheme.scss";
+  @use "../../../assets/scheme.scss";
+
   .qw {
     border-radius: 0.25rem;
     position: relative;
-    border: 2px solid $surface;
+    border: 2px solid scheme.$surface;
 
     &:hover {
-      border-color: $surfaceLightest;
+      border-color: scheme.$surfaceLightest;
     }
 
     &--active,
     &--active:hover {
-      border-color: $primary;
+      border-color: scheme.$primary;
     }
 
     &:focus {
-      outline: 2px solid $outlineFill;
+      outline: 2px solid scheme.$outlineFill;
       outline-offset: 4px;
     }
   }
@@ -110,7 +111,7 @@
     padding: 0.75rem;
     overflow: auto;
     flex: auto;
-    border: 0.1rem solid $surfaceLight;
+    border: 0.1rem solid scheme.$surfaceLight;
     border-radius: 0.5rem;
 
     display: flex;

@@ -204,7 +204,7 @@
 {/if}
 
 <style lang="scss">
-  @import "../../assets/scheme";
+  @use "../../assets/scheme";
 
   .page {
     gap: 1rem;
@@ -225,8 +225,8 @@
     max-width: 15rem;
     text-align: center;
     background-color: transparent;
-    border: 5px solid $surface;
-    color: $textPrimary;
+    border: 5px solid scheme.$surface;
+    color: scheme.$textPrimary;
     border-radius: 0.5rem;
     outline: none;
     transition: 0.5s ease;
@@ -234,7 +234,7 @@
     vertical-align: middle;
 
     &:focus {
-      border-bottom-color: $primary;
+      border-bottom-color: scheme.$primary;
     }
 
     &--small {
@@ -249,18 +249,19 @@
     border-radius: 1rem;
     border: none;
     cursor: pointer;
-    color: $textPrimary;
-    background-color: $primary;
+    color: scheme.$textPrimary;
+    background-color: scheme.$primary;
 
     &--small {
       padding-inline-start: 0.6rem;
     }
   }
+
   .back {
-    border: 0.1rem solid $btnBorderColor;
+    border: 0.1rem solid scheme.$btnBorderColor;
 
     :global(> svg) {
-      fill: $textPrimary;
+      fill: scheme.$textPrimary;
     }
   }
 

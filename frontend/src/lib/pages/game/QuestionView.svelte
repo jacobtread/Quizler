@@ -20,12 +20,7 @@
     answered: boolean;
   }
 
-  let {
-    gameData,
-    timeMs,
-    question,
-    answered = $bindable()
-  }: Props = $props();
+  let { gameData, timeMs, question, answered = $bindable() }: Props = $props();
 
   let answers: number[] = $state([]);
   let typerAnswer: string = $state("");
@@ -172,16 +167,16 @@
 </main>
 
 <style lang="scss">
-  @import "../../../assets/scheme.scss";
+  @use "../../../assets/scheme.scss";
 
   .bottom {
     width: 100%;
-    background-color: $surface;
+    background-color: scheme.$surface;
     padding: 0.5rem 1rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-top: 5px solid $surfaceLight;
+    border-top: 5px solid scheme.$surfaceLight;
   }
 
   .token {
@@ -202,7 +197,7 @@
   }
 
   .time {
-    color: $primary;
+    color: scheme.$primary;
     font-weight: bold;
     font-size: 2rem;
   }
@@ -232,8 +227,8 @@
     margin-bottom: 0;
     display: flex;
     flex-flow: column;
-    background-color: $appBackground;
-    border: 2px solid $surface;
+    background-color: scheme.$appBackground;
+    border: 2px solid scheme.$surface;
     border-radius: 0.5rem;
     margin: 0 1rem;
 
@@ -258,10 +253,10 @@
     }
 
     &--checked {
-      background-color: $primary;
+      background-color: scheme.$primary;
 
       &:hover {
-        background-color: $primary;
+        background-color: scheme.$primary;
       }
     }
 

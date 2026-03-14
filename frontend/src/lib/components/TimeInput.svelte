@@ -1,8 +1,6 @@
 <!-- Input for deciding the amount of time something should take -->
 
 <script lang="ts">
-  
-
   interface Props {
     // The time in milliseconds for the input
     value: number;
@@ -76,15 +74,15 @@
 </div>
 
 <style lang="scss">
-  @import "../../assets/scheme.scss";
+  @use "../../assets/scheme.scss";
 
   .select,
   .time-input {
     padding: 0.5rem;
     border-radius: 0.25rem;
     font-size: 1rem;
-    background-color: $btnSurfaceBackground;
-    color: $btnText;
+    background-color: scheme.$btnSurfaceBackground;
+    color: scheme.$btnText;
     border: none;
   }
 

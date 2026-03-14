@@ -35,7 +35,8 @@
 </main>
 
 <style lang="scss">
-  @import "../../../assets/scheme.scss";
+  @use "sass:color";
+  @use "../../../assets/scheme.scss";
 
   .text {
     color: #fff;
@@ -59,50 +60,69 @@
     gap: 1rem;
     justify-content: center;
     align-items: center;
-    background: linear-gradient(to bottom right, $primary, $secondary);
+    background: linear-gradient(
+      to bottom right,
+      scheme.$primary,
+      scheme.$secondary
+    );
 
     .title,
     .text {
-      text-shadow: 0 3px 1px darken($color: $primary, $amount: 15);
+      text-shadow: 0 3px 1px
+        color.adjust($color: scheme.$primary, $lightness: -15%);
     }
   }
 
   .main[data-type="Correct"] {
-    background: linear-gradient(to bottom right, $correctStart, $correctEnd);
+    background: linear-gradient(
+      to bottom right,
+      scheme.$correctStart,
+      scheme.$correctEnd
+    );
 
     .title {
-      text-shadow: 0 3px 1px darken($color: $correctEnd, $amount: 5);
+      text-shadow: 0 3px 1px
+        color.adjust($color: scheme.$correctEnd, $lightness: -5%);
     }
 
     .text {
-      text-shadow: 0 2px 1px darken($color: $correctEnd, $amount: 5);
+      text-shadow: 0 2px 1px
+        color.adjust($color: scheme.$correctEnd, $lightness: -5%);
     }
   }
 
   .main[data-type="Partial"] {
-    background: linear-gradient(to bottom right, $partialStart, $partialEnd);
+    background: linear-gradient(
+      to bottom right,
+      scheme.$partialStart,
+      scheme.$partialEnd
+    );
 
     .title {
-      text-shadow: 0 3px 1px darken($color: $partialStart, $amount: 15);
+      text-shadow: 0 3px 1px
+        color.adjust($color: scheme.$partialStart, $lightness: -15%);
     }
 
     .text {
-      text-shadow: 0 2px 1px darken($color: $partialStart, $amount: 15);
+      text-shadow: 0 2px 1px
+        color.adjust($color: scheme.$partialStart, $lightness: -15%);
     }
   }
 
   .main[data-type="Incorrect"] {
     background: linear-gradient(
       to bottom right,
-      $incorrectStart,
-      $incorrectEnd
+      scheme.$incorrectStart,
+      scheme.$incorrectEnd
     );
 
     .title {
-      text-shadow: 0 3px 1px darken($color: $incorrectEnd, $amount: 5);
+      text-shadow: 0 3px 1px
+        color.adjust($color: scheme.$incorrectEnd, $lightness: -5%);
     }
     .text {
-      text-shadow: 0 2px 1px darken($color: $incorrectEnd, $amount: 5);
+      text-shadow: 0 2px 1px
+        color.adjust($color: scheme.$incorrectEnd, $lightness: -5%);
     }
   }
 

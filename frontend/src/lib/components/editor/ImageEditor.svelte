@@ -70,7 +70,7 @@
 <ImageStorage />
 
 <style lang="scss">
-  @import "../../../assets/scheme.scss";
+  @use "../../../assets/scheme.scss";
 
   .settings {
     position: absolute;
@@ -85,7 +85,7 @@
     position: relative;
     margin-bottom: 1rem;
 
-    border: 1px solid $surfaceLight;
+    border: 1px solid scheme.$surfaceLight;
     border-radius: 0.5rem;
   }
 
@@ -106,7 +106,7 @@
     background-color: transparent;
     border: none;
     border-radius: 0.5rem;
-    color: $textDefault;
+    color: scheme.$textDefault;
   }
 
   .overlay {

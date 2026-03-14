@@ -99,7 +99,7 @@
 <QuestionTypeSelect bind:question bind:visible={type} />
 
 <style lang="scss">
-  @import "../../../assets/scheme.scss";
+  @use "../../../assets/scheme.scss";
 
   .actions {
     margin-bottom: 0.5rem;
@@ -111,7 +111,7 @@
     padding: 0.5rem;
 
     &__type {
-      background-color: $surfaceLight;
+      background-color: scheme.$surfaceLight;
       padding: 0.5rem;
       border-radius: 0.5rem;
       margin-left: 0.5rem;
@@ -130,12 +130,12 @@
 
     padding: 0.5rem;
     border: none;
-    background-color: $surface;
+    background-color: scheme.$surface;
     border-radius: 0.25rem;
     margin-top: 0.5rem;
     font-size: 1rem;
     line-height: 1.5;
-    color: $textDefault;
+    color: scheme.$textDefault;
   }
 
   @media screen and (max-width: 64rem) {

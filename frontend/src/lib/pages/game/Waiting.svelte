@@ -28,7 +28,8 @@
 </main>
 
 <style lang="scss">
-  @import "../../../assets/scheme.scss";
+  @use "sass:color";
+  @use "../../../assets/scheme.scss";
 
   .quiz {
     display: flex;
@@ -39,31 +40,36 @@
     text-align: center;
 
     padding: 1rem;
-    background: linear-gradient(to bottom right, $partialStart, $partialEnd);
+    background: linear-gradient(
+      to bottom right,
+      scheme.$partialStart,
+      scheme.$partialEnd
+    );
   }
 
   .title {
     font-size: 3rem;
 
     color: #fff;
-    text-shadow: 0 3px 1px darken($color: $partialStart, $amount: 25);
+    text-shadow: 0 3px 1px
+      color.adjust($color: scheme.$partialStart, $lightness: -25%);
   }
 
   .text {
     font-size: 1.25rem;
 
     margin-bottom: 1rem;
-    color: lighten($color: $partialStart, $amount: 32);
+    color: color.adjust($color: scheme.$partialStart, $lightness: 32%);
   }
 
   .bottom {
     width: 100%;
-    background-color: $surface;
+    background-color: scheme.$surface;
     padding: 0.5rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-top: 5px solid $surfaceLight;
+    border-top: 5px solid scheme.$surfaceLight;
     padding-left: 1rem;
   }
 

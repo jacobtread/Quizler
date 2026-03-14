@@ -46,7 +46,7 @@
 
 <style lang="scss">
   @use "sass:color";
-  @import "../../assets/scheme.scss";
+  @use "../../assets/scheme.scss";
 
   .left {
     text-align: center;
@@ -67,8 +67,8 @@
     justify-content: center;
     align-items: center;
     overflow: auto;
-    background-color: $appBackground;
-    background-image: $appBackgroundPattern;
+    background-color: scheme.$appBackground;
+    background-image: scheme.$appBackgroundPattern;
 
     gap: 3rem;
     height: 100%;
@@ -77,7 +77,7 @@
   .logo :global(> svg) {
     max-width: 16rem;
     padding: 1rem;
-    fill: $logoFill;
+    fill: scheme.$logoFill;
   }
 
   .action {
@@ -94,34 +94,38 @@
 
     border-radius: 1rem;
 
-    background-color: $surface;
-    border: 0.15rem solid $btnBorderColor;
+    background-color: scheme.$surface;
+    border: 0.15rem solid scheme.$btnBorderColor;
     text-align: left;
 
     z-index: 2;
 
     cursor: pointer;
 
-    transition: background-color 0.5s ease, color 0.2s linear;
+    transition:
+      background-color 0.5s ease,
+      color 0.2s linear;
 
     :global(> svg) {
       float: left;
       margin-right: 1rem;
       padding: 1rem;
       box-sizing: content-box;
-      background-color: $surfaceLight;
+      background-color: scheme.$surfaceLight;
       border-radius: 0.5rem;
-      transition: background-color 0.5s ease, color 0.2s linear;
+      transition:
+        background-color 0.5s ease,
+        color 0.2s linear;
     }
 
     &__name {
       font-size: 1.4rem;
       margin-bottom: 0.25rem;
-      color: $textPrimary;
+      color: scheme.$textPrimary;
     }
 
     &__text {
-      color: $textSecondary;
+      color: scheme.$textSecondary;
       font-size: 1.1rem;
     }
 
@@ -135,7 +139,7 @@
       height: 100%;
       z-index: -1;
 
-      background: $primaryDark;
+      background: scheme.$primaryDark;
       border-radius: 1rem;
 
       transform: translate(-100%);
@@ -148,10 +152,10 @@
         transform: translate(0);
       }
 
-      border-color: $primary;
+      border-color: scheme.$primary;
 
       :global(> svg) {
-        background-color: $primary;
+        background-color: scheme.$primary;
       }
     }
   }

@@ -185,10 +185,10 @@
 {/if}
 
 <style lang="scss">
-  @import "../../assets/scheme.scss";
+  @use "../../assets/scheme.scss";
 
   .error {
-    color: $textError;
+    color: scheme.$textError;
   }
 
   .wrapper {
@@ -209,8 +209,8 @@
   }
 
   .dialog {
-    background-color: $appBackground;
-    border: 1px solid $surface;
+    background-color: scheme.$appBackground;
+    border: 1px solid scheme.$surface;
 
     padding: 1rem;
     border-radius: 0.5rem;
@@ -228,7 +228,7 @@
 
     padding: 0.5rem;
     border-radius: 0.25rem;
-    background-color: $surface;
+    background-color: scheme.$surface;
 
     height: 60vh;
 
@@ -250,13 +250,13 @@
     width: 100%;
     height: 80px;
     position: relative;
-    border: 1px solid $surface;
-    background-color: $surfaceLight;
+    border: 1px solid scheme.$surface;
+    background-color: scheme.$surfaceLight;
   }
 
   .file {
-    border: 1px solid $surfaceLight;
-    background-color: $appBackground;
+    border: 1px solid scheme.$surfaceLight;
+    background-color: scheme.$appBackground;
 
     padding: 0.5rem;
     border-radius: 0.25rem;
@@ -265,7 +265,7 @@
       text-overflow: ellipsis;
       white-space: nowrap;
       overflow: hidden;
-      color: $textPrimary;
+      color: scheme.$textPrimary;
       font-weight: bold;
       margin-bottom: 0.5rem;
     }

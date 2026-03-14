@@ -230,7 +230,7 @@
 {/if}
 
 <style lang="scss">
-  @import "../../assets/scheme.scss";
+  @use "../../assets/scheme.scss";
 
   .editor__none {
     display: flex;
@@ -240,7 +240,7 @@
     flex: auto;
 
     h1 {
-      color: $textPrimary;
+      color: scheme.$textPrimary;
     }
   }
 

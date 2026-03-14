@@ -11,7 +11,8 @@
 </main>
 
 <style lang="scss">
-  @import "../../../assets/scheme.scss";
+  @use "sass:color";
+  @use "../../../assets/scheme.scss";
 
   .main {
     width: 100%;
@@ -20,20 +21,26 @@
     flex-flow: column;
     justify-content: center;
     align-items: center;
-    background: linear-gradient(to bottom right, $primary, $secondary);
+    background: linear-gradient(
+      to bottom right,
+      scheme.$primary,
+      scheme.$secondary
+    );
   }
 
   .title {
     font-size: 3rem;
 
     color: #fff;
-    text-shadow: 0 3px 1px darken($color: $primary, $amount: 15);
+    text-shadow: 0 3px 1px
+      color.adjust($color: scheme.$primary, $lightness: -15%);
   }
 
   .text {
     font-size: 1.25rem;
 
     color: #fff;
-    text-shadow: 0 3px 1px darken($color: $primary, $amount: 15);
+    text-shadow: 0 3px 1px
+      color.adjust($color: scheme.$primary, $lightness: -15%);
   }
 </style>

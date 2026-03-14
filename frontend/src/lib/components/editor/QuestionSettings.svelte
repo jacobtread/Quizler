@@ -94,9 +94,7 @@
   </div>
 </FloatingModal>
 
-<style lang="scss">
-  @import "../../../assets/scheme.scss";
-
+<style>
   .field-group {
     display: flex;
     gap: 1rem;
