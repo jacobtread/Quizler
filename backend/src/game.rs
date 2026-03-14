@@ -124,11 +124,7 @@ impl Game {
     ) -> Self {
         Self {
             token,
-            host: HostSession {
-                id: host_id,
-                addr: host_addr,
-                ready: false,
-            },
+            host: HostSession::new(host_id, host_addr),
             players: Default::default(),
             config,
             state: GameState::Lobby,
@@ -645,6 +641,16 @@ struct HostSession {
     addr: EventTarget,
     /// The player ready state
     ready: bool,
+}
+
+impl HostSession {
+    pub fn new(id: SessionId, addr: EventTarget) -> Self {
+        Self {
+            id,
+            addr,
+            ready: false,
+        }
+    }
 }
 
 /// Represents a session and associated data
