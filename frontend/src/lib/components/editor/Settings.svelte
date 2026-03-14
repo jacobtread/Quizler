@@ -5,7 +5,11 @@
   import { createData } from "$stores/createStore";
   import FloatingModal from "../FloatingModal.svelte";
 
-  export let visible: boolean;
+  interface Props {
+    visible: boolean;
+  }
+
+  let { visible = $bindable() }: Props = $props();
 </script>
 
 <FloatingModal bind:visible>

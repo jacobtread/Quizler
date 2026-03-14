@@ -8,7 +8,11 @@
   import Checkbox from "$components/Checkbox.svelte";
   import Delete from "$components/icons/Delete.svelte";
 
-  export let question: Question;
+  interface Props {
+    question: Question;
+  }
+
+  let { question = $bindable() }: Props = $props();
 
   function addAnswer() {
     /// Adding questions is only supported by single/multiple choice questions
@@ -81,7 +85,7 @@
 
         <button
           disabled={question.answers.length == 1}
-          on:click={() => removeAnswer(index)}
+          onclick={() => removeAnswer(index)}
           class="btn btn--icon-only delete"
         >
           <Delete />
@@ -89,7 +93,7 @@
       </div>
     {/each}
     {#if question.answers.length < constants.MAX_ANSWERS}
-      <button class="btn add" on:click={addAnswer}> Add Answer </button>
+      <button class="btn add" onclick={addAnswer}> Add Answer </button>
     {/if}
   </div>
 {:else if question.ty === QuestionType.TrueFalse}
@@ -124,18 +128,18 @@
   </div>
 {:else if question.ty === QuestionType.Typer}
   <div class="answers">
-    {#each question.answers as answer, index (index)}
+    {#each question.answers as _answer, index (index)}
       <div class="answer">
         <input
           class="answer__input"
           type="text"
-          bind:value={answer}
+          bind:value={question.answers[index]}
           maxlength={constants.MAX_ANSWER_LENGTH}
         />
 
         <button
           disabled={question.answers.length == 1}
-          on:click={() => removeAnswer(index)}
+          onclick={() => removeAnswer(index)}
           class="btn btn--icon-only delete"
         >
           <Delete />
@@ -143,7 +147,7 @@
       </div>
     {/each}
     {#if question.answers.length < constants.MAX_ANSWERS}
-      <button class="btn add" on:click={addTyperAnswer}> Add Answer </button>
+      <button class="btn add" onclick={addTyperAnswer}> Add Answer </button>
     {/if}
   </div>
 {/if}

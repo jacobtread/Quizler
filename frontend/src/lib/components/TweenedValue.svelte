@@ -2,14 +2,20 @@
 <script lang="ts">
   import { tweened, type Tweened } from "svelte/motion";
 
-  // The actual value
-  export let value: number;
+  interface Props {
+    // The actual value
+    value: number;
+  }
+
+  let { value }: Props = $props();
 
   // Create a tweened version of the value
   const valueTween: Tweened<number> = tweened(0, { delay: 500 });
 
   // Update the tweened value when it changes
-  $: valueTween.set(value);
+  $effect(() => {
+    valueTween.set(value);
+  });
 </script>
 
 {$valueTween.toFixed(0)}

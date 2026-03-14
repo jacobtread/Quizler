@@ -9,8 +9,12 @@
   import { confirmDialog } from "$lib/stores/dialogStore";
   import FloatingModal from "../FloatingModal.svelte";
 
-  export let question: Question;
-  export let visible: boolean;
+  interface Props {
+    question: Question;
+    visible: boolean;
+  }
+
+  let { question = $bindable(), visible = $bindable() }: Props = $props();
 
   async function setQuestionType(ty: QuestionType) {
     if (ty !== question.ty) {
@@ -37,7 +41,7 @@
       <button
         class="type"
         class:type--selected={question.ty == QuestionType.Single}
-        on:click={() => setQuestionType(QuestionType.Single)}
+        onclick={() => setQuestionType(QuestionType.Single)}
       >
         <p class="type__name">Single Choice</p>
         <p class="type__desc">Players can only select one answer</p>
@@ -60,7 +64,7 @@
       <button
         class="type"
         class:type--selected={question.ty == QuestionType.Multiple}
-        on:click={() => setQuestionType(QuestionType.Multiple)}
+        onclick={() => setQuestionType(QuestionType.Multiple)}
       >
         <p class="type__name">Multiple Choice</p>
         <p class="type__desc">Players can select multiple answers</p>
@@ -82,7 +86,7 @@
       <button
         class="type"
         class:type--selected={question.ty == QuestionType.TrueFalse}
-        on:click={() => setQuestionType(QuestionType.TrueFalse)}
+        onclick={() => setQuestionType(QuestionType.TrueFalse)}
       >
         <p class="type__name">True / False</p>
         <p class="type__desc">Simple true or false questions</p>
@@ -98,7 +102,7 @@
       <button
         class="type"
         class:type--selected={question.ty == QuestionType.Typer}
-        on:click={() => setQuestionType(QuestionType.Typer)}
+        onclick={() => setQuestionType(QuestionType.Typer)}
       >
         <p class="type__name">Typer</p>
         <p class="type__desc">Players must type out their answer</p>

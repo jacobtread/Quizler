@@ -1,19 +1,24 @@
 <!-- Input for deciding the amount of time something should take -->
 
 <script lang="ts">
-  // The time in milliseconds for the input
-  export let value: number;
+  
 
-  export let min: number;
-  export let max: number;
+  interface Props {
+    // The time in milliseconds for the input
+    value: number;
+    min: number;
+    max: number;
+  }
+
+  let { value = $bindable(), min, max }: Props = $props();
 
   const enum Unit {
     Seconds,
     Minutes
   }
 
-  let unit = Unit.Seconds;
-  let actualValue = convertTo(value);
+  let unit = $state(Unit.Seconds);
+  let actualValue = $state(convertTo(value));
 
   function convertFrom(value: number) {
     if (unit == Unit.Seconds) {
@@ -62,9 +67,9 @@
     min={convertTo(min)}
     max={convertTo(max)}
     bind:value={actualValue}
-    on:change={updateValue}
+    onchange={updateValue}
   />
-  <select class="select" bind:value={unit} on:change={updateValue}>
+  <select class="select" bind:value={unit} onchange={updateValue}>
     <option value={Unit.Minutes}>Minutes</option>
     <option value={Unit.Seconds}>Seconds</option>
   </select>

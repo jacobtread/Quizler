@@ -1,4 +1,4 @@
-<script context="module" lang="ts">
+<script module lang="ts">
   import type { GameConfig, Scores } from "$api/models";
 
   export interface GameData {
@@ -45,24 +45,28 @@
   import Starting from "$pages/game/Starting.svelte";
   import Loading from "$pages/Loading.svelte";
 
-  export let gameData: GameData;
+  interface Props {
+    gameData: GameData;
+  }
 
-  let players: PlayerData[] = gameData.host
-    ? []
-    : [{ id: gameData.id, name: gameData.name ?? "" }];
-  let gameState: GameState = GameState.Lobby;
+  let { gameData }: Props = $props();
+
+  let players: PlayerData[] = $state(
+    gameData.host ? [] : [{ id: gameData.id, name: gameData.name ?? "" }]
+  );
+  let gameState: GameState = $state(GameState.Lobby);
 
   // The current game summary
-  let summary: GameSummary | null = null;
+  let summary: GameSummary | null = $state(null);
 
-  let question: Question | null = null;
+  let question: Question | null = $state(null);
 
-  let score: Score = { ty: ScoreType.Incorrect };
-  let scores: Scores = {};
+  let score: Score = $state({ ty: ScoreType.Incorrect });
+  let scores: Scores = $state({});
 
-  let answered: boolean;
+  let answered: boolean = $state(false);
 
-  let timeMs: number = 0;
+  let timeMs: number = $state(0);
   let lastUpdateTime: number = 0;
 
   function updateTimer() {

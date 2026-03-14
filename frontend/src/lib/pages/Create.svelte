@@ -34,10 +34,10 @@
     activeQuestion
   } from "$stores/createStore";
 
-  let loading: boolean = false;
-  let loadingState: string = "";
+  let loading: boolean = $state(false);
+  let loadingState: string = $state("");
   let progress: Tweened<number> = tweened(0);
-  let settings: boolean = false;
+  let settings: boolean = $state(false);
 
   async function doExport() {
     const data: CreateData | null = getCreateData();
@@ -180,23 +180,23 @@
 
 <main class="main">
   <header class="header btn-row btn-row--fill">
-    <button on:click={setHome} class="btn btn--icon">
+    <button onclick={setHome} class="btn btn--icon">
       <Back />
       <span>Back</span>
     </button>
-    <button on:click={doImport} class="btn btn--icon">
+    <button onclick={doImport} class="btn btn--icon">
       <Import />
       <span>Import</span>
     </button>
-    <button on:click={doExport} class="btn btn--icon">
+    <button onclick={doExport} class="btn btn--icon">
       <Export />
       <span>Export</span>
     </button>
-    <button on:click={() => (settings = true)} class="btn btn--icon">
+    <button onclick={() => (settings = true)} class="btn btn--icon">
       <Cog />
       <span>Quiz Settings</span>
     </button>
-    <button on:click={play} class="btn btn--icon">
+    <button onclick={play} class="btn btn--icon">
       <Play />
       <span>Play</span>
     </button>

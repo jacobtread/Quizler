@@ -5,8 +5,12 @@
   import TimeInput from "../TimeInput.svelte";
   import FloatingModal from "../FloatingModal.svelte";
 
-  export let question: Question;
-  export let visible: boolean;
+  interface Props {
+    question: Question;
+    visible: boolean;
+  }
+
+  let { question = $bindable(), visible = $bindable() }: Props = $props();
 </script>
 
 <FloatingModal bind:visible>

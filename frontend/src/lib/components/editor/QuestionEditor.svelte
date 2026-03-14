@@ -19,9 +19,14 @@
   import { removeQuestion } from "$stores/createStore";
   import { confirmDialog } from "$stores/dialogStore";
 
-  export let question: Question;
-  let settings: boolean = false;
-  let type: boolean = false;
+  interface Props {
+    question: Question;
+  }
+
+  let { question = $bindable() }: Props = $props();
+
+  let settings: boolean = $state(false);
+  let type: boolean = $state(false);
 
   function shuffleAnswers() {
     if (
@@ -49,7 +54,7 @@
 <ImageEditor bind:question />
 
 <div class="actions btn-row">
-  <button on:click={() => (settings = true)} class="btn btn--icon">
+  <button onclick={() => (settings = true)} class="btn btn--icon">
     <Cog />
     <span>Settings</span>
   </button>
@@ -58,7 +63,7 @@
   {#if (question.ty === QuestionType.Single || question.ty === QuestionType.Multiple) && question.answers !== undefined}
     <button
       class="btn btn--icon"
-      on:click={shuffleAnswers}
+      onclick={shuffleAnswers}
       disabled={question.answers.length <= 1}
     >
       <Shuffle />
@@ -66,14 +71,14 @@
     </button>
   {/if}
 
-  <button class="btn btn--icon qt" on:click={() => (type = true)}>
+  <button class="btn btn--icon qt" onclick={() => (type = true)}>
     <Swap />
     <span>Change Type</span>
 
     <span class="qt__type">{question.ty}</span>
   </button>
 
-  <button on:click={remove} class="btn btn--icon">
+  <button onclick={remove} class="btn btn--icon">
     <Delete />
     <span>Delete</span>
   </button>

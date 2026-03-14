@@ -5,16 +5,22 @@
   import { ScoreType, type Score } from "$api/models";
   import { getRandomMessage } from "$lib/utils/messages";
 
-  export let score: Score;
+  interface Props {
+    score: Score;
+  }
+
+  let { score }: Props = $props();
 
   const message: string = getRandomMessage(score.ty);
   const value = tweened(0, {
     delay: 500
   });
 
-  $: if (score.ty === ScoreType.Correct || score.ty === ScoreType.Partial) {
-    value.set(score.value);
-  }
+  $effect(() => {
+    if (score.ty === ScoreType.Correct || score.ty === ScoreType.Partial) {
+      value.set(score.value);
+    }
+  });
 </script>
 
 <main class="main" data-type={score.ty} transition:slide|global>

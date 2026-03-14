@@ -1,4 +1,4 @@
-<script context="module" lang="ts">
+<script module lang="ts">
   export const enum ModelSize {
     Normal,
     Small
@@ -8,9 +8,19 @@
 <script lang="ts">
   import { fade, slide } from "svelte/transition";
   import Close from "$components/icons/Delete.svelte";
+  import type { Snippet } from "svelte";
 
-  export let visible: boolean;
-  export let size: ModelSize = ModelSize.Normal;
+  interface Props {
+    visible: boolean;
+    size?: ModelSize;
+    children?: Snippet;
+  }
+
+  let {
+    visible = $bindable(),
+    size = ModelSize.Normal,
+    children
+  }: Props = $props();
 </script>
 
 {#if visible}
@@ -20,12 +30,12 @@
       class:dialog--small={size == ModelSize.Small}
       transition:slide|global={{ duration: 250 }}
     >
-      <button on:click={() => (visible = false)} class="btn btn--icon">
+      <button onclick={() => (visible = false)} class="btn btn--icon">
         <Close />
         Close
       </button>
 
-      <slot />
+      {@render children?.()}
     </div>
   </div>
 {/if}

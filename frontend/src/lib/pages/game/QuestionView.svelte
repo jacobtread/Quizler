@@ -13,13 +13,22 @@
   import { formatTime } from "$lib/utils/utils";
   import QuPreviewImage from "$components/editor/QuPreviewImage.svelte";
 
-  export let gameData: GameData;
-  export let timeMs: number;
-  export let question: Question;
-  export let answered: boolean;
+  interface Props {
+    gameData: GameData;
+    timeMs: number;
+    question: Question;
+    answered: boolean;
+  }
 
-  let answers: number[] = [];
-  let typerAnswer: string = "";
+  let {
+    gameData,
+    timeMs,
+    question,
+    answered = $bindable()
+  }: Props = $props();
+
+  let answers: number[] = $state([]);
+  let typerAnswer: string = $state("");
 
   function select(index: number) {
     if (isSelected(index)) {
@@ -94,7 +103,7 @@
             data-host={gameData.host}
             class="answer btn"
             disabled={gameData.host}
-            on:click={() => answerSingle(index)}
+            onclick={() => answerSingle(index)}
           >
             {answer.value}
           </button>
@@ -108,7 +117,7 @@
             class="answer btn"
             class:answer--checked={isSelected(index)}
             disabled={gameData.host || (!isSelected(index) && canSelect())}
-            on:click={() => select(index)}
+            onclick={() => select(index)}
           >
             {answer.value}
           </button>
@@ -117,7 +126,7 @@
       {#if !gameData.host}
         <button
           class="btn btn submit"
-          on:click={answerMultiple}
+          onclick={answerMultiple}
           disabled={answers.length < 1}
         >
           Submit
@@ -129,7 +138,7 @@
           data-host={gameData.host}
           class="answer btn"
           disabled={gameData.host}
-          on:click={() => answerBool(true)}
+          onclick={() => answerBool(true)}
         >
           True
         </button>
@@ -137,7 +146,7 @@
           data-host={gameData.host}
           class="answer btn"
           disabled={gameData.host}
-          on:click={() => answerBool(false)}
+          onclick={() => answerBool(false)}
         >
           False
         </button>
@@ -146,7 +155,7 @@
       <input class="input" type="text" bind:value={typerAnswer} />
       <button
         class="btn submit"
-        on:click={answerTyper}
+        onclick={answerTyper}
         disabled={typerAnswer.length < 1}
       >
         Submit
@@ -156,7 +165,7 @@
   <div class="bottom">
     <p class="token">{gameData.token}</p>
     {#if gameData.host}
-      <button class="btn btn--surface" on:click={next}>Skip</button>
+      <button class="btn btn--surface" onclick={next}>Skip</button>
     {/if}
     <p class="time">{formatTime(timeMs)}</p>
   </div>

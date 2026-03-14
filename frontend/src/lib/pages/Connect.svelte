@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { afterUpdate } from "svelte";
   import { slide } from "svelte/transition";
 
   import {
@@ -23,28 +22,28 @@
     Join
   }
 
-  let state = State.Connect;
+  let connectState = $state(State.Connect);
 
   // The user provided token
-  let token: string = "";
+  let token: string = $state("");
 
   // The user provided name
-  let name = "";
+  let name = $state("");
 
   // Disabled state for the connect button
-  let tokenValid: boolean = false;
+  let tokenValid: boolean = $state(false);
 
   // Disabled state for the connect button
-  let nameValid: boolean = false;
+  let nameValid: boolean = $state(false);
 
   // Loading screen state
-  let loading: boolean = false;
+  let loading: boolean = $state(false);
 
   // Determines whether focus should be updated
-  let updateFocus: boolean = true;
+  let updateFocus: boolean = $state(true);
 
-  let inputToken: HTMLInputElement;
-  let inputName: HTMLInputElement;
+  let inputToken: HTMLInputElement | undefined = $state();
+  let inputName: HTMLInputElement | undefined = $state();
 
   /**
    * Update called whenever the token input changes in
@@ -83,13 +82,14 @@
    * Handles attempting to connect to a quiz using the
    * user provided token.
    */
-  function connect() {
+  function connect(event: SubmitEvent) {
+    event.preventDefault();
     loading = true;
 
     socket
       .send({ ty: ClientMessage.Connect, token })
       .then(() => {
-        state = State.Join;
+        connectState = State.Join;
         updateFocus = true;
       })
       .catch((error: ServerError) => {
@@ -99,7 +99,8 @@
       .finally(() => (loading = false));
   }
 
-  function join() {
+  function join(event: SubmitEvent) {
+    event.preventDefault();
     loading = true;
 
     socket
@@ -115,15 +116,15 @@
   }
 
   function back() {
-    if (state === State.Connect) {
+    if (connectState === State.Connect) {
       setHome();
     } else {
-      state = State.Connect;
-      inputToken.focus();
+      connectState = State.Connect;
+      inputToken?.focus();
     }
   }
 
-  afterUpdate(() => {
+  $effect(() => {
     if (!updateFocus) return;
 
     if (inputToken && document.activeElement !== inputToken) {
@@ -136,24 +137,26 @@
   });
 </script>
 
-{#if loading} <FloatingLoader /> {/if}
+{#if loading}
+  <FloatingLoader />
+{/if}
 
-<button on:click={back} class="back back--floating">
+<button onclick={back} class="back back--floating">
   <Back />
 </button>
 
-{#if state === State.Connect}
+{#if connectState === State.Connect}
   <main class="page page--center page--overflow" transition:slide|global>
     <h1>Enter Code</h1>
     <p>Please enter your quiz code below</p>
 
-    <form class="form" on:submit|preventDefault={connect}>
+    <form class="form" onsubmit={connect}>
       <input
         bind:this={inputToken}
         class="special-input"
         type="text"
         bind:value={token}
-        on:input={updateToken}
+        oninput={updateToken}
         minlength={TOKEN_LENGTH}
         maxlength={TOKEN_LENGTH}
         placeholder={"X".repeat(TOKEN_LENGTH)}
@@ -176,13 +179,13 @@
     <h1>Enter Name</h1>
     <p>Please enter your desired name</p>
 
-    <form class="form" on:submit|preventDefault={join}>
+    <form class="form" onsubmit={join}>
       <input
         bind:this={inputName}
         class="special-input special-input--small"
         type="text"
         bind:value={name}
-        on:input={updateName}
+        oninput={updateName}
         minlength={MIN_PLAYER_NAME_LENGTH}
         maxlength={MAX_PLAYER_NAME_LENGTH}
       />

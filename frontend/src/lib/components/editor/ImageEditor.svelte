@@ -7,9 +7,13 @@
   import ImageStorage from "$components/ImageStorage.svelte";
   import Cog from "$components/icons/Cog.svelte";
 
-  export let question: Question;
+  interface Props {
+    question: Question;
+  }
 
-  let settings: boolean = false;
+  let { question = $bindable() }: Props = $props();
+
+  let settings: boolean = $state(false);
 
   async function pickImage() {
     let res = await selectImage();
@@ -31,10 +35,10 @@
   <div class="wrapper">
     <!-- Actual preview image may not be immediately available -->
     <QuPreviewImage uuid={question.image.uuid} fit={question.image.fit} />
-    <button class="overlay" on:click={removeImage}>Click to remove</button>
+    <button class="overlay" onclick={removeImage}>Click to remove</button>
     <button
       class="btn btn--icon btn--icon-only settings"
-      on:click={() => (settings = true)}
+      onclick={() => (settings = true)}
     >
       <Cog />
     </button>
@@ -58,7 +62,7 @@
   </FloatingModal>
 {:else}
   <div class="wrapper">
-    <button class="add" on:click={pickImage}>Pick Image</button>
+    <button class="add" onclick={pickImage}>Pick Image</button>
   </div>
 {/if}
 

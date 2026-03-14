@@ -7,9 +7,13 @@
   import type { GameData } from "$pages/Game.svelte";
   import { formatTime } from "$lib/utils/utils";
 
-  export let gameState: GameState;
-  export let timeMs: number;
-  export let gameData: GameData;
+  interface Props {
+    gameState: GameState;
+    timeMs: number;
+    gameData: GameData;
+  }
+
+  const { gameState, timeMs, gameData }: Props = $props();
 
   // Sends the next state action
   const next = () => doHostAction(HostAction.Next);
@@ -36,9 +40,9 @@
 
     {#if gameData.host}
       {#if gameState === GameState.Starting}
-        <button class="btn btn--surface" on:click={reset}>Cancel</button>
+        <button class="btn btn--surface" onclick={reset}>Cancel</button>
       {/if}
-      <button class="btn btn--surface" on:click={next}>Skip</button>
+      <button class="btn btn--surface" onclick={next}>Skip</button>
     {/if}
   </div>
 </main>

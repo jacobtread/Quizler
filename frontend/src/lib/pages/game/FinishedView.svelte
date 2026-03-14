@@ -12,8 +12,12 @@
 
   import { getNumberWithOrdinal } from "$lib/utils/utils";
 
-  export let summary: GameSummary;
-  export let gameData: GameData;
+  interface Props {
+    summary: GameSummary;
+    gameData: GameData;
+  }
+
+  const { summary, gameData }: Props = $props();
 
   const doHostReset = () => doHostAction(HostAction.Reset);
 </script>
@@ -28,11 +32,11 @@
     <p class="desc">{gameData.config.text}</p>
 
     <div class="btn-row btn-row--fill actions">
-      <button class="btn" on:click={() => leave(gameData)}>Leave</button>
+      <button class="btn" onclick={() => leave(gameData)}>Leave</button>
 
       {#if gameData.host}
         <!-- Restart started button for restarting games -->
-        <button class="btn" on:click={doHostReset}>Restart</button>
+        <button class="btn" onclick={doHostReset}>Restart</button>
       {/if}
     </div>
 

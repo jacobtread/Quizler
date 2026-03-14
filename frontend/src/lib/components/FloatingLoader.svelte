@@ -2,7 +2,11 @@
   import { fade } from "svelte/transition";
   import Spinner from "$components/Spinner.svelte";
 
-  export let text: string = "";
+  interface Props {
+    text?: string;
+  }
+
+  let { text = "" }: Props = $props();
 </script>
 
 <main class="main" transition:fade>

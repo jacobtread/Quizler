@@ -18,14 +18,14 @@
 
       <div class="btn-row btn-row--fill">
         {#if $dialogStore.ty === DialogType.Error}
-          <button class="btn" on:click={() => consumeDialog(true)}>
+          <button class="btn" onclick={() => consumeDialog(true)}>
             Close
           </button>
         {:else}
-          <button class="btn" on:click={() => consumeDialog(true)}>
+          <button class="btn" onclick={() => consumeDialog(true)}>
             Confirm
           </button>
-          <button class="btn" on:click={() => consumeDialog(false)}>
+          <button class="btn" onclick={() => consumeDialog(false)}>
             Cancel
           </button>
         {/if}

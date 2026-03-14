@@ -1,7 +1,11 @@
 <script lang="ts">
   import Spinner from "$components/Spinner.svelte";
 
-  export let text: string;
+  interface Props {
+    text: string;
+  }
+
+  const { text }: Props = $props();
 </script>
 
 <main class="page page--center page--overflow">
@@ -9,7 +13,7 @@
   <p class="text">{text}</p>
 </main>
 
-<style lang="scss">
+<style>
   .text {
     margin-top: 1rem;
   }

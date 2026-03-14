@@ -1,5 +1,9 @@
 <script lang="ts">
-  export let value: boolean;
+  interface Props {
+    value: boolean;
+  }
+
+  let { value = $bindable() }: Props = $props();
 </script>
 
 <label class="checkbox">

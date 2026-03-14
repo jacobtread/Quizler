@@ -6,8 +6,12 @@
   import { SHADOW_ITEM_MARKER_PROPERTY_NAME } from "svelte-dnd-action";
   import QuPreviewImage from "./QuPreviewImage.svelte";
 
-  export let question: Question;
-  export let index: number;
+  interface Props {
+    question: Question;
+    index: number;
+  }
+
+  const { question, index }: Props = $props();
 </script>
 
 <div class="question">

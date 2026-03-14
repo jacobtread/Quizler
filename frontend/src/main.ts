@@ -1,8 +1,9 @@
 import App from "./App.svelte";
 import "./assets/app.scss";
 import "$api/socket";
+import { mount } from "svelte";
 
-const app = new App({
+const app = mount(App, {
   target: document.getElementById("app") as Element
 });
 

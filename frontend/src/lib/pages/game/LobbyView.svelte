@@ -14,10 +14,14 @@
   import ScoreTweened from "$components/TweenedValue.svelte";
   import type { GameData } from "$pages/Game.svelte";
 
-  export let gameData: GameData;
-  export let players: PlayerData[];
-  export let scores: Record<SessionId, number>;
-  export let gameState: GameState;
+  interface Props {
+    gameData: GameData;
+    players: PlayerData[];
+    scores: Record<SessionId, number>;
+    gameState: GameState;
+  }
+
+  const { gameData, players, scores, gameState }: Props = $props();
 
   // Sends the next state action
   const next = () => doHostAction(HostAction.Next);
@@ -33,14 +37,14 @@
     <p class="desc">{gameData.config.text}</p>
 
     <div class="btn-row btn-row--fill actions">
-      <button class="btn" on:click={() => leave(gameData)}>Leave</button>
+      <button class="btn" onclick={() => leave(gameData)}>Leave</button>
 
       {#if gameState === GameState.Marked}
         <!-- Cancel started button for starting games -->
-        <button class="btn" on:click={next}>Next</button>
+        <button class="btn" onclick={next}>Next</button>
       {:else if players.length > 0 && gameState === GameState.Lobby}
         <!-- Start button if theres players in the game -->
-        <button class="btn" on:click={next}>Start</button>
+        <button class="btn" onclick={next}>Start</button>
       {/if}
     </div>
 
@@ -63,7 +67,7 @@
             </td>
             <!-- Host privileges -->
             <td class="player__action">
-              <button class="btn" on:click={() => doKick(player.id)}>
+              <button class="btn" onclick={() => doKick(player.id)}>
                 Kick
               </button>
             </td>

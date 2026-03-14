@@ -16,7 +16,7 @@
   import { ImageFit } from "$api/models";
   import { fade, slide } from "svelte/transition";
 
-  let uploading: FileUpload[] = [];
+  let uploading: FileUpload[] = $state([]);
 
   interface FileUpload {
     name: string;
@@ -121,8 +121,8 @@
   <div class="wrapper" transition:fade={{ duration: 200 }}>
     <div
       class="dialog"
-      on:drop={onDrop}
-      on:dragover={onDragOver}
+      ondrop={onDrop}
+      ondragover={onDragOver}
       aria-hidden="true"
       transition:slide|global={{ duration: 250 }}
     >
@@ -144,9 +144,9 @@
             <div class="file__actions">
               <button
                 class="btn btn--small"
-                on:click={() => consumeSelectImage(image)}>Select</button
+                onclick={() => consumeSelectImage(image)}>Select</button
               >
-              <button class="btn btn--small" on:click={() => onDelete(image)}>
+              <button class="btn btn--small" onclick={() => onDelete(image)}>
                 Delete
               </button>
             </div>
@@ -169,13 +169,13 @@
       </div>
 
       <div class="actions btn-row btn-row--fill">
-        <button on:click={clearSelectImage} class="btn">Close</button>
-        <button on:click={doUpload} class="btn btn--icon">
+        <button onclick={clearSelectImage} class="btn">Close</button>
+        <button onclick={doUpload} class="btn btn--icon">
           <Import />
           Upload Images
         </button>
         <button
-          on:click={doClear}
+          onclick={doClear}
           class="btn"
           disabled={$imageStore.length === 0}>Delete All Images</button
         >

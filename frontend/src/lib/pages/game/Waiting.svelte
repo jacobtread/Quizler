@@ -5,7 +5,11 @@
 
   import type { GameData } from "$pages/Game.svelte";
 
-  export let gameData: GameData;
+  interface Props {
+    gameData: GameData;
+  }
+
+  const { gameData }: Props = $props();
 </script>
 
 <main class="page page--overflow" transition:slide|global>
@@ -17,7 +21,7 @@
   <div class="bottom">
     <p class="token">{gameData.token}</p>
 
-    <button class="btn btn--surface" on:click={() => leave(gameData)}>
+    <button class="btn btn--surface" onclick={() => leave(gameData)}>
       Leave
     </button>
   </div>

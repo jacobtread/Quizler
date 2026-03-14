@@ -3,27 +3,32 @@
   import { imagePreviewStore } from "$lib/stores/imageStore";
   import type { ImageFit } from "$lib/api/models";
 
-  // UUID based preview image loading
-  export let uuid: string | null = null;
+  interface Props {
+    // UUID based preview image loading
+    uuid?: string | null;
+    // Preloaded question images
+    preloaded?: HTMLImageElement | null;
+    // Image fitting
+    fit: ImageFit;
+  }
+
+  let { uuid = null, preloaded = null, fit }: Props = $props();
+
   // Preview image URL for loaded images
-  let previewImage: string | null = null;
-
-  // Preloaded question images
-  export let preloaded: HTMLImageElement | null = null;
-
-  // Image fitting
-  export let fit: ImageFit;
+  let previewImage: string | null = $state(null);
 
   // Handling for images that need to be loaded from the preview store
-  $: if (uuid !== null) {
-    // Handle displaying image previews
-    let imagePreview = $imagePreviewStore[uuid];
-    if (imagePreview !== undefined) {
-      previewImage = imagePreview;
-    } else {
-      previewImage = null;
+  $effect(() => {
+    if (uuid !== null) {
+      // Handle displaying image previews
+      let imagePreview = $imagePreviewStore[uuid];
+      if (imagePreview !== undefined) {
+        previewImage = imagePreview;
+      } else {
+        previewImage = null;
+      }
     }
-  }
+  });
 
   /**
    * Handles appending the provided preloaded image HTML

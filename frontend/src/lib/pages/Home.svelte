@@ -26,7 +26,7 @@
     </a>
   </div>
   <div class="actions">
-    <button on:click={setConnect} class="action" aria-label="Join">
+    <button onclick={setConnect} class="action" aria-label="Join">
       <Play />
       <div class="action__body">
         <p class="action__name">Join a quiz</p>
@@ -34,7 +34,7 @@
       </div>
     </button>
 
-    <button on:click={setCreate} class="action" aria-label="Create">
+    <button onclick={setCreate} class="action" aria-label="Create">
       <Edit />
       <div class="action__body">
         <p class="action__name">Create a quiz</p>
