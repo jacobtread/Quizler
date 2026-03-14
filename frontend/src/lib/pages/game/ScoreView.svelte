@@ -11,7 +11,7 @@
 
   let { score }: Props = $props();
 
-  const message: string = getRandomMessage(score.ty);
+  const message: string = $derived(getRandomMessage(score.ty));
   const value = tweened(0, {
     delay: 500
   });

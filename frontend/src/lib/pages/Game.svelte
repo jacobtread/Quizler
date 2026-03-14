@@ -51,9 +51,19 @@
 
   let { gameData }: Props = $props();
 
-  let players: PlayerData[] = $state(
-    gameData.host ? [] : [{ id: gameData.id, name: gameData.name ?? "" }]
-  );
+  // Player data loaded over the network
+  let remotePlayerData: PlayerData[] = $state([]);
+
+  let players: PlayerData[] = $derived.by(() => {
+    if (remotePlayerData.length > 0) {
+      return remotePlayerData;
+    }
+
+    return gameData.host
+      ? []
+      : [{ id: gameData.id, name: gameData.name ?? "" }];
+  });
+
   let gameState: GameState = $state(GameState.Lobby);
 
   // The current game summary
