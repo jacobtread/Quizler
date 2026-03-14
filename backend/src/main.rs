@@ -38,16 +38,13 @@ async fn main() {
 
     info!("Starting Quizler on port {} (v{})", port, VERSION);
 
-    #[allow(unused_mut)]
-    let mut router = http::router();
+    let router = http::router();
 
+    // Add CORS and tracing layer to the router in debug mode
     #[cfg(debug_assertions)]
-    {
-        // Add CORS and tracing layer to the router in debug mode
-        router = router
-            .layer(tower_http::cors::CorsLayer::very_permissive())
-            .layer(tower_http::trace::TraceLayer::new_for_http());
-    }
+    let router = router
+        .layer(tower_http::cors::CorsLayer::very_permissive())
+        .layer(tower_http::trace::TraceLayer::new_for_http());
 
     let listener = TcpListener::bind((Ipv4Addr::UNSPECIFIED, port))
         .await
