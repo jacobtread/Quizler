@@ -5,12 +5,12 @@ use crate::{
     types::{GameToken, ImStr, Image, NameFiltering, Question},
 };
 use axum::{
+    Json, Router,
     body::Body,
-    extract::{multipart::MultipartError, Multipart, Path, WebSocketUpgrade},
-    http::{header::CONTENT_TYPE, HeaderValue, Request, StatusCode},
+    extract::{Multipart, Path, WebSocketUpgrade, multipart::MultipartError},
+    http::{HeaderValue, Request, StatusCode, header::CONTENT_TYPE},
     response::{IntoResponse, Response},
     routing::{get, post},
-    Json, Router,
 };
 use bytes::BytesMut;
 use embeddy::Embedded;
@@ -20,7 +20,7 @@ use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     convert::Infallible,
-    future::{ready, Ready},
+    future::{Ready, ready},
     sync::Arc,
     task::{Context, Poll},
 };

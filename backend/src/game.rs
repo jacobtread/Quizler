@@ -386,10 +386,10 @@ impl Game {
         }
 
         // Name filtering
-        if let Some(filter_type) = self.config.filtering.type_of() {
-            if name.is(filter_type) {
-                return Err(ServerError::InappropriateName);
-            }
+        if let Some(filter_type) = self.config.filtering.type_of()
+            && name.is(filter_type)
+        {
+            return Err(ServerError::InappropriateName);
         }
 
         // Game already at max capacity

@@ -11,15 +11,15 @@ use log::{debug, error};
 use serde::Serialize;
 use std::{
     sync::{
-        atomic::{AtomicU32, Ordering},
         Arc,
+        atomic::{AtomicU32, Ordering},
     },
     time::{Duration, Instant},
 };
 use tokio::{
     select,
     sync::mpsc,
-    time::{interval, MissedTickBehavior},
+    time::{MissedTickBehavior, interval},
 };
 use uuid::Uuid;
 
@@ -154,10 +154,10 @@ impl Session {
         let value = event.as_ref();
 
         // Ensure we drop our reference to the game when kicked
-        if let ServerEvent::Kicked { id, .. } = value {
-            if self.id.eq(id) {
-                self.game = None;
-            }
+        if let ServerEvent::Kicked { id, .. } = value
+            && self.id.eq(id)
+        {
+            self.game = None;
         }
 
         self.send(value).await

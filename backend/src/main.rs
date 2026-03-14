@@ -1,6 +1,6 @@
 use crate::games::Games;
 use dotenvy::dotenv;
-use log::{error, info, LevelFilter};
+use log::{LevelFilter, error, info};
 use std::{net::Ipv4Addr, process::exit};
 use tokio::net::TcpListener;
 

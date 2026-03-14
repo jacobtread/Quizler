@@ -1,6 +1,6 @@
 use bytes::Bytes;
 use rand::Rng;
-use serde::{de::Visitor, ser::SerializeMap, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::Visitor, ser::SerializeMap};
 use std::{collections::HashMap, fmt::Display, hash::Hash, str::FromStr, time::Duration};
 use uuid::Uuid;
 

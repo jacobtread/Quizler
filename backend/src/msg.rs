@@ -8,7 +8,7 @@ use crate::{
         ServerError,
     },
 };
-use serde::{ser::SerializeMap, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, ser::SerializeMap};
 use std::sync::Arc;
 use uuid::Uuid;
 

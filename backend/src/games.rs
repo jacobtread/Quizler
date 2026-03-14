@@ -10,7 +10,7 @@ use std::{
 };
 use tokio::{
     sync::RwLock,
-    time::{interval, MissedTickBehavior},
+    time::{MissedTickBehavior, interval},
 };
 use uuid::Uuid;
 
