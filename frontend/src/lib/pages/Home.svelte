@@ -1,11 +1,13 @@
 <script lang="ts">
-  import { setConnect, setCreate } from "$stores/state";
   import { slide } from "svelte/transition";
 
   import GitHub from "$components/icons/GitHub.svelte";
   import Play from "$components/icons/Play.svelte";
   import Edit from "$components/icons/Edit.svelte";
   import Logo from "$components/icons/Logo.svelte";
+  import stateContext from "$lib/context/state";
+
+  const appState = stateContext.get();
 </script>
 
 <main class="main" transition:slide|global>
@@ -26,7 +28,7 @@
     </a>
   </div>
   <div class="actions">
-    <button onclick={setConnect} class="action" aria-label="Join">
+    <button onclick={appState.setConnect} class="action" aria-label="Join">
       <Play />
       <div class="action__body">
         <p class="action__name">Join a quiz</p>
@@ -34,7 +36,7 @@
       </div>
     </button>
 
-    <button onclick={setCreate} class="action" aria-label="Create">
+    <button onclick={appState.setCreate} class="action" aria-label="Create">
       <Edit />
       <div class="action__body">
         <p class="action__name">Create a quiz</p>

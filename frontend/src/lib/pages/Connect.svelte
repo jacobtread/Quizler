@@ -7,20 +7,23 @@
     TOKEN_LENGTH
   } from "$lib/constants";
 
-  import * as socket from "$api/socket";
   import { ClientMessage, ServerError, errorText } from "$api/models";
 
   import FloatingLoader from "$components/FloatingLoader.svelte";
   import Back from "$components/icons/Back.svelte";
   import Play from "$components/icons/Play.svelte";
 
-  import { setGame, setHome } from "$stores/state";
   import { errorDialog } from "$stores/dialogStore";
+  import stateContext from "$lib/context/state";
+  import socketContext from "$lib/context/socket";
 
   const enum State {
     Connect,
     Join
   }
+
+  const appState = stateContext.get();
+  const socket = socketContext.get();
 
   let connectState = $state(State.Connect);
 
@@ -106,7 +109,7 @@
     socket
       .send({ ty: ClientMessage.Join, name })
       .then(({ id, token, config }) => {
-        setGame({ id, token, config, host: false, name });
+        appState.setGame({ id, token, config, host: false, name });
       })
       .catch((error: ServerError) => {
         console.error("Failed to join", error);
@@ -117,7 +120,7 @@
 
   function back() {
     if (connectState === State.Connect) {
-      setHome();
+      appState.setHome();
     } else {
       connectState = State.Connect;
       inputToken?.focus();

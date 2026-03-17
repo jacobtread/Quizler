@@ -11,6 +11,8 @@
   import type { GameData } from "$pages/Game.svelte";
 
   import { getNumberWithOrdinal } from "$lib/utils/utils";
+  import stateContext from "$lib/context/state";
+  import socketContext from "$lib/context/socket";
 
   interface Props {
     summary: GameSummary;
@@ -19,7 +21,10 @@
 
   const { summary, gameData }: Props = $props();
 
-  const doHostReset = () => doHostAction(HostAction.Reset);
+  const appState = stateContext.get();
+  const socketState = socketContext.get();
+
+  const doHostReset = () => doHostAction(socketState, HostAction.Reset);
 </script>
 
 <main class="page page--middle page--overflow" transition:slide|global>
@@ -32,7 +37,12 @@
     <p class="desc">{gameData.config.text}</p>
 
     <div class="btn-row btn-row--fill actions">
-      <button class="btn" onclick={() => leave(gameData)}>Leave</button>
+      <button
+        class="btn"
+        onclick={() => leave(socketState, appState, gameData)}
+      >
+        Leave
+      </button>
 
       {#if gameData.host}
         <!-- Restart started button for restarting games -->

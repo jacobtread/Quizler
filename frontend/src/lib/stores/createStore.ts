@@ -2,7 +2,7 @@ import {
   defaultAnswers,
   defaultCreateData,
   defaultQuestion
-} from "$lib/constants";
+} from "$lib/defaults";
 import {
   QuestionType,
   type Question,
@@ -12,9 +12,8 @@ import { arraySwap, randomRange } from "$lib/utils/utils";
 import { writable, type Writable } from "svelte/store";
 
 // Store for the current creation data
-export const createData: Writable<CreateDataRuntime> = writable(
-  defaultCreateData()
-);
+export const createData: Writable<CreateDataRuntime> =
+  writable(defaultCreateData());
 export const activeQuestion: Writable<Question | null> = writable(null);
 
 activeQuestion.subscribe(() => {

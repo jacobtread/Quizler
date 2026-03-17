@@ -1,6 +1,5 @@
 import App from "./App.svelte";
 import "./assets/app.scss";
-import "$api/socket";
 import { mount } from "svelte";
 
 const app = mount(App, {

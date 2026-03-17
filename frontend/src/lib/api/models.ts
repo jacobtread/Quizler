@@ -397,8 +397,7 @@ export type MessagePairs =
 export type ServerResponseOf<T> = Extract<
   ServerResponseSchema,
   {
-    ty: // Type is extracted by using the mapping to locate the right hand side
-    Extract<MessagePairs, { left: T }>["right"];
+    ty: Extract<MessagePairs, { left: T }>["right"]; // Type is extracted by using the mapping to locate the right hand side
   }
 >;
 

@@ -10,7 +10,6 @@
     type CreateDataRuntime
   } from "$api/models";
   import { createHttp } from "$api/http";
-  import * as socket from "$api/socket";
 
   import QuestionEditor from "$components/editor/QuestionEditor.svelte";
   import QuestionList from "$components/editor/QuestionList.svelte";
@@ -26,13 +25,17 @@
   import { acceptUpload, startDownload } from "$lib/utils/file";
 
   import { imageStore, type StoredImage } from "$stores/imageStore";
-  import { setHome, setGame } from "$stores/state";
   import { errorDialog } from "$stores/dialogStore";
   import {
     createData,
     setCreateData,
     activeQuestion
   } from "$stores/createStore";
+  import stateContext from "$lib/context/state";
+  import socketContext from "$lib/context/socket";
+
+  const appState = stateContext.get();
+  const socket = socketContext.get();
 
   let loading: boolean = $state(false);
   let loadingState: string = $state("");
@@ -163,7 +166,7 @@
       })
       // Switch to the game view
       .then(({ id, token, config }) => {
-        setGame({ id, token, config, host: true });
+        appState.setGame({ id, token, config, host: true });
       })
       // Handle errors
       .catch((error: Error | ServerError) => {
@@ -180,7 +183,7 @@
 
 <main class="main">
   <header class="header btn-row btn-row--fill">
-    <button onclick={setHome} class="btn btn--icon">
+    <button onclick={appState.setHome} class="btn btn--icon">
       <Back />
       <span>Back</span>
     </button>

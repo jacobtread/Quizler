@@ -4,12 +4,17 @@
   import { leave } from "$api/actions";
 
   import type { GameData } from "$pages/Game.svelte";
+  import stateContext from "$lib/context/state";
+  import socketContext from "$lib/context/socket";
 
   interface Props {
     gameData: GameData;
   }
 
   const { gameData }: Props = $props();
+
+  const appState = stateContext.get();
+  const socket = socketContext.get();
 </script>
 
 <main class="page page--overflow" transition:slide|global>
@@ -21,7 +26,10 @@
   <div class="bottom">
     <p class="token">{gameData.token}</p>
 
-    <button class="btn btn--surface" onclick={() => leave(gameData)}>
+    <button
+      class="btn btn--surface"
+      onclick={() => leave(socket, appState, gameData)}
+    >
       Leave
     </button>
   </div>

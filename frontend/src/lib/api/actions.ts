@@ -1,10 +1,10 @@
 import { ClientMessage, HostAction } from "$api/models";
-import * as socket from "$api/socket";
+import type { SocketStore } from "$lib/stores/socket.svelte";
 import type { GameData } from "$pages/Game.svelte";
 import { confirmDialog } from "$stores/dialogStore";
-import { setHome } from "$stores/state";
+import { type AppStateStore } from "$stores/state.svelte";
 
-export async function doKick(id: number) {
+export async function doKick(socket: SocketStore, id: number) {
   try {
     await socket.send({
       ty: ClientMessage.Kick,
@@ -15,7 +15,10 @@ export async function doKick(id: number) {
   }
 }
 
-export async function doHostAction(action: HostAction): Promise<void> {
+export async function doHostAction(
+  socket: SocketStore,
+  action: HostAction
+): Promise<void> {
   try {
     await socket.send({
       ty: ClientMessage.HostAction,
@@ -26,7 +29,11 @@ export async function doHostAction(action: HostAction): Promise<void> {
   }
 }
 
-export async function leave(gameData: GameData) {
+export async function leave(
+  socket: SocketStore,
+  state: AppStateStore,
+  gameData: GameData
+) {
   const message = gameData.host
     ? "Are you sure you want to leave? Leaving will remove all other players from the game"
     : "Are you sure you want to leave?";
@@ -36,8 +43,8 @@ export async function leave(gameData: GameData) {
   if (!result) return;
 
   // Take back to the home screen
-  setHome();
+  state.setHome();
 
   // Kick self from game to leave
-  doKick(gameData.id);
+  doKick(socket, gameData.id);
 }

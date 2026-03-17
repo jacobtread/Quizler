@@ -13,6 +13,8 @@
 
   import ScoreTweened from "$components/TweenedValue.svelte";
   import type { GameData } from "$pages/Game.svelte";
+  import stateContext from "$lib/context/state";
+  import socketContext from "$lib/context/socket";
 
   interface Props {
     gameData: GameData;
@@ -23,8 +25,11 @@
 
   const { gameData, players, scores, gameState }: Props = $props();
 
+  const appState = stateContext.get();
+  const socketState = socketContext.get();
+
   // Sends the next state action
-  const next = () => doHostAction(HostAction.Next);
+  const next = () => doHostAction(socketState, HostAction.Next);
 </script>
 
 <main class="page page--middle page--overflow" transition:slide|global>
@@ -37,7 +42,9 @@
     <p class="desc">{gameData.config.text}</p>
 
     <div class="btn-row btn-row--fill actions">
-      <button class="btn" onclick={() => leave(gameData)}>Leave</button>
+      <button class="btn" onclick={() => leave(socketState, appState, gameData)}
+        >Leave</button
+      >
 
       {#if gameState === GameState.Marked}
         <!-- Cancel started button for starting games -->
@@ -67,7 +74,10 @@
             </td>
             <!-- Host privileges -->
             <td class="player__action">
-              <button class="btn" onclick={() => doKick(player.id)}>
+              <button
+                class="btn"
+                onclick={() => doKick(socketState, player.id)}
+              >
                 Kick
               </button>
             </td>

@@ -15,6 +15,7 @@
     "Jacobtread",
     "onconsider",
     "onfinalize",
-    "dndzone"
+    "dndzone",
+    "socketContext"
   ]
 }

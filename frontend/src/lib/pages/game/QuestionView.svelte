@@ -1,5 +1,4 @@
 <script lang="ts">
-  import * as socket from "$api/socket";
   import {
     QuestionType,
     type Question,
@@ -12,6 +11,7 @@
   import { doHostAction } from "$api/actions";
   import { formatTime } from "$lib/utils/utils";
   import QuPreviewImage from "$components/editor/QuPreviewImage.svelte";
+  import socketContext from "$lib/context/socket";
 
   interface Props {
     gameData: GameData;
@@ -21,6 +21,7 @@
   }
 
   let { gameData, timeMs, question, answered = $bindable() }: Props = $props();
+  const socket = socketContext.get();
 
   let answers: number[] = $state([]);
   let typerAnswer: string = $state("");
@@ -42,7 +43,7 @@
   }
 
   // Sends the next state action
-  const next = () => doHostAction(HostAction.Next);
+  const next = () => doHostAction(socket, HostAction.Next);
 
   async function answer(answer: Answer) {
     answered = true;

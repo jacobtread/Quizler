@@ -1,5 +1,5 @@
 <script module lang="ts">
-  import type { GameConfig, Scores } from "$api/models";
+  import type { GameConfig, PlayerSummary, Scores } from "$api/models";
 
   export interface GameData {
     // ID of the current player
@@ -30,11 +30,9 @@
     ClientMessage
   } from "$api/models";
 
-  import * as socket from "$api/socket";
   import { preloadImage } from "$api/http";
 
   import { errorDialog } from "$stores/dialogStore";
-  import { setHome } from "$stores/state";
 
   import AnsweredView from "$pages/game/AnsweredView.svelte";
   import FinishedView from "$pages/game/FinishedView.svelte";
@@ -44,6 +42,9 @@
   import Waiting from "$pages/game/Waiting.svelte";
   import Starting from "$pages/game/Starting.svelte";
   import Loading from "$pages/Loading.svelte";
+  import stateContext from "$lib/context/state";
+  import socketContext from "$lib/context/socket";
+  import { onMount } from "svelte";
 
   interface Props {
     gameData: GameData;
@@ -51,18 +52,11 @@
 
   let { gameData }: Props = $props();
 
+  const appState = stateContext.get();
+  const socket = socketContext.get();
+
   // Player data loaded over the network
   let remotePlayerData: PlayerData[] = $state([]);
-
-  let players: PlayerData[] = $derived.by(() => {
-    if (remotePlayerData.length > 0) {
-      return remotePlayerData;
-    }
-
-    return gameData.host
-      ? []
-      : [{ id: gameData.id, name: gameData.name ?? "" }];
-  });
 
   let gameState: GameState = $state(GameState.Lobby);
 
@@ -78,6 +72,28 @@
 
   let timeMs: number = $state(0);
   let lastUpdateTime: number = 0;
+
+  // Fallback player list to use before remote players are loaded
+  const defaultPlayers = $derived(
+    gameData.host ? [] : [{ id: gameData.id, name: gameData.name ?? "" }]
+  );
+
+  // Current player list ordered by scores
+  const players: PlayerSummary[] = $derived.by(() => {
+    const players =
+      remotePlayerData.length > 0 ? remotePlayerData : defaultPlayers;
+
+    // Add the scoring data to the player
+    const playersWithScore = players.map((player) => ({
+      score: scores[player.id] ?? 0,
+      ...player
+    }));
+
+    // Sort players list by the player scores if available
+    playersWithScore.sort((a, b) => b.score - a.score);
+
+    return playersWithScore;
+  });
 
   function updateTimer() {
     // Don't update the timer if we have reached the time
@@ -98,103 +114,127 @@
     }
   }
 
-  // Hook the handlers for the different message types
-  socket.setHandler(ServerEvent.PlayerData, (msg) => {
-    console.debug("Other player message", msg);
-    // Add to the players list
-    players.push(msg);
-    players = players;
-  });
+  onMount(() => {
+    const abortController = new AbortController();
+    const abortSignal = abortController.signal;
 
-  socket.setHandler(ServerEvent.GameState, (msg) => {
-    console.debug("Game state message", msg);
-    gameState = msg.state;
+    // Hook the handlers for the different message types
+    socket.setHandler(
+      ServerEvent.PlayerData,
+      (msg) => {
+        console.debug("Other player message", msg);
 
-    // If the state has changed reset our answered state
-    answered = false;
+        // Add to the players list
+        remotePlayerData.push(msg);
+      },
+      abortSignal
+    );
 
-    // Reset known scores when reverting to lobby state
-    if (msg.state === GameState.Lobby) {
-      scores = {};
-    } else if (msg.state === GameState.Finished) {
-      // Compute the finished summary
-      const playersExt = players.map((player) => ({
-        score: scores[player.id] ?? 0,
-        ...player
-      }));
+    socket.setHandler(
+      ServerEvent.GameState,
+      (msg) => {
+        console.debug("Game state message", msg);
+        gameState = msg.state;
 
-      // Sort the players based on score
-      playersExt.sort((a, b) => b.score - a.score);
+        // If the state has changed reset our answered state
+        answered = false;
 
-      summary = {
-        players: playersExt
-      };
-    }
-  });
+        // Reset known scores when reverting to lobby state
+        if (msg.state === GameState.Lobby) {
+          scores = {};
+        } else if (msg.state === GameState.Finished) {
+          summary = { players };
+        }
+      },
+      abortSignal
+    );
 
-  socket.setHandler(ServerEvent.Timer, (msg) => {
-    console.debug("Time sync message", msg);
+    socket.setHandler(
+      ServerEvent.Timer,
+      (msg) => {
+        console.debug("Time sync message", msg);
 
-    lastUpdateTime = performance.now();
-    timeMs = msg.value;
+        lastUpdateTime = performance.now();
+        timeMs = msg.value;
 
-    updateTimer();
-  });
+        updateTimer();
+      },
+      abortSignal
+    );
 
-  socket.setHandler(ServerEvent.Question, async (msg) => {
-    console.debug("Question message", msg);
-    question = msg.question;
+    socket.setHandler(
+      ServerEvent.Question,
+      async (msg) => {
+        console.debug("Question message", msg);
+        question = msg.question;
 
-    // Preload the image
-    const preloadedImage = await preloadImage(gameData.token, question);
+        // Preload the image
+        const preloadedImage = await preloadImage(gameData.token, question);
 
-    if (preloadedImage !== null && question.image !== null) {
-      // Ensure browser compatibility
-      if (preloadedImage.decode !== undefined) {
-        await preloadedImage.decode();
-      }
+        if (preloadedImage !== null && question.image !== null) {
+          // Ensure browser compatibility
+          if (preloadedImage.decode !== undefined) {
+            await preloadedImage.decode();
+          }
 
-      question.image.preloaded = preloadedImage;
-    }
+          question.image.preloaded = preloadedImage;
+        }
 
-    // Update the ready state
-    try {
-      await socket.send({ ty: ClientMessage.Ready });
-      console.debug("Server acknowledged ready state");
-    } catch (e) {
-      console.error("Error while attempting to ready", e);
-    }
-  });
+        // Update the ready state
+        try {
+          await socket.send({ ty: ClientMessage.Ready });
+          console.debug("Server acknowledged ready state");
+        } catch (e) {
+          console.error("Error while attempting to ready", e);
+        }
+      },
+      abortSignal
+    );
 
-  socket.setHandler(ServerEvent.Scores, (msg) => {
-    console.debug("Score message", msg);
-    scores = msg.scores;
+    socket.setHandler(
+      ServerEvent.Scores,
+      (msg) => {
+        console.debug("Score message", msg);
+        scores = msg.scores;
+      },
+      abortSignal
+    );
 
-    // Sort players list by the player scores
-    let getScore = (id: number): number => scores[id] ?? 0;
-    players = players.sort((a, b) => getScore(b.id) - getScore(a.id));
-  });
+    socket.setHandler(
+      ServerEvent.Score,
+      (msg) => {
+        console.debug("Score message", msg);
+        score = msg.score;
+      },
+      abortSignal
+    );
 
-  socket.setHandler(ServerEvent.Score, (msg) => {
-    console.debug("Score message", msg);
-    score = msg.score;
-  });
+    socket.setHandler(
+      ServerEvent.Kicked,
+      (msg) => {
+        console.debug("Kick message", msg);
+        // Remove from the players list
+        remotePlayerData = remotePlayerData.filter(
+          (player) => player.id !== msg.id
+        );
 
-  socket.setHandler(ServerEvent.Kicked, (msg) => {
-    console.debug("Kick message", msg);
-    // Remove from the players list
-    players = players.filter((player) => player.id !== msg.id);
+        // if the removed player was us
+        if (msg.id === gameData.id) {
+          appState.setHome();
 
-    // if the removed player was us
-    if (msg.id === gameData.id) {
-      setHome();
+          // For remove reasons other than self disconnect
+          if (msg.reason !== RemoveReason.Disconnected) {
+            const reason = removeReasonText[msg.reason];
+            errorDialog("Removed from game", reason);
+          }
+        }
+      },
+      abortSignal
+    );
 
-      // For remove reasons other than self disconnect
-      if (msg.reason !== RemoveReason.Disconnected) {
-        const reason = removeReasonText[msg.reason];
-        errorDialog("Removed from game", reason);
-      }
-    }
+    return () => {
+      abortController.abort();
+    };
   });
 </script>
 

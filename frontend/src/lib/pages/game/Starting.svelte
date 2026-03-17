@@ -6,6 +6,7 @@
 
   import type { GameData } from "$pages/Game.svelte";
   import { formatTime } from "$lib/utils/utils";
+  import socketContext from "$lib/context/socket";
 
   interface Props {
     gameState: GameState;
@@ -15,11 +16,13 @@
 
   const { gameState, timeMs, gameData }: Props = $props();
 
+  const socket = socketContext.get();
+
   // Sends the next state action
-  const next = () => doHostAction(HostAction.Next);
+  const next = () => doHostAction(socket, HostAction.Next);
 
   // Sends the host cancel action
-  const reset = () => doHostAction(HostAction.Reset);
+  const reset = () => doHostAction(socket, HostAction.Reset);
 </script>
 
 <main class="page page--overflow" transition:slide|global>
