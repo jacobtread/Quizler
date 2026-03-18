@@ -375,6 +375,13 @@ export type ServerEventSchema = { ret: undefined } & (
 // Server message type extractor
 export type ServerEventOf<T> = Extract<ServerEventSchema, { ty: T }>;
 
+export function isServerEventType<T extends ServerEvent>(
+  ty: T,
+  msg: ServerMessage
+): msg is ServerEventOf<T> {
+  return msg.ty === ty;
+}
+
 export type ServerResponseSchema = { ret: 1 } & (
   | { ty: ServerResponse.Joined; id: number; token: string; config: GameConfig }
   | { ty: ServerResponse.Ok }

@@ -6,7 +6,8 @@ import {
   ClientMessage,
   type ClientMessageOf,
   type ServerResponseOf,
-  type ServerMessage
+  type ServerMessage,
+  isServerEventType
 } from "$api/models";
 import { getServerURL } from "$api/http";
 import type { AppStateStore } from "./state.svelte";
@@ -243,9 +244,9 @@ export function createSocketState(appState: AppStateStore): SocketStore {
 
     // Process matching queued messages
     messageQueue = messageQueue.filter((msg) => {
-      if (msg.ty === ty) {
+      if (isServerEventType(ty, msg)) {
         // Handle messages that match the handler type
-        handler(msg as ServerEventOf<T>);
+        handler(msg);
         return false;
       } else {
         return true;
