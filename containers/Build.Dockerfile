@@ -12,7 +12,7 @@ COPY frontend/package.json ./
 COPY frontend/package-lock.json ./
 
 # Install the dependencies
-RUN npm install
+RUN npm ci
 
 # Copy the remaining source
 COPY frontend ./
